@@ -7,13 +7,9 @@
 # See LICENSE.txt for details about copyright and rights to use.
 
 cmake_minimum_required(VERSION 3.20)
-project(btune C CXX)
+project(btune LANGUAGES C CXX)
 set (CMAKE_CXX_STANDARD 20)
 
-set(BLOSC_SRC_DIR "" CACHE PATH "Directory that contains the c-blosc2 sources")
-if(NOT BLOSC_SRC_DIR)
-    message( SEND_ERROR "Call with -DBLOSC_SRC_DIR=XXX" )
-endif()
 
 set(TENSORFLOW_SRC_DIR "" CACHE PATH "Directory that contains the TensorFlow project")
 if(NOT TENSORFLOW_SRC_DIR)

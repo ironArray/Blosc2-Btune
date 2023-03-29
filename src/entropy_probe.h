@@ -8,7 +8,7 @@ extern "C" {
 #include <blosc2.h>
 
 #define ENTROPY_PROBE_ID 244
-void b2ep_register_codec(blosc2_codec *codec);
+void register_entropy_codec(blosc2_codec *codec);
 #define FILTER_STOP 3
 #ifdef __cplusplus
 }

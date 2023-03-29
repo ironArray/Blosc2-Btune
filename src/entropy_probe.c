@@ -3,17 +3,15 @@
 #include <string.h>
 
 #include <blosc2.h>
-#include "blosc2_entropy_prober.h"
+#include "entropy_probe.h"
 
 
 #define MAX_COPY 32U
 #define MAX_DISTANCE 8191
 #define MAX_FARDISTANCE (65535 + MAX_DISTANCE - 1)
 
-// The hash length (1 << HASH_LOG2) can be tuned for performance (12 -> 15)
-#define HASH_LOG2 (12U)
-// #define HASH_LOG2 (13U)
-// #define HASH_LOG2 (14U)
+// The hash length (1 << HASH_LOG) can be tuned for performance (12 -> 15)
+#define HASH_LOG (14U)
 
 #define HASH_FUNCTION(v, s, h)              \
     {                                       \
@@ -35,8 +33,7 @@
         }                          \
     }
 
-static uint8_t *get_run(uint8_t *ip, const uint8_t *ip_bound, const uint8_t *ref)
-{
+static uint8_t *get_run(uint8_t *ip, const uint8_t *ip_bound, const uint8_t *ref) {
     uint8_t x = ip[-1];
     int64_t value, value2;
     /* Broadcast the value for every byte in a 64-bit register */
@@ -61,8 +58,7 @@ static uint8_t *get_run(uint8_t *ip, const uint8_t *ip_bound, const uint8_t *ref
     return ip;
 }
 
-static uint8_t *get_match(uint8_t *ip, const uint8_t *ip_bound, const uint8_t *ref)
-{
+static uint8_t *get_match(uint8_t *ip, const uint8_t *ip_bound, const uint8_t *ref) {
     while (ip < (ip_bound - sizeof(int64_t))) {
         if (*(int64_t *)ref != *(int64_t *)ip) {
             /* Return the byte that starts to differ */
@@ -81,8 +77,7 @@ static uint8_t *get_match(uint8_t *ip, const uint8_t *ip_bound, const uint8_t *r
     return ip;
 }
 
-static uint8_t *get_run_or_match(uint8_t *ip, uint8_t *ip_bound, const uint8_t *ref, bool run)
-{
+static uint8_t *get_run_or_match(uint8_t *ip, uint8_t *ip_bound, const uint8_t *ref, bool run) {
     if (run) {
         ip = get_run(ip, ip_bound, ref);
     }
@@ -94,12 +89,11 @@ static uint8_t *get_run_or_match(uint8_t *ip, uint8_t *ip_bound, const uint8_t *
 }
 
 // Get a guess for the compressed size of a buffer
-static float get_cratio(const uint8_t *ibase, int maxlen, int minlen, int ipshift)
-{
+static float get_cratio(const uint8_t *ibase, int maxlen, int minlen, int ipshift) {
     const uint8_t *ip = ibase;
     int32_t oc = 0;
-    const uint16_t hashlen = (1U << (uint8_t)HASH_LOG2);
-    uint16_t htab[1U << (uint8_t)HASH_LOG2];
+    const uint16_t hashlen = (1U << (uint8_t)HASH_LOG);
+    uint32_t htab[1U << (uint8_t)HASH_LOG];
     uint32_t hval;
     uint32_t seq;
     uint8_t copy;
@@ -109,7 +103,7 @@ static float get_cratio(const uint8_t *ibase, int maxlen, int minlen, int ipshif
     const uint8_t *ip_limit = ibase + limit - 12;
 
     // Initialize the hash table to distances of 0
-    memset(htab, 0, hashlen * sizeof(uint16_t));
+    memset(htab, 0, hashlen * sizeof(uint32_t));
 
     /* we start with literal copy */
     copy = 4;
@@ -123,14 +117,14 @@ static float get_cratio(const uint8_t *ibase, int maxlen, int minlen, int ipshif
 
         /* find potential match */
         seq = BLOSCLZ_READU32(ip);
-        HASH_FUNCTION(hval, seq, HASH_LOG2)
+        HASH_FUNCTION(hval, seq, HASH_LOG)
         ref = ibase + htab[hval];
 
         /* calculate distance to the match */
         distance = (unsigned int)(anchor - ref);
 
         /* update hash table */
-        htab[hval] = (uint16_t)(anchor - ibase);
+        htab[hval] = (uint32_t)(anchor - ibase);
 
         if (distance == 0 || (distance >= MAX_FARDISTANCE)) {
             LITERAL2(ip, anchor, copy)
@@ -186,8 +180,8 @@ static float get_cratio(const uint8_t *ibase, int maxlen, int minlen, int ipshif
 
         /* update the hash at match boundary */
         seq = BLOSCLZ_READU32(ip);
-        HASH_FUNCTION(hval, seq, HASH_LOG2)
-        htab[hval] = (uint16_t)(ip++ - ibase);
+        HASH_FUNCTION(hval, seq, HASH_LOG)
+        htab[hval] = (uint32_t)(ip++ - ibase);
         ip++;
         /* assuming literal copy */
         oc++;
@@ -200,8 +194,7 @@ static float get_cratio(const uint8_t *ibase, int maxlen, int minlen, int ipshif
 static int encoder(const uint8_t *input, int32_t input_len,
                    uint8_t *output, int32_t output_len,
                    uint8_t meta,
-                   blosc2_cparams *cparams, const void *chunk)
-{
+                   blosc2_cparams *cparams, const void *chunk) {
     // Get the cratio.  minlen and ipshift are decent defaults, but one can try
     // with (4, 4) or (3, 4) or (4, 3)
     float cratio = get_cratio(input, input_len, 3, 3);
@@ -212,10 +205,9 @@ static int encoder(const uint8_t *input, int32_t input_len,
     return cbytes;
 }
 
-void b2ep_register_codec(blosc2_codec *codec)
-{
+void register_entropy_codec(blosc2_codec *codec) {
     codec->compcode = ENTROPY_PROBE_ID;
-    codec->compver = 1;
+    codec->version = 1;
     codec->complib = 1;
     codec->compname = "entropy_probe";
     codec->encoder = encoder;

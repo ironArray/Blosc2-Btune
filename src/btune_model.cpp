@@ -4,8 +4,8 @@
 #include <tensorflow/lite/optional_debug_tools.h>
 
 #include <blosc2.h>
-#include <context.h>
-#include "blosc2_entropy_prober.h"
+#include "context.h"
+#include "entropy_probe.h"
 #include "btune.h"
 #include "btune_model.h"
 #include "json.h"
@@ -262,7 +262,7 @@ int btune_model_inference(blosc2_context * ctx, btune_comp_mode btune_comp, int 
 
     // Register entropy codec
     blosc2_codec codec;
-    b2ep_register_codec(&codec);
+    register_entropy_codec(&codec);
 
     // Build the interpreter with the InterpreterBuilder.
     // Note: all Interpreters should be built with the InterpreterBuilder,
