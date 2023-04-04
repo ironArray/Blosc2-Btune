@@ -14,6 +14,7 @@
 #include <assert.h>
 
 #include <blosc2/filters-registry.h>
+#include <blosc2/btunes-registry.h>
 #include "btune.h"
 #include "btune_model.h"
 
@@ -1178,6 +1179,6 @@ void btune_update(blosc2_context * context, double ctime) {
   }
 }
 
-blosc2_btune_info info = {.btune_init="btune_init", .btune_next_blocksize="btune_next_blocksize",
+btune_info info = {.btune_init="btune_init", .btune_next_blocksize="btune_next_blocksize",
         .btune_next_cparams="btune_next_cparams", .btune_update="btune_update", .btune_free="btune_free",
         .btune_params="btune_params"};

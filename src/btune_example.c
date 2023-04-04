@@ -13,8 +13,7 @@ static int fsize(FILE *file) {
     return size;
 }
 
-static int get_nchunks_in_file(FILE *file, int chunksize)
-{
+static int get_nchunks_in_file(FILE *file, int chunksize) {
     int filesize = fsize(file);
     int nchunks = filesize / chunksize;
     if (filesize % CHUNKSIZE != 0) {
@@ -24,8 +23,7 @@ static int get_nchunks_in_file(FILE *file, int chunksize)
     return nchunks;
 }
 
-int main(int argc, char* argv[])
-{
+int main(int argc, char* argv[]) {
     blosc2_init();
 
     // Input parameters
@@ -48,18 +46,10 @@ int main(int argc, char* argv[])
     cparams.blocksize = BLOCKSIZE; // If unset there's a division by zero crash
 
     // btune
-    blosc2_btune *btune = malloc(sizeof(blosc2_btune));
     btune_config btune_config = BTUNE_CONFIG_DEFAULTS;
     //btune_config.comp_mode = BTUNE_COMP_HCR;
     //btune_config.behaviour.repeat_mode = BTUNE_REPEAT_ALL;
-    btune->btune_init = btune_init;
-    btune->btune_next_blocksize = btune_next_blocksize;
-    btune->btune_next_cparams = btune_next_cparams;
-    btune->btune_update = btune_update;
-    btune->btune_free = btune_free;
-    btune->id = BTUNE_ID;
-    btune->name = "btune";
-    cparams.btune_id = BTUNE_ID;
+    cparams.btune_id = 32;
     cparams.btune_params = &btune_config;
 
     // Create super chunk
@@ -72,6 +62,10 @@ int main(int argc, char* argv[])
         .urlpath=(char*)out_fname
     };
     blosc2_schunk* schunk_out = blosc2_schunk_new(&storage);
+    if (schunk_out == NULL) {
+        fprintf(stderr, "Output file cannot be created.\n");
+        return 1;
+    }
 
     // Statistics
     blosc_timestamp_t t0;

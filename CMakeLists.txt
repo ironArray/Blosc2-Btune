@@ -7,7 +7,7 @@
 # See LICENSE.txt for details about copyright and rights to use.
 
 cmake_minimum_required(VERSION 3.20)
-project(btune LANGUAGES C CXX)
+project(blosc2_btune_plugin LANGUAGES C CXX)
 set (CMAKE_CXX_STANDARD 20)
 
 
