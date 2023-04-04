@@ -11,7 +11,7 @@ requires = ["setuptools", "scikit-build", "cmake", "ninja", "blosc2"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "blosc2_btune_plugin"
+name = "blosc2_btune"
 dynamic = ["version", "readme"]
 authors = [
     {name = "Blosc Development Team", email = "blosc@blosc.org"},
@@ -36,7 +36,7 @@ dependencies = [
 ]
 
 [tool.setuptools.dynamic]
-version = {attr = "blosc2_btune_plugin.VERSION"}
+version = {attr = "blosc2_btune.VERSION"}
 readme = {file = ["README.md"], content-type = "text/markdown"}
 
 [tool.setuptools]

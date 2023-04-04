@@ -12,20 +12,20 @@ include_directories(
     ${TENSORFLOW_SRC_DIR}
 )
 
-add_library(blosc2_btune_plugin SHARED btune.c btune_model.cpp json.c
+add_library(blosc2_btune SHARED btune.c btune_model.cpp json.c
             entropy_probe.c)
 
-target_link_directories(blosc2_btune_plugin
+target_link_directories(blosc2_btune
     PUBLIC ${Python_LIB}
     PUBLIC ${BLOSC2_INCLUDE_DIR}
     PUBLIC ${TENSORFLOW_SRC_DIR}/bazel-out/darwin-opt/bin/tensorflow/lite #Different in MacOS and Linux
 )
-target_link_libraries(blosc2_btune_plugin blosc2 tensorflowlite)
+target_link_libraries(blosc2_btune blosc2 tensorflowlite)
 
 link_directories(${Python_LIB})
 include_directories(${Python_INCLUDE})
 
 add_executable("btune_example" "btune_example.c")
-target_link_libraries("btune_example" blosc2_btune_plugin blosc2)
+target_link_libraries("btune_example" blosc2_btune blosc2)
 
-install(TARGETS blosc2_btune_plugin LIBRARY DESTINATION blosc2_btune_plugin)
+install(TARGETS blosc2_btune LIBRARY DESTINATION blosc2_btune)

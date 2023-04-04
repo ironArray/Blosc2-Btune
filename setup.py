@@ -9,6 +9,6 @@
 from skbuild import setup
 
 setup(
-    name="blosc2_btune_plugin",
-    packages=["blosc2_btune_plugin"],
+    name="blosc2_btune",
+    packages=["blosc2_btune"],
 )
