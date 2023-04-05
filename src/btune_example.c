@@ -1,4 +1,5 @@
 #include "btune.h"
+#include <blosc2/tunes-registry.h>
 
 #define KB  1024.
 #define MB  (1024*KB)
@@ -49,8 +50,8 @@ int main(int argc, char* argv[]) {
     btune_config btune_config = BTUNE_CONFIG_DEFAULTS;
     //btune_config.comp_mode = BTUNE_COMP_HCR;
     //btune_config.behaviour.repeat_mode = BTUNE_REPEAT_ALL;
-    cparams.btune_id = 32;
-    cparams.btune_params = &btune_config;
+    cparams.tune_id = BLOSC_BTUNE;
+    cparams.tune_params = &btune_config;
 
     // Create super chunk
     remove(out_fname);
