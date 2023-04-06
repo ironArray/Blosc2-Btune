@@ -27,12 +27,13 @@ typedef struct {
 typedef struct {
     uint8_t codec;
     uint8_t filter;
+    int clevel;
 } category_t;
 
 typedef struct {
     norm_t cratio;
     norm_t cspeed;
-    category_t categories[30]; // TODO Make this dynamic with malloc/free
+    category_t categories[40]; // TODO Make this dynamic with malloc/free
 } metadata_t;
 
 
@@ -199,8 +200,10 @@ static int read_metadata(const char *fname, metadata_t *metadata)
                 json_value *cat = value->u.array.values[i];
                 json_value *codec = cat->u.array.values[0];
                 json_value *filter = cat->u.array.values[1];
+                json_value *clevel = cat->u.array.values[2];
                 metadata->categories[i].codec = codec->u.integer;
                 metadata->categories[i].filter = filter->u.integer;
+                metadata->categories[i].clevel = clevel->u.integer;
             }
         }
     }
@@ -210,7 +213,8 @@ static int read_metadata(const char *fname, metadata_t *metadata)
     return 0;
 }
 
-int btune_model_inference(blosc2_context * ctx, btune_comp_mode btune_comp, int * compcode, uint8_t * filter)
+int btune_model_inference(blosc2_context * ctx, btune_comp_mode btune_comp,
+                          int * compcode, uint8_t * filter, int * clevel)
 {
     metadata_t metadata;
 
@@ -276,6 +280,7 @@ int btune_model_inference(blosc2_context * ctx, btune_comp_mode btune_comp, int 
     category_t cat = metadata.categories[best];
     *compcode = cat.codec;
     *filter = cat.filter;
+    *clevel = cat.clevel;
 
     return 0;
 }

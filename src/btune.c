@@ -607,12 +607,13 @@ void btune_next_cparams(blosc2_context *context) {
   // Run inference only for the first chunk
   int compcode;
   uint8_t filter;
+  int clevel;
   int nchunk = context->schunk->nchunks;
   if (nchunk == 0) {
     btune_comp_mode comp_mode = btune_params->config.comp_mode;
-    int error = btune_model_inference(context, comp_mode, &compcode, &filter);
+    int error = btune_model_inference(context, comp_mode, &compcode, &filter, &clevel);
     if (error == 0) {
-      printf("Inference: chunk=%d codec=%d filter=%d\n", nchunk, compcode, filter);
+      printf("Inference: chunk=%d codec=%d filter=%d clevel=%d\n", nchunk, compcode, filter, clevel);
       btune_params->codecs[0] = compcode;
       btune_params->ncodecs = 1;
       btune_params->filters[0] = filter;
