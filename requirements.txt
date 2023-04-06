@@ -1,0 +1,3 @@
+blosc2
+scikit-build
+flatbuffers
