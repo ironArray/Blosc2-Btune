@@ -22,8 +22,6 @@
 typedef struct {
     float mean;
     float std;
-    float min;
-    float max;
 } norm_t;
 
 typedef struct {
@@ -82,12 +80,10 @@ static int get_best_codec(
     return best;
 }
 
-static float normalize(float value, float mean, float std, float min, float max)
+static float normalize(float value, float mean, float std)
 {
     value -= mean;
     value /= std;
-    value -= min;
-    value /= max;
     return value;
 }
 
@@ -101,12 +97,8 @@ static int get_best_codec_for_chunk(
 {
     float cratio_mean = metadata->cratio.mean;
     float cratio_std = metadata->cratio.std;
-    float cratio_min = metadata->cratio.min;
-    float cratio_max = metadata->cratio.max;
     float cspeed_mean = metadata->cspeed.mean;
     float cspeed_std = metadata->cspeed.std;
-    float cspeed_min = metadata->cspeed.min;
-    float cspeed_max = metadata->cspeed.max;
 
     // cparams
     blosc2_cparams cparams = BLOSC2_CPARAMS_DEFAULTS;
@@ -138,8 +130,8 @@ static int get_best_codec_for_chunk(
     blosc2_instr *instr_data = (blosc2_instr *)ddata;
     for (int i = 0; i < nblocks; i++) {
         // Normalize
-        float cratio = normalize(instr_data->cratio, cratio_mean, cratio_std, cratio_min, cratio_max);
-        float cspeed = normalize(instr_data->cspeed, cspeed_mean, cspeed_std, cspeed_min, cspeed_max);
+        float cratio = normalize(instr_data->cratio, cratio_mean, cratio_std);
+        float cspeed = normalize(instr_data->cspeed, cspeed_mean, cspeed_std);
         //printf("block=%d cratio=%f cspeed=%f\n", i, cratio, cspeed);
         instr_data++;
 
@@ -172,12 +164,6 @@ static int read_dict(json_value *json, norm_t *norm)
         }
         else if (strcmp(name, "std") == 0) {
             norm->std = value->u.dbl;
-        }
-        else if (strcmp(name, "min") == 0) {
-            norm->min = value->u.dbl;
-        }
-        else if (strcmp(name, "max") == 0) {
-            norm->max = value->u.dbl;
         }
     }
 
