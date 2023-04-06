@@ -21,6 +21,7 @@ add_library(blosc2_btune SHARED btune.c btune_model.cpp json.c
 
 target_link_directories(blosc2_btune
     PUBLIC ${Python_LIB}
+    PUBLIC  ${Python_LIB64}
     PUBLIC ${BLOSC2_INCLUDE_DIR}
 )
 if(APPLE)
