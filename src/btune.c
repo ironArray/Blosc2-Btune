@@ -29,7 +29,6 @@
 // Internal btune control behaviour constants.
 enum {
   BTUNE_KB = 1024,
-  MAX_CLEVEL = 9,
   MIN_BLOCK = 16 * BTUNE_KB,  // TODO remove when included in blosc.h
   MAX_BLOCK = 2 * BTUNE_KB * BTUNE_KB,
   MIN_BITSHUFFLE = 1,
@@ -127,10 +126,12 @@ static void extract_btune_cparams(blosc2_context *context, cparams_btune *cparam
 
 // Check if btune can still modify the clevel or has to change the direction
 static bool has_ended_clevel(btune_struct *btune_params) {
-  return ((btune_params->best->increasing_clevel &&
-           (btune_params->best->clevel >= (MAX_CLEVEL - btune_params->step_size))) ||
-          (!btune_params->best->increasing_clevel &&
-           (btune_params->best->clevel <= (1 + btune_params->step_size))));
+  int max_clevel = btune_params->nclevels;
+  int clevel_index = btune_params->clevel_index;
+  int step_size = btune_params->step_size;
+  return (btune_params->best->increasing_clevel)
+    ? (clevel_index + step_size) >= max_clevel
+    : (clevel_index - step_size) < 0;
 }
 
 // Check if btune can still modify the shufflesize or has to change the direction
@@ -351,10 +352,15 @@ void btune_init(void *tune_params, blosc2_context * cctx, blosc2_context * dctx)
   add_filter(btune, BLOSC_NOFILTER);
   add_filter(btune, BLOSC_SHUFFLE);
   add_filter(btune, BLOSC_BITSHUFFLE);
+  btune->nclevels = BTUNE_MAX_CLEVELS;
+  for (int i = 0; i < btune->nclevels; i++) {
+    btune->clevels[i] = i+1;
+  }
 
   // State attributes
   btune->rep_index = 0;
   btune->aux_index = 0;
+  btune->clevel_index = 8; // Start with clevel=9
   btune->steps_count = 0;
   btune->nsofts = 0;
   btune->nhards = 0;
@@ -618,6 +624,11 @@ void btune_next_cparams(blosc2_context *context) {
       btune_params->ncodecs = 1;
       btune_params->filters[0] = filter;
       btune_params->nfilters = 1;
+      btune_params->clevels[0] = clevel;
+      btune_params->nclevels = 1;
+      btune_params->clevel_index = 0;
+      btune_params->best->clevel = clevel;
+      btune_params->aux_cparams->clevel = clevel;
     }
 
     if (getenv("BTUNE_LOG")) {
@@ -696,18 +707,19 @@ void btune_next_cparams(blosc2_context *context) {
         cparams->blocksize = 0;
       }
       btune_params->aux_index++;
-      if (cparams->increasing_clevel) {
-        if (cparams->clevel <= (MAX_CLEVEL - btune_params->step_size)) {
-          cparams->clevel += btune_params->step_size;
-          // ZSTD level 9 is extremely slow, so avoid it, always
-          if (cparams->clevel == 9 && cparams->compcode == BLOSC_ZSTD) {
-            cparams->clevel = 8;
-          }
+
+      if (!has_ended_clevel(btune_params)) {
+        if (cparams->increasing_clevel) {
+          btune_params->clevel_index += btune_params->step_size;
         }
-      } else {
-        if (cparams->clevel > btune_params->step_size) {
-          cparams->clevel -= btune_params->step_size;
+        else {
+          btune_params->clevel_index -= btune_params->step_size;
         }
+      }
+
+      cparams->clevel = btune_params->clevels[btune_params->clevel_index];
+      if (cparams->clevel == 9 && cparams->compcode == BLOSC_ZSTD) {
+        cparams->clevel = 8;
       }
       break;
 

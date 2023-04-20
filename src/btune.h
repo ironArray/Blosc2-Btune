@@ -29,6 +29,7 @@
 // Maximum number of codecs
 #define BTUNE_MAX_CODECS 8
 #define BTUNE_MAX_FILTERS 3
+#define BTUNE_MAX_CLEVELS 9
 
 #define BTUNE_DEBUG(msg, ...) \
     do { \
@@ -235,6 +236,10 @@ typedef struct {
   // The filter list used by BTune
   uint8_t nfilters;
   // Number of filters used by BTune
+  uint8_t clevels[BTUNE_MAX_CLEVELS];
+  // The clevels list used by BTune
+  uint8_t nclevels;
+  // Number of clevels used by BTune
   cparams_btune * best;
   // The best cparams optained with BTune
   cparams_btune * aux_cparams;
@@ -247,6 +252,8 @@ typedef struct {
   // The aux index for the repetitions
   int aux_index;
   // The auxiliar index for state management
+  int clevel_index;
+  // The index for the clevel array
   int steps_count;
   // The count of steps made made by BTune
   btune_state state;
