@@ -51,7 +51,7 @@ Compression ratio: 3456.0 MB -> 662.0 MB (5.2x)
 Compression time: 17.3 s, 199.8 MB/s
 ```
 
-You can use BTUNE_LOG=1 to see what BTune is doing.
+You can use `BTUNE_LOG=1` to see what BTune is doing.
 
 ```shell
 BTUNE_LOG=1 ./src/btune_example <inputfile> <output.b2frame>

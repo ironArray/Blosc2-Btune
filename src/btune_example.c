@@ -29,7 +29,7 @@ int main(int argc, char* argv[]) {
 
     // Input parameters
     if (argc != 3) {
-        fprintf(stderr, "main <input file> <output.b2frame>\n");
+        fprintf(stderr, "btune_example <input file> <output.b2frame>\n");
         return 1;
     }
     const char* in_fname = argv[1];

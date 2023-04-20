@@ -96,11 +96,10 @@ static int get_best_codec_for_chunk(
     metadata_t *metadata
 )
 {
-    float cratio_mean = metadata->cratio.mean;
-    float cratio_std = metadata->cratio.std;
-    float cspeed_mean = metadata->cspeed.mean;
-    float cspeed_std = metadata->cspeed.std;
 
+    blosc_timestamp_t last, current;
+    blosc_set_timestamp(&last);
+    // <<< ENTROPY PROBER START
     // cparams
     blosc2_cparams cparams = BLOSC2_CPARAMS_DEFAULTS;
     cparams.compcode = ENTROPY_PROBE_ID;
@@ -108,6 +107,7 @@ static int get_best_codec_for_chunk(
     cparams.blocksize = schunk->blocksize;
     cparams.splitmode = BLOSC_NEVER_SPLIT;
     cparams.filters[BLOSC2_MAX_FILTERS - 1] = BLOSC_NOFILTER;
+    cparams.nthreads = 8;
     blosc2_context *cctx = blosc2_create_cctx(cparams);
 
     // dparams
@@ -125,6 +125,18 @@ static int get_best_codec_for_chunk(
     int8_t ddata[size];
     int dsize = blosc2_decompress_ctx(dctx, cdata, csize, ddata, size);
     BLOSC_ERROR(dsize);
+    // >>> ENTROPY PROBER END
+    blosc_set_timestamp(&current);
+    printf("TIME ENTROPY: %f\n", (float) blosc_elapsed_secs(last, current));
+
+
+    blosc_set_timestamp(&last);
+    // <<< INFERENCE START
+    float cratio_mean = metadata->cratio.mean;
+    float cratio_std = metadata->cratio.std;
+    float cspeed_mean = metadata->cspeed.mean;
+    float cspeed_std = metadata->cspeed.std;
+
     // Read the cratio/cspeed for every block
     int codecs[NCODECS] = {0};
     int nblocks = dsize / (int)sizeof(blosc2_instr);
@@ -151,6 +163,9 @@ static int get_best_codec_for_chunk(
             best = i;
         }
     }
+    // >>> INFERENCE START
+    blosc_set_timestamp(&current);
+    printf("TIME INFEREN: %f\n", (float) blosc_elapsed_secs(last, current));
 
     return best;
 }
@@ -216,6 +231,9 @@ static int read_metadata(const char *fname, metadata_t *metadata)
 int btune_model_inference(blosc2_context * ctx, btune_comp_mode btune_comp,
                           int * compcode, uint8_t * filter, int * clevel)
 {
+    blosc_timestamp_t last, current;
+    blosc_set_timestamp(&last);
+
     metadata_t metadata;
 
     // Read metadata
@@ -268,6 +286,9 @@ int btune_model_inference(blosc2_context * ctx, btune_comp_mode btune_comp,
     CHECK(interpreter->AllocateTensors() == kTfLiteOk);
     //printf("=== Pre-invoke Interpreter State ===\n");
     //tflite::PrintInterpreterState(interpreter.get());
+
+    blosc_set_timestamp(&current);
+    printf("TIME LOAD MO: %f\n", (float) blosc_elapsed_secs(last, current));
 
     const void *src = (const void*)ctx->src;
     int32_t size = ctx->srcsize;
