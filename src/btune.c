@@ -107,6 +107,26 @@ static void btune_init_codecs(btune_struct *btune_params) {
   }
 }
 
+static void btune_init_clevels(btune_struct *btune_params, int min, int max, int start) {
+  assert(min >= 0 && max <= 9);
+  assert(start >= min && start <= max);
+
+  if (btune_params->best) {
+    btune_params->best->clevel = start;
+  }
+  if (btune_params->aux_cparams) {
+    btune_params->aux_cparams->clevel = start;
+  }
+
+  btune_params->nclevels = max - min + 1;
+  for (int i = 0; i < btune_params->nclevels; i++) {
+    btune_params->clevels[i] = min + i;
+    if (min + i == start) {
+        btune_params->clevel_index = i;
+    }
+  }
+}
+
 // Extract the cparams_btune inside blosc2_context
 static void extract_btune_cparams(blosc2_context *context, cparams_btune *cparams){
   cparams->compcode = context->compcode;
@@ -352,15 +372,11 @@ void btune_init(void *tune_params, blosc2_context * cctx, blosc2_context * dctx)
   add_filter(btune, BLOSC_NOFILTER);
   add_filter(btune, BLOSC_SHUFFLE);
   add_filter(btune, BLOSC_BITSHUFFLE);
-  btune->nclevels = BTUNE_MAX_CLEVELS;
-  for (int i = 0; i < btune->nclevels; i++) {
-    btune->clevels[i] = i+1;
-  }
+  btune_init_clevels(btune, 1, 9, 9);
 
   // State attributes
   btune->rep_index = 0;
   btune->aux_index = 0;
-  btune->clevel_index = 8; // Start with clevel=9
   btune->steps_count = 0;
   btune->nsofts = 0;
   btune->nhards = 0;
@@ -624,11 +640,9 @@ void btune_next_cparams(blosc2_context *context) {
       btune_params->ncodecs = 1;
       btune_params->filters[0] = filter;
       btune_params->nfilters = 1;
-      btune_params->clevels[0] = clevel;
-      btune_params->nclevels = 1;
-      btune_params->clevel_index = 0;
-      btune_params->best->clevel = clevel;
-      btune_params->aux_cparams->clevel = clevel;
+      int min = (clevel > 1) ? (clevel - 1) : clevel;
+      int max = (clevel < 9) ? (clevel + 1) : clevel;
+      btune_init_clevels(btune_params, min, max, clevel);
     }
 
     if (getenv("BTUNE_LOG")) {

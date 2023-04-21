@@ -197,7 +197,8 @@ static int read_metadata(const char *fname, metadata_t *metadata)
     // Parse
     int size = fsize(file);
     char *buffer = (char*)malloc(size + 1);
-    fread(buffer, size, 1, file);
+    size_t nread = fread(buffer, 1, size, file);
+    assert(size == nread);
     buffer[size] = 0;
     json_value *json = json_parse(buffer, size);
 
