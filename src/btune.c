@@ -335,7 +335,6 @@ static const char* repeat_mode_to_str(btune_repeat_mode repeat_mode) {
 }
 
 
-
 // Init btune_struct inside blosc2_context
 void btune_init(void *tune_params, blosc2_context * cctx, blosc2_context * dctx) {
   btune_config *config = (btune_config *)tune_params;
@@ -640,9 +639,14 @@ void btune_next_cparams(blosc2_context *context) {
       btune_params->ncodecs = 1;
       btune_params->filters[0] = filter;
       btune_params->nfilters = 1;
-      int min = (clevel > 1) ? (clevel - 1) : clevel;
-      int max = (clevel < 9) ? (clevel + 1) : clevel;
-      btune_init_clevels(btune_params, min, max, clevel);
+      if (btune_params->config.perf_mode == BTUNE_PERF_DECOMP) {
+        btune_init_clevels(btune_params, clevel, clevel, clevel);
+      }
+      else {
+        int min = (clevel > 1) ? (clevel - 1) : clevel;
+        int max = (clevel < 9) ? (clevel + 1) : clevel;
+        btune_init_clevels(btune_params, min, max, clevel);
+      }
     }
 
     if (getenv("BTUNE_LOG")) {
