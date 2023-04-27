@@ -457,6 +457,7 @@ void btune_free(blosc2_context *context) {
   free(btune_params->aux_cparams);
   free(btune_params->current_scores);
   free(btune_params->current_cratios);
+  free(btune_params->metadata);
   free(btune_params);
   context->tune_params = NULL;
 }
@@ -630,9 +631,14 @@ void btune_next_cparams(blosc2_context *context) {
   uint8_t filter;
   int clevel;
   int nchunk = context->schunk->nchunks;
+
   if (nchunk == 0) {
+    if (btune_params->metadata == NULL) {
+      btune_params->metadata = btune_model_read_metadata();
+    }
+
     btune_comp_mode comp_mode = btune_params->config.comp_mode;
-    int error = btune_model_inference(context, comp_mode, &compcode, &filter, &clevel);
+    int error = btune_model_inference(context, btune_params->metadata, comp_mode, &compcode, &filter, &clevel);
     if (error == 0) {
       printf("Inference: chunk=%d codec=%d filter=%d clevel=%d\n", nchunk, compcode, filter, clevel);
       btune_params->codecs[0] = compcode;

@@ -19,24 +19,6 @@
         return -1; \
     }
 
-typedef struct {
-    float mean;
-    float std;
-} norm_t;
-
-typedef struct {
-    uint8_t codec;
-    uint8_t filter;
-    int clevel;
-} category_t;
-
-typedef struct {
-    norm_t cratio;
-    norm_t cspeed;
-    category_t categories[40]; // TODO Make this dynamic with malloc/free
-} metadata_t;
-
-
 static int fsize(FILE *file) {
     fseek(file, 0, SEEK_END);
     int size = ftell(file);
@@ -186,13 +168,21 @@ static int read_dict(json_value *json, norm_t *norm)
     return 0;
 }
 
-static int read_metadata(const char *fname, metadata_t *metadata)
+metadata_t * btune_model_read_metadata()
 {
+    const char * fname = getenv("BTUNE_METADATA");
+    if (fname == NULL) {
+        BTUNE_DEBUG("Environment variable BTUNE_METADATA is not defined");
+        return NULL;
+    }
+
     FILE* file = fopen(fname, "rt");
     if (file == NULL) {
         fprintf(stderr, "Error: Cannot open the %s file\n", fname);
-        return -1;
+        return NULL;
     }
+
+    metadata_t *metadata = (metadata_t*)malloc(sizeof(metadata_t));
 
     // Parse
     int size = fsize(file);
@@ -226,29 +216,17 @@ static int read_metadata(const char *fname, metadata_t *metadata)
 
     free(buffer);
     fclose(file);
-    return 0;
+    return metadata;
 }
 
-int btune_model_inference(blosc2_context * ctx, btune_comp_mode btune_comp,
+int btune_model_inference(blosc2_context * ctx, metadata_t *metadata, btune_comp_mode btune_comp,
                           int * compcode, uint8_t * filter, int * clevel)
 {
     blosc_timestamp_t last, current;
     blosc_set_timestamp(&last);
 
-    metadata_t metadata;
-
-    // Read metadata
-    char * fname = getenv("BTUNE_METADATA");
-    if (fname == NULL) {
-        BTUNE_DEBUG("Environment variable BTUNE_METADATA is not defined");
-        return -1;
-    }
-    int error = read_metadata(fname, &metadata);
-    if (error) {
-        return -1;
-    }
-
     // Load model
+    char *fname;
     switch (btune_comp) {
         case BTUNE_COMP_BALANCED:
             fname = getenv("BTUNE_MODEL_BALANCED");
@@ -293,13 +271,13 @@ int btune_model_inference(blosc2_context * ctx, btune_comp_mode btune_comp,
 
     const void *src = (const void*)ctx->src;
     int32_t size = ctx->srcsize;
-    int best = get_best_codec_for_chunk(ctx->schunk, src, size, interpreter.get(), &metadata);
+    int best = get_best_codec_for_chunk(ctx->schunk, src, size, interpreter.get(), metadata);
     if (best < 0) {
         return best;
     }
 
     // Return compcode and filter
-    category_t cat = metadata.categories[best];
+    category_t cat = metadata->categories[best];
     *compcode = cat.codec;
     *filter = cat.filter;
     *clevel = cat.clevel;
