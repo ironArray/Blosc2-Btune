@@ -968,7 +968,10 @@ static void update_aux(blosc2_context * ctx, bool improved) {
 
         int32_t shufflesize = best->shufflesize;
         // Is shufflesize valid or not
-        if (BTUNE_DISABLE_SHUFFLESIZE) {
+        if (btune_params->config.perf_mode == BTUNE_PERF_DECOMP) {
+          btune_params->state = STOP;
+        }
+        else if (BTUNE_DISABLE_SHUFFLESIZE) {
           btune_params->state = (BTUNE_DISABLE_THREADS) ? CLEVEL : THREADS;
         } else {
           bool is_power_2 = (shufflesize & (shufflesize - 1)) == 0;
