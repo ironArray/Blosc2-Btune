@@ -171,6 +171,7 @@ static int read_dict(json_value *json, norm_t *norm)
 metadata_t * btune_model_read_metadata()
 {
     const char * fname = getenv("BTUNE_METADATA");
+    printf("btune_model_read_metadata(%s)\n", fname);
     if (fname == NULL) {
         BTUNE_DEBUG("Environment variable BTUNE_METADATA is not defined");
         return NULL;
@@ -246,10 +247,6 @@ int btune_model_inference(blosc2_context * ctx, metadata_t *metadata, btune_comp
     }
     std::unique_ptr<tflite::FlatBufferModel> model = tflite::FlatBufferModel::BuildFromFile(fname);
     CHECK(model != nullptr);
-
-    // Register entropy codec
-    blosc2_codec codec;
-    register_entropy_codec(&codec);
 
     // Build the interpreter with the InterpreterBuilder.
     // Note: all Interpreters should be built with the InterpreterBuilder,

@@ -24,16 +24,8 @@ static int get_nchunks_in_file(FILE *file, int chunksize) {
     return nchunks;
 }
 
-int main(int argc, char* argv[]) {
-    blosc2_init();
 
-    // Input parameters
-    if (argc != 3) {
-        fprintf(stderr, "btune_example <input file> <output.b2frame>\n");
-        return 1;
-    }
-    const char* in_fname = argv[1];
-    const char* out_fname = argv[2];
+static int compress(const char* in_fname, const char* out_fname) {
 
     // Open input file
     blosc2_schunk *schunk_in = blosc2_schunk_open(in_fname);
@@ -48,6 +40,7 @@ int main(int argc, char* argv[]) {
 
     // btune
     btune_config btune_config = BTUNE_CONFIG_DEFAULTS;
+    btune_config.perf_mode = BTUNE_PERF_DECOMP;
     //btune_config.comp_mode = BTUNE_COMP_HCR;
     //btune_config.behaviour.repeat_mode = BTUNE_REPEAT_ALL;
     cparams.tune_id = BLOSC_BTUNE;
@@ -98,6 +91,24 @@ int main(int argc, char* argv[]) {
     // Free resources
     blosc2_schunk_free(schunk_in);
     blosc2_schunk_free(schunk_out);
+}
+
+
+int main(int argc, char* argv[]) {
+    blosc2_init();
+
+    // Input parameters
+    if (argc < 3 || (argc % 2 != 1)) {
+        fprintf(stderr, "btune_example <input file> <output.b2frame>\n");
+        return 1;
+    }
+
+    for (int i = 0; i < (argc - 1) / 2; i++) {
+        const char* in_fname = argv[1 + i*2];
+        const char* out_fname = argv[1 + i*2 + 1];
+        compress(in_fname, out_fname);
+    }
+
     blosc2_destroy();
 
     return 0;

@@ -17,6 +17,7 @@
 #include <blosc2/tunes-registry.h>
 #include "btune.h"
 #include "btune_model.h"
+#include "entropy_probe.h"
 
 
 // Disable shufflesize and blocksize
@@ -338,6 +339,10 @@ static const char* repeat_mode_to_str(btune_repeat_mode repeat_mode) {
 // Init btune_struct inside blosc2_context
 void btune_init(void *tune_params, blosc2_context * cctx, blosc2_context * dctx) {
   btune_config *config = (btune_config *)tune_params;
+
+  // Register entropy codec
+  blosc2_codec codec;
+  register_entropy_codec(&codec);
 
   // TODO CHECK CONFIG ENUMS (bandwidth range...)
   btune_struct *btune = calloc(sizeof(btune_struct), 1);
