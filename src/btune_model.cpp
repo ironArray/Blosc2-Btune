@@ -236,38 +236,31 @@ int btune_model_inference(blosc2_context * ctx, btune_config * config,
     blosc_timestamp_t last, current;
     blosc_set_timestamp(&last);
 
-    metadata_t metadata;
-
-    // Read metadata
-    char * fname = getenv("BTUNE_METADATA");
-    if (fname == NULL) {
-        BTUNE_DEBUG("Environment variable BTUNE_METADATA is not defined");
+    // Read environement variables
+    const char * name;
+    name = config->perf_mode == BTUNE_PERF_DECOMP ? "BTUNE_METADATA_DECOMP" : "BTUNE_METADATA_COMP";
+    const char * metadata_fname = getenv(name);
+    if (metadata_fname == NULL) {
+        BTUNE_DEBUG("Environment variable %s is not defined", name);
         return -1;
     }
-    int error = read_metadata(fname, &metadata);
+
+    name = config->perf_mode == BTUNE_PERF_DECOMP ? "BTUNE_MODEL_DECOMP" : "BTUNE_MODEL_COMP";
+    const char * model_fname = getenv(name);
+    if (model_fname == NULL) {
+        BTUNE_DEBUG("Environment variable %s is not defined", name);
+        return -1;
+    }
+
+    // Read metadata
+    metadata_t metadata;
+    int error = read_metadata(metadata_fname, &metadata);
     if (error) {
         return -1;
     }
 
     // Load model
-    switch (config->comp_mode) {
-        case BTUNE_COMP_BALANCED:
-            fname = getenv("BTUNE_MODEL_BALANCED");
-            break;
-        case BTUNE_COMP_HCR:
-            fname = getenv("BTUNE_MODEL_HCR");
-            break;
-        case BTUNE_COMP_HSP:
-            fname = getenv("BTUNE_MODEL_HSP");
-            break;
-        default:
-            fname = NULL;
-    }
-    if (fname == NULL) {
-        BTUNE_DEBUG("Environment variable BTUNE_MODEL_XXX is not defined");
-        return -1;
-    }
-    std::unique_ptr<tflite::FlatBufferModel> model = tflite::FlatBufferModel::BuildFromFile(fname);
+    std::unique_ptr<tflite::FlatBufferModel> model = tflite::FlatBufferModel::BuildFromFile(model_fname);
     CHECK(model != nullptr);
 
     // Build the interpreter with the InterpreterBuilder.
