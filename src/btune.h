@@ -224,23 +224,6 @@ typedef struct {
     // The decompression time obtained with this cparams
 } cparams_btune;
 
-typedef struct {
-    float mean;
-    float std;
-} norm_t;
-
-typedef struct {
-    uint8_t codec;
-    uint8_t filter;
-    int clevel;
-} category_t;
-
-typedef struct {
-    norm_t cratio;
-    norm_t cspeed;
-    category_t categories[40]; // TODO Make this dynamic with malloc/free
-} metadata_t;
-
 // BTune struct
 typedef struct {
   btune_config config;
@@ -295,8 +278,6 @@ typedef struct {
   // The number of threads for decompression (used if dctx is NULL)
   bool threads_for_comp;
   // Depending on this value the THREADS state will change the compression or decompression threads
-  metadata_t * metadata;
-  // Metadata for inference
 } btune_struct;
 /// @endcond
 
