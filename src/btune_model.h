@@ -5,7 +5,7 @@
 extern "C" {
 #endif
 
-int btune_model_inference(blosc2_context * ctx, btune_comp_mode btune_comp,
+int btune_model_inference(blosc2_context * ctx, btune_config * config,
                           int * compcode, uint8_t * filter, int * clevel);
 
 #ifdef __cplusplus

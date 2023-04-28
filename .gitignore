@@ -1,1 +1,6 @@
 .*.swp
+.envrc
+/_skbuild/
+/blosc2_btune.egg-info/
+/build/
+/dist/

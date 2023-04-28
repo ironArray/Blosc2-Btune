@@ -629,6 +629,7 @@ static void set_btune_cparams(blosc2_context * context, cparams_btune * cparams)
 // Tune some compression parameters based on the context
 void btune_next_cparams(blosc2_context *context) {
   btune_struct *btune_params = (btune_struct*) context->tune_params;
+  btune_config config = btune_params->config;
 
   // Run inference only for the first chunk
   int compcode;
@@ -636,15 +637,14 @@ void btune_next_cparams(blosc2_context *context) {
   int clevel;
   int nchunk = context->schunk->nchunks;
   if (nchunk == 0) {
-    btune_comp_mode comp_mode = btune_params->config.comp_mode;
-    int error = btune_model_inference(context, comp_mode, &compcode, &filter, &clevel);
+    int error = btune_model_inference(context, &config, &compcode, &filter, &clevel);
     if (error == 0) {
       printf("Inference: chunk=%d codec=%d filter=%d clevel=%d\n", nchunk, compcode, filter, clevel);
       btune_params->codecs[0] = compcode;
       btune_params->ncodecs = 1;
       btune_params->filters[0] = filter;
       btune_params->nfilters = 1;
-      if (btune_params->config.perf_mode == BTUNE_PERF_DECOMP) {
+      if (config.perf_mode == BTUNE_PERF_DECOMP) {
         btune_init_clevels(btune_params, clevel, clevel, clevel);
       }
       else {
@@ -673,7 +673,7 @@ void btune_next_cparams(blosc2_context *context) {
       cparams->splitmode = (btune_params->aux_index % 2) + 1;
 
       // The first tuning of ZSTD in some modes should start in clevel 3
-      btune_performance_mode perf_mode = btune_params->config.perf_mode;
+      btune_performance_mode perf_mode = config.perf_mode;
       if (
               (perf_mode == BTUNE_PERF_COMP || perf_mode == BTUNE_PERF_BALANCED) &&
               (cparams->compcode == BLOSC_ZSTD || cparams->compcode == BLOSC_ZLIB) &&

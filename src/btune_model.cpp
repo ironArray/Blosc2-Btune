@@ -230,7 +230,7 @@ static int read_metadata(const char *fname, metadata_t *metadata)
     return 0;
 }
 
-int btune_model_inference(blosc2_context * ctx, btune_comp_mode btune_comp,
+int btune_model_inference(blosc2_context * ctx, btune_config * config,
                           int * compcode, uint8_t * filter, int * clevel)
 {
     blosc_timestamp_t last, current;
@@ -250,7 +250,7 @@ int btune_model_inference(blosc2_context * ctx, btune_comp_mode btune_comp,
     }
 
     // Load model
-    switch (btune_comp) {
+    switch (config->comp_mode) {
         case BTUNE_COMP_BALANCED:
             fname = getenv("BTUNE_MODEL_BALANCED");
             break;
