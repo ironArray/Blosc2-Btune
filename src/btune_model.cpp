@@ -33,7 +33,7 @@ typedef struct {
 typedef struct {
     norm_t cratio;
     norm_t cspeed;
-    category_t categories[40]; // TODO Make this dynamic with malloc/free
+    category_t *categories;
 } metadata_t;
 
 
@@ -129,7 +129,6 @@ static int get_best_codec_for_chunk(
     blosc_set_timestamp(&current);
     printf("TIME ENTROPY: %f\n", (float) blosc_elapsed_secs(last, current));
 
-
     blosc_set_timestamp(&last);
     // <<< INFERENCE START
     float cratio_mean = metadata->cratio.mean;
@@ -213,6 +212,7 @@ static int read_metadata(const char *fname, metadata_t *metadata)
             read_dict(value, &metadata->cspeed);
         }
         else if (strcmp(name, "categories") == 0) {
+            metadata->categories = (category_t*)malloc(sizeof(category_t) * value->u.array.length);
             for (int i = 0; i < value->u.array.length; i++) {
                 json_value *cat = value->u.array.values[i];
                 json_value *codec = cat->u.array.values[0];
@@ -293,6 +293,7 @@ int btune_model_inference(blosc2_context * ctx, btune_config * config,
     *compcode = cat.codec;
     *filter = cat.filter;
     *clevel = cat.clevel;
+    free(metadata.categories);
 
     return 0;
 }
