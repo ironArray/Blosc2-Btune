@@ -175,7 +175,6 @@ typedef enum {
     SHUFFLE_SIZE,
     THREADS,
     CLEVEL,
-    BLOCKSIZE,
     MEMCPY,
     WAITING,
     STOP,
