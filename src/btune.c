@@ -452,6 +452,11 @@ void btune_free(blosc2_context *context) {
   context->tune_params = NULL;
 }
 
+// This must exist because unconditionally called by c-blosc2, otherwise there
+// will be a crash
+void btune_next_blocksize(blosc2_context *context) {
+}
+
 // Set the cparams_btune inside blosc2_context
 static void set_btune_cparams(blosc2_context * context, cparams_btune * cparams){
   context->compcode = cparams->compcode;
@@ -481,9 +486,6 @@ static void set_btune_cparams(blosc2_context * context, cparams_btune * cparams)
   }
   if (cparams->blocksize) {
     context->blocksize = cparams->blocksize;
-  } else {
-    btune_next_blocksize(context);
-    cparams->blocksize = context->blocksize;
   }
   context->typesize = cparams->shufflesize;  // TODO typesize -> shufflesize
   context->new_nthreads = (int16_t) cparams->nthreads_comp;
@@ -549,8 +551,6 @@ void btune_next_cparams(blosc2_context *context) {
               ) {
         cparams->clevel = 3;
       }
-      // Force auto blocksize
-      // cparams->blocksize = 0;
       btune_params->aux_index++;
       break;
     }
@@ -593,10 +593,6 @@ void btune_next_cparams(blosc2_context *context) {
 
       // Tune compression level
     case CLEVEL:
-      // Force auto blocksize on hard readapts
-      if (btune_params->readapt_from == HARD){
-        cparams->blocksize = 0;
-      }
       btune_params->aux_index++;
 
       if (!has_ended_clevel(btune_params)) {
@@ -1038,5 +1034,10 @@ void btune_update(blosc2_context * context, double ctime) {
   }
 }
 
-tune_info info = {.init="btune_init", .next_blocksize="btune_next_blocksize",
-                  .next_cparams="btune_next_cparams", .update="btune_update", .free="btune_free"};
+tune_info info = {
+    .init="btune_init",
+    .next_blocksize="btune_next_blocksize",
+    .next_cparams="btune_next_cparams",
+    .update="btune_update",
+    .free="btune_free"
+};
