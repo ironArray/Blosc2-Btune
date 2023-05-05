@@ -28,6 +28,7 @@ typedef struct {
     uint8_t codec;
     uint8_t filter;
     int clevel;
+    int32_t splitmode;
 } category_t;
 
 typedef struct {
@@ -230,37 +231,52 @@ static int read_metadata(const char *fname, metadata_t *metadata)
     return 0;
 }
 
-int btune_model_inference(blosc2_context * ctx, btune_config * config,
-                          int * compcode, uint8_t * filter, int * clevel)
-{
+static char * concat_path(const char * dirname, const char * fname) {
+    int len = strlen(dirname) + 1 + strlen(fname);
+    char * dest = (char*)malloc(sizeof(char) * (len + 1));
+    int n = sprintf(dest, "%s/%s", dirname, fname);
+    if (n != len) {
+        free(dest);
+        return NULL;
+    }
+    return dest;
+}
+
+int btune_model_inference(
+    blosc2_context * ctx, btune_config * config,  // Input args
+    int * compcode, uint8_t * filter, int * clevel, int32_t * splitmode // Output args
+) {
     blosc_timestamp_t last, current;
     blosc_set_timestamp(&last);
 
     // Read environement variables
-    const char * name;
-    name = config->perf_mode == BTUNE_PERF_DECOMP ? "BTUNE_METADATA_DECOMP" : "BTUNE_METADATA_COMP";
-    const char * metadata_fname = getenv(name);
-    if (metadata_fname == NULL) {
-        BTUNE_DEBUG("Environment variable %s is not defined", name);
+    const char * dirname = getenv("BTUNE_DATA_DIR");
+    if (dirname == NULL) {
+        BTUNE_DEBUG("Environment variable BTUNE_DATA_DIR is not defined");
         return -1;
     }
 
-    name = config->perf_mode == BTUNE_PERF_DECOMP ? "BTUNE_MODEL_DECOMP" : "BTUNE_MODEL_COMP";
-    const char * model_fname = getenv(name);
-    if (model_fname == NULL) {
-        BTUNE_DEBUG("Environment variable %s is not defined", name);
-        return -1;
-    }
+    char * metadata_fname = concat_path(
+        dirname,
+        config->perf_mode == BTUNE_PERF_DECOMP ? "model_decomp.json" : "model_comp.json"
+    );
+
+    char * model_fname = concat_path(
+        dirname,
+        config->perf_mode == BTUNE_PERF_DECOMP ? "model_decomp.tflite" : "model_comp.tflite"
+    );
 
     // Read metadata
     metadata_t metadata;
     int error = read_metadata(metadata_fname, &metadata);
+    free(metadata_fname);
     if (error) {
         return -1;
     }
 
     // Load model
     std::unique_ptr<tflite::FlatBufferModel> model = tflite::FlatBufferModel::BuildFromFile(model_fname);
+    free(model_fname);
     CHECK(model != nullptr);
 
     // Build the interpreter with the InterpreterBuilder.
@@ -293,6 +309,7 @@ int btune_model_inference(blosc2_context * ctx, btune_config * config,
     *compcode = cat.codec;
     *filter = cat.filter;
     *clevel = cat.clevel;
+    *splitmode = cat.splitmode;
     free(metadata.categories);
 
     return 0;

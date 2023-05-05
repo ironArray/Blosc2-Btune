@@ -505,9 +505,10 @@ void btune_next_cparams(blosc2_context *context) {
   int compcode;
   uint8_t filter;
   int clevel;
+  int32_t splitmode;
   int nchunk = context->schunk->nchunks;
   if (nchunk == 0) {
-    int error = btune_model_inference(context, &config, &compcode, &filter, &clevel);
+    int error = btune_model_inference(context, &config, &compcode, &filter, &clevel, &splitmode);
     if (error == 0) {
       printf("Inference: chunk=%d codec=%d filter=%d clevel=%d\n", nchunk, compcode, filter, clevel);
       btune_params->codecs[0] = compcode;
