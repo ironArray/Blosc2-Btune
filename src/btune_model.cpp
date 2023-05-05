@@ -13,12 +13,6 @@
 
 #define NCODECS 15
 
-#define CHECK(x) \
-    if (!(x)) { \
-        fprintf(stderr, "Error at %s:%d\n", __FILE__, __LINE__); \
-        return -1; \
-    }
-
 typedef struct {
     float mean;
     float std;
@@ -57,7 +51,11 @@ static int get_best_codec(
     *(input+1) = cspeed;
 
     // Run inference
-    CHECK(interpreter->Invoke() == kTfLiteOk);
+    if (interpreter->Invoke() != kTfLiteOk) {
+        fprintf(stderr, "Error: interpreter invocation failed\n");
+        return -1;
+    }
+
     //printf("\n\n=== Post-invoke Interpreter State ===\n");
     //tflite::PrintInterpreterState(interpreter);
 
@@ -70,14 +68,12 @@ static int get_best_codec(
     float max = -1;
     for (int i = 0; i < NCODECS; i++) {
         float value = *output;
-//      printf("%f ", value);
         output++;
         if (value > max) {
             max = value;
             best = i;
         }
     }
-//  printf("-> %d\n\n", best);
 
     return best;
 }
@@ -97,9 +93,12 @@ static int get_best_codec_for_chunk(
     metadata_t *metadata
 )
 {
-
+    char * trace = getenv("BTUNE_TRACE");
     blosc_timestamp_t last, current;
-    blosc_set_timestamp(&last);
+    if (trace) {
+        blosc_set_timestamp(&last);
+    }
+
     // <<< ENTROPY PROBER START
     // cparams
     blosc2_cparams cparams = BLOSC2_CPARAMS_DEFAULTS;
@@ -119,7 +118,7 @@ static int get_best_codec_for_chunk(
     int8_t cdata[size];
     int csize = blosc2_compress_ctx(cctx, src, size, cdata, sizeof(cdata));
     if (csize < 0) {
-        printf("Error %d compressing chunk\n", csize);
+        fprintf(stderr, "Error %d compressing chunk\n", csize);
         return csize;
     }
     // Decompress so we can read the instrumentation data
@@ -127,10 +126,12 @@ static int get_best_codec_for_chunk(
     int dsize = blosc2_decompress_ctx(dctx, cdata, csize, ddata, size);
     BLOSC_ERROR(dsize);
     // >>> ENTROPY PROBER END
-    blosc_set_timestamp(&current);
-    printf("TIME ENTROPY: %f\n", (float) blosc_elapsed_secs(last, current));
+    if (trace) {
+        blosc_set_timestamp(&current);
+        printf("TIME ENTROPY: %f\n", (float) blosc_elapsed_secs(last, current));
+        blosc_set_timestamp(&last);
+    }
 
-    blosc_set_timestamp(&last);
     // <<< INFERENCE START
     float cratio_mean = metadata->cratio.mean;
     float cratio_std = metadata->cratio.std;
@@ -145,7 +146,6 @@ static int get_best_codec_for_chunk(
         // Normalize
         float cratio = normalize(instr_data->cratio, cratio_mean, cratio_std);
         float cspeed = normalize(instr_data->cspeed, cspeed_mean, cspeed_std);
-        //printf("block=%d cratio=%f cspeed=%f\n", i, cratio, cspeed);
         instr_data++;
 
         // Run inference
@@ -164,8 +164,10 @@ static int get_best_codec_for_chunk(
         }
     }
     // >>> INFERENCE START
-    blosc_set_timestamp(&current);
-    printf("TIME INFEREN: %f\n", (float) blosc_elapsed_secs(last, current));
+    if (trace) {
+        blosc_set_timestamp(&current);
+        printf("TIME INFEREN: %f\n", (float) blosc_elapsed_secs(last, current));
+    }
 
     return best;
 }
@@ -188,10 +190,8 @@ static int read_dict(json_value *json, norm_t *norm)
 
 static int read_metadata(const char *fname, metadata_t *metadata)
 {
-    //printf("read_metadata(%s)\n", fname);
     FILE* file = fopen(fname, "rt");
     if (file == NULL) {
-        fprintf(stderr, "Error: Cannot open the %s file\n", fname);
         return -1;
     }
 
@@ -246,8 +246,11 @@ int btune_model_inference(
     blosc2_context * ctx, btune_config * config,  // Input args
     int * compcode, uint8_t * filter, int * clevel, int32_t * splitmode // Output args
 ) {
+    char * trace = getenv("BTUNE_TRACE");
     blosc_timestamp_t last, current;
-    blosc_set_timestamp(&last);
+    if (trace) {
+        blosc_set_timestamp(&last);
+    }
 
     // Read environement variables
     const char * dirname = getenv("BTUNE_DATA_DIR");
@@ -269,15 +272,22 @@ int btune_model_inference(
     // Read metadata
     metadata_t metadata;
     int error = read_metadata(metadata_fname, &metadata);
-    free(metadata_fname);
     if (error) {
+        fprintf(stderr, "Error: Failed to read %s\n", metadata_fname);
+        free(metadata_fname);
         return -1;
     }
+    free(metadata_fname);
 
     // Load model
     std::unique_ptr<tflite::FlatBufferModel> model = tflite::FlatBufferModel::BuildFromFile(model_fname);
+    if (model == nullptr) {
+        fprintf(stderr, "Error: Failed to load %s\n", model_fname);
+        free(model_fname);
+        return -1;
+    }
     free(model_fname);
-    CHECK(model != nullptr);
+    printf("INFO: Model files found in the '%s/' directory\n", dirname);
 
     // Build the interpreter with the InterpreterBuilder.
     // Note: all Interpreters should be built with the InterpreterBuilder,
@@ -287,15 +297,23 @@ int btune_model_inference(
     tflite::InterpreterBuilder builder(*model, resolver);
     std::unique_ptr<tflite::Interpreter> interpreter;
     builder(&interpreter);
-    CHECK(interpreter != nullptr);
+    if (interpreter == nullptr) {
+        fprintf(stderr, "Error: Failed to build interpreter\n");
+        return -1;
+    }
 
     // Allocate tensor buffers.
-    CHECK(interpreter->AllocateTensors() == kTfLiteOk);
+    if (interpreter->AllocateTensors() != kTfLiteOk) {
+        fprintf(stderr, "Error: Failed to allocate tensors\n");
+        return -1;
+    }
     //printf("=== Pre-invoke Interpreter State ===\n");
     //tflite::PrintInterpreterState(interpreter.get());
 
-    blosc_set_timestamp(&current);
-    printf("TIME LOAD MO: %f\n", (float) blosc_elapsed_secs(last, current));
+    if (trace) {
+        blosc_set_timestamp(&current);
+        printf("TIME LOAD MO: %f\n", (float) blosc_elapsed_secs(last, current));
+    }
 
     const void *src = (const void*)ctx->src;
     int32_t size = ctx->srcsize;
@@ -312,5 +330,7 @@ int btune_model_inference(
     *splitmode = cat.splitmode;
     free(metadata.categories);
 
+    BTUNE_DEBUG("Inference: category=%d codec=%d filter=%d clevel=%d splitmode=%d\n",
+                best, *compcode, *filter, *clevel, *splitmode);
     return 0;
 }
