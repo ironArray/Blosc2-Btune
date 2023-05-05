@@ -219,9 +219,11 @@ static int read_metadata(const char *fname, metadata_t *metadata)
                 json_value *codec = cat->u.array.values[0];
                 json_value *filter = cat->u.array.values[1];
                 json_value *clevel = cat->u.array.values[2];
+                json_value *splitmode = cat->u.array.values[3];
                 metadata->categories[i].codec = codec->u.integer;
                 metadata->categories[i].filter = filter->u.integer;
                 metadata->categories[i].clevel = clevel->u.integer;
+                metadata->categories[i].splitmode = splitmode->u.integer;
             }
         }
     }
