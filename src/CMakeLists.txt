@@ -11,17 +11,16 @@ include_directories(
     ${TENSORFLOW_SRC_DIR}
 )
 if(APPLE)
-include_directories(
-    /usr/local/include/ # Needed to find flatbuffers.h
-)
+    include_directories(
+        /usr/local/include/ # Needed to find flatbuffers.h
+    )
 endif()
 
-add_library(blosc2_btune SHARED btune.c btune_model.cpp json.c
-            entropy_probe.c)
+add_library(blosc2_btune SHARED btune.c btune_model.cpp json.c entropy_probe.c)
 
 target_link_directories(blosc2_btune
     PUBLIC ${Python_LIB}
-    PUBLIC  ${Python_LIB64}
+    PUBLIC ${Python_LIB64}
     PUBLIC ${BLOSC2_INCLUDE_DIR}
 )
 if(APPLE)
@@ -34,7 +33,16 @@ else()
     )
 endif()
 
-target_link_libraries(blosc2_btune blosc2 tensorflowlite)
+if (BUILD_STATIC_TFLITE)
+    add_subdirectory(
+        "${TENSORFLOW_SRC_DIR}/tensorflow/lite"
+        "${CMAKE_CURRENT_BINARY_DIR}/tensorflow-lite"
+        EXCLUDE_FROM_ALL
+    )
+    target_link_libraries(blosc2_btune blosc2 tensorflow-lite)
+else()
+    target_link_libraries(blosc2_btune blosc2 tensorflowlite)
+endif()
 
 link_directories(${Python_LIB})
 include_directories(${Python_INCLUDE})

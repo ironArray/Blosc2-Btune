@@ -10,12 +10,12 @@ cmake_minimum_required(VERSION 3.20)
 project(blosc2_btune LANGUAGES C CXX)
 set (CMAKE_CXX_STANDARD 20)
 
+option(BUILD_STATIC_TFLITE "Link tflite statically" OFF)
 
 set(TENSORFLOW_SRC_DIR "" CACHE PATH "Directory that contains the TensorFlow project")
 if(NOT TENSORFLOW_SRC_DIR)
     message( SEND_ERROR "Call with -DTENSORFLOW_SRC_DIR=XXX" )
 endif()
-
 
 message("Building Blosc2 plugin btune ...")
 

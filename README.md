@@ -27,6 +27,8 @@ cd -
 python setup.py bdist_wheel -DTENSORFLOW_SRC_DIR=<absolute path to tensorflow_src> 
 ```
 
+To link tensorflow lite statically pass the `-DBUILD_STATIC_TFLITE=ON` option.
+
 ## Install the wheel
 
 ```shell
@@ -42,6 +44,8 @@ cd build
 cmake ..  -DTENSORFLOW_SRC_DIR=<absolute path to tensorflow_src> 
 cmake --build . -j
 ```
+
+To link tensorflow lite statically pass the `-DBUILD_STATIC_TFLITE=ON` option.
 
 ## Run example
 
