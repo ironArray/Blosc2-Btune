@@ -23,7 +23,7 @@
 // Disable different states
 #define BTUNE_ENABLE_SHUFFLESIZE  false
 #define BTUNE_ENABLE_MEMCPY       false
-#define BTUNE_ENABLE_THREADS      false
+#define BTUNE_ENABLE_THREADS      true
 
 
 // Internal btune control behaviour constants.
@@ -52,7 +52,7 @@ static const cparams_btune cparams_btune_default = {
   .increasing_clevel = false,
   .increasing_block = true,
   .increasing_shuffle = true,
-  .increasing_nthreads = false,
+  .increasing_nthreads = true,
   .score = 100,
   .cratio = 1.0,
   .ctime = 100,
@@ -188,7 +188,7 @@ static void init_soft(btune_struct *btune_params) {
 static void init_hard(btune_struct *btune_params) {
   // In decompression mode, when running inference, do nothing
   if (btune_params->config.perf_mode == BTUNE_PERF_DECOMP && btune_params->splitmode != BLOSC_AUTO_SPLIT) {
-    btune_params->state = STOP;
+    btune_params->state = THREADS;
     return;
   }
 
@@ -811,7 +811,7 @@ static void update_aux(blosc2_context * ctx, bool improved) {
   cparams_btune *best = btune_params->best;
   bool first_time = btune_params->aux_index == 1;
   switch (btune_params->state) {
-    case CODEC_FILTER:
+    case CODEC_FILTER: {
       // Reached last combination of codec filter
       int aux_index_max = btune_params->ncodecs *  btune_params->nfilters;
       if (btune_params->splitmode == BLOSC_AUTO_SPLIT) {
@@ -850,6 +850,7 @@ static void update_aux(blosc2_context * ctx, bool improved) {
         }
       }
       break;
+    }
 
     case SHUFFLE_SIZE:
       if (!improved && first_time) {
@@ -944,29 +945,30 @@ void btune_update(blosc2_context * context, double ctime) {
 
   // When the source is NULL (eval with prefilters), decompression is not working.
   // Disabling this part for the time being.
-//  // Compute the decompression time if needed
-//  btune_behaviour behaviour = btune_params->config.behaviour;
-//  if (!((btune_params->state == WAITING) &&
-//      ((behaviour.nwaits_before_readapt == 0) ||
-//      (btune_params->nwaitings % behaviour.nwaits_before_readapt != 0))) &&
-//      ((btune_params->config.perf_mode == BTUNE_PERF_DECOMP) ||
-//      (btune_params->config.perf_mode == BTUNE_PERF_BALANCED))) {
-//    blosc2_context * dctx;
-//    if (btune_params->dctx == NULL) {
-//      blosc2_dparams params = { btune_params->nthreads_decomp, NULL, NULL, NULL};
-//      dctx = blosc2_create_dctx(params);
-//    } else {
-//      dctx = btune_params->dctx;
-//    }
-//    blosc_set_timestamp(&last);
-//    blosc2_decompress_ctx(dctx, context->dest, context->destsize, (void*)(context->src),
-//                          context->sourcesize);
-//    blosc_set_timestamp(&current);
-//    dtime = blosc_elapsed_secs(last, current);
-//    if (btune_params->dctx == NULL) {
-//      blosc2_free_ctx(dctx);
-//    }
-//  }
+  // Compute the decompression time if needed
+  btune_behaviour behaviour = btune_params->config.behaviour;
+  blosc_timestamp_t last, current;
+  if (!((btune_params->state == WAITING) &&
+      ((behaviour.nwaits_before_readapt == 0) ||
+      (btune_params->nwaitings % behaviour.nwaits_before_readapt != 0))) &&
+      ((btune_params->config.perf_mode == BTUNE_PERF_DECOMP) ||
+      (btune_params->config.perf_mode == BTUNE_PERF_BALANCED))) {
+    blosc2_context * dctx;
+    if (btune_params->dctx == NULL) {
+      blosc2_dparams params = { btune_params->nthreads_decomp, NULL, NULL, NULL};
+      dctx = blosc2_create_dctx(params);
+    } else {
+      dctx = btune_params->dctx;
+    }
+    blosc_set_timestamp(&last);
+    blosc2_decompress_ctx(dctx, context->dest, context->destsize, (void*)(context->src),
+                          context->sourcesize);
+    blosc_set_timestamp(&current);
+    dtime = blosc_elapsed_secs(last, current);
+    if (btune_params->dctx == NULL) {
+      blosc2_free_ctx(dctx);
+    }
+  }
 
   double score = score_function(btune_params, ctime, cbytes, dtime);
   assert(score > 0);

@@ -37,18 +37,21 @@ static int compress(const char* in_fname, const char* out_fname) {
     // compression params
     blosc2_cparams cparams = BLOSC2_CPARAMS_DEFAULTS;
     cparams.blocksize = BLOCKSIZE; // If unset there's a division by zero crash
+    cparams.nthreads = 16; // Btune may lower this
 
     // btune
     btune_config btune_config = BTUNE_CONFIG_DEFAULTS;
     btune_config.perf_mode = BTUNE_PERF_DECOMP;
-    btune_config.comp_mode = 1.;
-    //btune_config.behaviour.repeat_mode = BTUNE_REPEAT_ALL;
+    btune_config.comp_mode = .5;
+    btune_config.behaviour.nhards_before_stop = 10;
+    btune_config.behaviour.repeat_mode = BTUNE_REPEAT_ALL;
     cparams.tune_id = BLOSC_BTUNE;
     cparams.tune_params = &btune_config;
 
     // Create super chunk
     remove(out_fname);
     blosc2_dparams dparams = BLOSC2_DPARAMS_DEFAULTS;
+    dparams.nthreads = 1;
     blosc2_storage storage = {
         .cparams=&cparams,
         .dparams=&dparams,
