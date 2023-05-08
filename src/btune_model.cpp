@@ -42,13 +42,15 @@ static int fsize(FILE *file) {
 static int get_best_codec(
     tflite::Interpreter *interpreter,
     float cratio,
-    float cspeed
+    float cspeed,
+    float comp_mode
 )
 {
     // Fill input tensor
     float* input = interpreter->typed_input_tensor<float>(0);
     *input = cratio;
     *(input+1) = cspeed;
+    *(input+2) = comp_mode;
 
     // Run inference
     if (interpreter->Invoke() != kTfLiteOk) {
@@ -137,6 +139,7 @@ static int get_best_codec_for_chunk(
     float cratio_std = metadata->cratio.std;
     float cspeed_mean = metadata->cspeed.mean;
     float cspeed_std = metadata->cspeed.std;
+    btune_struct * btune = (btune_struct *)schunk->storage->cparams->tune_params;
 
     // Read the cratio/cspeed for every block
     int codecs[NCODECS] = {0};
@@ -149,7 +152,7 @@ static int get_best_codec_for_chunk(
         instr_data++;
 
         // Run inference
-        int best = get_best_codec(interpreter, cratio, cspeed);
+      int best = get_best_codec(interpreter, cratio, cspeed, btune->config.comp_mode);
         codecs[best]++;
     }
 

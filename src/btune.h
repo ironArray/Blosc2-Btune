@@ -60,14 +60,12 @@ enum bandwidth_units{
  * @brief Compression mode enumeration.
  *
  * The compression mode alters the BTune criteria for improvement.
- * Depending on this value BTune will prioritize the compression speed,
+ * Depending on this value BTune will prioritize the compression/decompression speed,
  * the compression ratio or both.
 */
-typedef enum {
-  BTUNE_COMP_HSP,       //!< Optimizes the speed, even accepting memcpy.
-  BTUNE_COMP_BALANCED,  //!< Optimizes both, the speed and compression ratio.
-  BTUNE_COMP_HCR,       //!< Optimizes the compression ratio.
-} btune_comp_mode;
+float const BTUNE_COMP_HSP = 0.1;           //!< Optimizes the speed, even accepting memcpy.
+float const BTUNE_COMP_BALANCED = 0.5;  //!< Optimizes both, the speed and compression ratio.
+float const BTUNE_COMP_HCR = 0.9;         //!< Optimizes the compression ratio.
 
 /**
  * @brief Performance mode enumeration.
@@ -136,8 +134,8 @@ typedef struct {
   */
   btune_performance_mode perf_mode;
   //!< The BTune performance mode.
-  btune_comp_mode comp_mode;
-  //!< The BTune compression mode.
+  float comp_mode;
+  //!< The BTune compression mode (between 0 (speed) and 1 (cratio)).
   btune_behaviour behaviour;
   //!< The BTune behaviour config.
   bool cparams_hint;
@@ -254,7 +252,7 @@ typedef struct {
   int clevel_index;
   // The index for the clevel array
   int steps_count;
-  // The count of steps made made by BTune
+  // The count of steps made by BTune
   btune_state state;
   // The state of BTune
   int step_size;

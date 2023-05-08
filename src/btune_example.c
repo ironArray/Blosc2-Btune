@@ -41,7 +41,7 @@ static int compress(const char* in_fname, const char* out_fname) {
     // btune
     btune_config btune_config = BTUNE_CONFIG_DEFAULTS;
     btune_config.perf_mode = BTUNE_PERF_DECOMP;
-    //btune_config.comp_mode = BTUNE_COMP_HCR;
+    btune_config.comp_mode = 1.;
     //btune_config.behaviour.repeat_mode = BTUNE_REPEAT_ALL;
     cparams.tune_id = BLOSC_BTUNE;
     cparams.tune_params = &btune_config;
