@@ -233,6 +233,8 @@ typedef struct {
   // The filter list used by BTune
   uint8_t nfilters;
   // Number of filters used by BTune
+  int32_t splitmode;
+  // Splitmode
   uint8_t clevels[BTUNE_MAX_CLEVELS];
   // The clevels list used by BTune
   uint8_t nclevels;

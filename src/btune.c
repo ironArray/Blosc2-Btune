@@ -21,9 +21,9 @@
 
 
 // Disable different states
-#define BTUNE_DISABLE_SHUFFLESIZE  true
-#define BTUNE_DISABLE_MEMCPY       true
-#define BTUNE_DISABLE_THREADS      true
+#define BTUNE_ENABLE_SHUFFLESIZE  false
+#define BTUNE_ENABLE_MEMCPY       false
+#define BTUNE_ENABLE_THREADS      false
 
 
 // Internal btune control behaviour constants.
@@ -186,6 +186,12 @@ static void init_soft(btune_struct *btune_params) {
 
 // Init a hard readapt
 static void init_hard(btune_struct *btune_params) {
+  // In decompression mode, when running inference, do nothing
+  if (btune_params->config.perf_mode == BTUNE_PERF_DECOMP && btune_params->splitmode != BLOSC_AUTO_SPLIT) {
+    btune_params->state = STOP;
+    return;
+  }
+
   btune_params->state = CODEC_FILTER;
   btune_params->step_size = HARD_STEP_SIZE;
   btune_params->readapt_from = HARD;
@@ -350,6 +356,7 @@ void btune_init(void *tune_params, blosc2_context * cctx, blosc2_context * dctx)
   add_filter(btune, BLOSC_NOFILTER);
   add_filter(btune, BLOSC_SHUFFLE);
   add_filter(btune, BLOSC_BITSHUFFLE);
+  btune->splitmode = BLOSC_AUTO_SPLIT;
   btune_init_clevels(btune, 1, 9, 9);
 
   // State attributes
@@ -503,6 +510,7 @@ void btune_next_cparams(blosc2_context *context) {
       btune_params->filters[0] = filter;
       btune_params->nfilters = 1;
       if (config.perf_mode == BTUNE_PERF_DECOMP) {
+        btune_params->splitmode = splitmode;
         btune_init_clevels(btune_params, clevel, clevel, clevel);
       }
       else {
@@ -528,7 +536,13 @@ void btune_next_cparams(blosc2_context *context) {
       int n_filters_splits = btune_params->nfilters * 2;
       cparams->compcode = btune_params->codecs[btune_params->aux_index / n_filters_splits];
       cparams->filter = btune_params->filters[(btune_params->aux_index % n_filters_splits) / 2];
-      cparams->splitmode = (btune_params->aux_index % 2) + 1;
+
+      if (btune_params->splitmode == BLOSC_AUTO_SPLIT) {
+        cparams->splitmode = (btune_params->aux_index % 2) + 1;
+      }
+      else {
+        cparams->splitmode = btune_params->splitmode;
+      }
 
       // The first tuning of ZSTD in some modes should start in clevel 3
       btune_performance_mode perf_mode = config.perf_mode;
@@ -799,20 +813,24 @@ static void update_aux(blosc2_context * ctx, bool improved) {
   switch (btune_params->state) {
     case CODEC_FILTER:
       // Reached last combination of codec filter
-      if (btune_params->aux_index >= (btune_params->ncodecs *  btune_params->nfilters * 2)) {
+      int aux_index_max = btune_params->ncodecs *  btune_params->nfilters;
+      if (btune_params->splitmode == BLOSC_AUTO_SPLIT) {
+        aux_index_max *= 2;
+      }
+
+      if (btune_params->aux_index >= aux_index_max) {
         btune_params->aux_index = 0;
 
         int32_t shufflesize = best->shufflesize;
         // Is shufflesize valid or not
-        if (btune_params->config.perf_mode == BTUNE_PERF_DECOMP) {
-          btune_params->state = STOP;
-        }
-        else if (BTUNE_DISABLE_SHUFFLESIZE) {
-          btune_params->state = (BTUNE_DISABLE_THREADS) ? CLEVEL : THREADS;
-        } else {
+        if (BTUNE_ENABLE_SHUFFLESIZE) {
           bool is_power_2 = (shufflesize & (shufflesize - 1)) == 0;
           btune_params->state = (best->filter && is_power_2) ? SHUFFLE_SIZE : THREADS;
         }
+        else {
+          btune_params->state = BTUNE_ENABLE_THREADS ? THREADS : CLEVEL;
+        }
+
         // max_threads must be greater than 1
         if ((btune_params->state == THREADS) && (btune_params->max_threads == 1)) {
           btune_params->state = CLEVEL;
@@ -821,7 +839,7 @@ static void update_aux(blosc2_context * ctx, bool improved) {
           }
         }
         // Control direction parameters
-        if (!BTUNE_DISABLE_SHUFFLESIZE && btune_params->state == SHUFFLE_SIZE) {
+        if (BTUNE_ENABLE_SHUFFLESIZE && btune_params->state == SHUFFLE_SIZE) {
           if (has_ended_shuffle(best)) {
             best->increasing_shuffle = !best->increasing_shuffle;
           }
@@ -840,12 +858,7 @@ static void update_aux(blosc2_context * ctx, bool improved) {
       // Can not change parameter or is not improving
       if (has_ended_shuffle(best) || (!improved && !first_time)) {
         btune_params->aux_index = 0;
-        if (!BTUNE_DISABLE_THREADS) {
-          btune_params->state = THREADS;
-        }
-        else {
-          btune_params->state = CLEVEL;
-        }
+        btune_params->state = BTUNE_ENABLE_THREADS ? THREADS : CLEVEL;
         // max_threads must be greater than 1
         if ((btune_params->state == THREADS) && (btune_params->max_threads == 1)) {
           btune_params->state = CLEVEL;
@@ -898,12 +911,7 @@ static void update_aux(blosc2_context * ctx, bool improved) {
       // Can not change parameter or is not improving
       if (has_ended_clevel(btune_params) || (!improved && !first_time)) {
         btune_params->aux_index = 0;
-        if (!BTUNE_DISABLE_MEMCPY) {
-          btune_params->state = MEMCPY;
-        }
-        else {
-          btune_params->state = WAITING;
-        }
+        btune_params->state = BTUNE_ENABLE_MEMCPY ? MEMCPY : WAITING;
       }
       break;
 
