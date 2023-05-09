@@ -43,14 +43,14 @@ static int get_best_codec(
     tflite::Interpreter *interpreter,
     float cratio,
     float cspeed,
-    float comp_mode
+    float comp_balance
 )
 {
     // Fill input tensor
     float* input = interpreter->typed_input_tensor<float>(0);
     *input = cratio;
     *(input+1) = cspeed;
-    *(input+2) = comp_mode;
+    *(input+2) = comp_balance;
 
     // Run inference
     if (interpreter->Invoke() != kTfLiteOk) {
@@ -152,7 +152,7 @@ static int get_best_codec_for_chunk(
         instr_data++;
 
         // Run inference
-      int best = get_best_codec(interpreter, cratio, cspeed, btune->config.comp_mode);
+      int best = get_best_codec(interpreter, cratio, cspeed, btune->config.comp_balance);
         codecs[best]++;
     }
 

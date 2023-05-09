@@ -84,7 +84,7 @@ static void add_filter(btune_struct *btune_params, uint8_t filter) {
 // Get the codecs list for btune
 static void btune_init_codecs(btune_struct *btune_params) {
   const char * all_codecs = blosc2_list_compressors();
-  if (2/3 <= btune_params->config.comp_mode <= 1.) {
+  if (2/3 <= btune_params->config.comp_balance <= 1.) {
     // In HCR mode only try with ZSTD and ZLIB
     if (strstr(all_codecs, "zstd") != NULL) {
       add_codec(btune_params, BLOSC_ZSTD);
@@ -97,7 +97,7 @@ static void btune_init_codecs(btune_struct *btune_params) {
   } else {
     // In all other modes, LZ4 is mandatory
     add_codec(btune_params, BLOSC_LZ4);
-    if (1/3 <= btune_params->config.comp_mode <= 2/3) {
+    if (1/3 <= btune_params->config.comp_balance <= 2/3) {
       // In BALANCE mode give BLOSCLZ a chance
       add_codec(btune_params, BLOSC_BLOSCLZ);
     }
@@ -338,10 +338,10 @@ void btune_init(void *tune_params, blosc2_context * cctx, blosc2_context * dctx)
     char bandwidth_str[12];
     bandwidth_to_str(bandwidth_str, btune->config.bandwidth);
     printf("BTune version: %s.\n"
-           "Perfomance Mode: %s, Compression Mode: %f, Bandwidth: %s.\n"
+           "Perfomance Mode: %s, Compression balance: %f, Bandwidth: %s.\n"
            "Behaviour: Waits - %d, Softs - %d, Hards - %d, Repeat Mode - %s.\n",
            BTUNE_VERSION_STRING, perf_mode_to_str(btune->config.perf_mode),
-           btune->config.comp_mode,
+           btune->config.comp_balance,
            bandwidth_str,
            btune->config.behaviour.nwaits_before_readapt,
            btune->config.behaviour.nsofts_before_hard,
@@ -378,7 +378,7 @@ void btune_init(void *tune_params, blosc2_context * cctx, blosc2_context * dctx)
   btune->aux_cparams = aux;
   best->compcode = btune->codecs[0];
   aux->compcode = btune->codecs[0];
-  if (2/3 <= btune->config.comp_mode <= 1.) {
+  if (2/3 <= btune->config.comp_balance <= 1.) {
     best->clevel = 8;
     aux->clevel = 8;
   }
@@ -470,13 +470,13 @@ static void set_btune_cparams(blosc2_context * context, cparams_btune * cparams)
   context->clevel = cparams->clevel;
   btune_struct *btune_params = (btune_struct*) context->tune_params;
   // Do not set a too large clevel for ZSTD and BALANCED mode
-  if (1/3 <= btune_params->config.comp_mode <= 2/3 &&
+  if (1/3 <= btune_params->config.comp_balance <= 2/3 &&
       (cparams->compcode == BLOSC_ZSTD || cparams->compcode == BLOSC_ZLIB) &&
       cparams->clevel >= 3) {
     cparams->clevel = 3;
   }
   // Do not set a too large clevel for HCR mode
-  if (2/3 <= btune_params->config.comp_mode <= 1.0 && cparams->clevel >= 6) {
+  if (2/3 <= btune_params->config.comp_balance <= 1.0 && cparams->clevel >= 6) {
     cparams->clevel = 6;
   }
   if (cparams->blocksize) {
@@ -655,21 +655,21 @@ static double mean(double const * array, int size) {
   return sum / size;
 }
 
-// Determines if btune has improved depending on the comp_mode
+// Determines if btune has improved depending on the comp_balance
 static bool has_improved(btune_struct *btune_params, double score_coef, double cratio_coef) {
-  float comp_mode = btune_params->config.comp_mode;
-  if (comp_mode <= 1/3) {
+  float comp_balance = btune_params->config.comp_balance;
+  if (comp_balance <= 1/3) {
     return (((cratio_coef > 1) && (score_coef > 1)) ||
             ((cratio_coef > 0.5) && (score_coef > 2)) ||
             ((cratio_coef > 0.67) && (score_coef > 1.3)) ||
             ((cratio_coef > 2) && (score_coef > 0.7)));
   }
-  if (comp_mode <= 2/3) {
+  if (comp_balance <= 2/3) {
     return (((cratio_coef > 1) && (score_coef > 1)) ||
             ((cratio_coef > 1.1) && (score_coef > 0.8)) ||
             ((cratio_coef > 1.3) && (score_coef > 0.5)));
   }
-  if (comp_mode <= 1.) {
+  if (comp_balance <= 1.) {
     return cratio_coef > 1;
   }
   fprintf(stderr, "WARNING: unknown compression mode, it must be between 0. and 1.0\n");
@@ -943,8 +943,6 @@ void btune_update(blosc2_context * context, double ctime) {
   size_t cbytes = context->destsize;
   double dtime = 0;
 
-  // When the source is NULL (eval with prefilters), decompression is not working.
-  // Disabling this part for the time being.
   // Compute the decompression time if needed
   btune_behaviour behaviour = btune_params->config.behaviour;
   blosc_timestamp_t last, current;
@@ -952,7 +950,9 @@ void btune_update(blosc2_context * context, double ctime) {
       ((behaviour.nwaits_before_readapt == 0) ||
       (btune_params->nwaitings % behaviour.nwaits_before_readapt != 0))) &&
       ((btune_params->config.perf_mode == BTUNE_PERF_DECOMP) ||
-      (btune_params->config.perf_mode == BTUNE_PERF_BALANCED))) {
+      (btune_params->config.perf_mode == BTUNE_PERF_BALANCED)) &&
+       // When the source is NULL (eval with prefilters), decompression is not working.
+       context->dest != NULL) {
     blosc2_context * dctx;
     if (btune_params->dctx == NULL) {
       blosc2_dparams params = { btune_params->nthreads_decomp, NULL, NULL, NULL};
