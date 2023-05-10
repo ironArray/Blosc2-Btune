@@ -332,7 +332,12 @@ void btune_init(void *tune_params, blosc2_context * cctx, blosc2_context * dctx)
     memcpy(&btune->config, config, sizeof(btune_config));
   }
 
-  char* envvar = getenv("BTUNE_TRACE");
+  char* envvar = getenv("BTUNE_BALANCE");
+  if (envvar != NULL) {
+    btune->config.comp_balance = atof(envvar);
+  }
+
+  envvar = getenv("BTUNE_TRACE");
   if (envvar != NULL) {
     printf("-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=\n");
     char bandwidth_str[12];
@@ -351,7 +356,7 @@ void btune_init(void *tune_params, blosc2_context * cctx, blosc2_context * dctx)
 
   btune->dctx = dctx;
 
-  // Initlialize codescs and filters
+  // Initialize codecs and filters
   btune_init_codecs(btune);
   add_filter(btune, BLOSC_NOFILTER);
   add_filter(btune, BLOSC_SHUFFLE);
@@ -469,6 +474,10 @@ static void set_btune_cparams(blosc2_context * context, cparams_btune * cparams)
   context->splitmode = cparams->splitmode;
   context->clevel = cparams->clevel;
   btune_struct *btune_params = (btune_struct*) context->tune_params;
+  char* envvar = getenv("BTUNE_BALANCE");
+  if (envvar != NULL) {
+    btune_params->config.comp_balance = atof(envvar);
+  }
   // Do not set a too large clevel for ZSTD and BALANCED mode
   if (1/3 <= btune_params->config.comp_balance <= 2/3 &&
       (cparams->compcode == BLOSC_ZSTD || cparams->compcode == BLOSC_ZLIB) &&
@@ -657,6 +666,10 @@ static double mean(double const * array, int size) {
 
 // Determines if btune has improved depending on the comp_balance
 static bool has_improved(btune_struct *btune_params, double score_coef, double cratio_coef) {
+  char* envvar = getenv("BTUNE_BALANCE");
+  if (envvar != NULL) {
+    btune_params->config.comp_balance = atof(envvar);
+  }
   float comp_balance = btune_params->config.comp_balance;
   if (comp_balance <= 1/3) {
     return (((cratio_coef > 1) && (score_coef > 1)) ||
