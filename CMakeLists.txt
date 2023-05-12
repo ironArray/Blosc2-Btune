@@ -1,6 +1,6 @@
 # Blosc - Blocked Shuffling and Compression Library
 #
-# Copyright (C) 2021  The Blosc Developers <blosc@blosc.org>
+# Copyright (C) 2021  Blosc Developement Team <blosc@blosc.org>
 # https://blosc.org
 # License: BSD 3-Clause (see LICENSE.txt)
 #
@@ -10,38 +10,37 @@ cmake_minimum_required(VERSION 3.20)
 project(blosc2_btune LANGUAGES C CXX)
 set (CMAKE_CXX_STANDARD 20)
 
-option(BUILD_STATIC_TFLITE "Link tflite statically" ON)
-
-set(TENSORFLOW_SRC_DIR "" CACHE PATH "Directory that contains the TensorFlow project")
-if(NOT TENSORFLOW_SRC_DIR)
-    message( SEND_ERROR "Call with -DTENSORFLOW_SRC_DIR=XXX" )
+if (APPLE)
+    option(BUILD_STATIC_TFLITE "Link tflite statically" OFF)
+else()
+    option(BUILD_STATIC_TFLITE "Link tflite statically" ON)
 endif()
+message("BUILD_STATIC_TFLITE: " ${BUILD_STATIC_TFLITE})
+
+cmake_path(SET TENSORFLOW_SRC_DIR NORMALIZE "${CMAKE_SOURCE_DIR}/tensorflow_src")
+if(NOT TENSORFLOW_SRC_DIR)
+    message( SEND_ERROR "Call prebuild.sh first" )
+endif()
+cmake_path(ABSOLUTE_PATH TENSORFLOW_SRC_DIR NORMALIZE)
+message("TENSORFLOW dir: " ${TENSORFLOW_SRC_DIR})
+
+cmake_path(SET BLOSC2_SRC_DIR NORMALIZE "${CMAKE_SOURCE_DIR}/c-blosc2")
+if(NOT BLOSC2_SRC_DIR)
+    message( SEND_ERROR "Call prebuild.sh first" )
+endif()
+cmake_path(ABSOLUTE_PATH BLOSC2_SRC_DIR NORMALIZE)
+message("BLOSC2 dir: " ${BLOSC2_SRC_DIR})
 
 message("Building Blosc2 plugin btune ...")
 
-# Find blosc2.h
-find_package(Python COMPONENTS Interpreter)
-if(Python_Interpreter_FOUND)
-    message(STATUS "Executable: ${Python_EXECUTABLE}")
-    cmake_path(SET Python_ROOT NORMALIZE "${Python_EXECUTABLE}/../..")
-    cmake_path(SET Python_INCLUDE NORMALIZE "${Python_ROOT}/include")
-    message(STATUS "Found Python include: ${Python_INCLUDE}")
-    cmake_path(SET Python_LIB NORMALIZE "${Python_ROOT}/lib")
-    message(STATUS "Found Python lib: ${Python_LIB}")
-    cmake_path(SET Python_LIB64 NORMALIZE "${Python_ROOT}/lib64")
-    message(STATUS "Found Python lib64: ${Python_LIB64}")
-    cmake_path(SET Python_Blosc2_INCLUDE NORMALIZE "${Python_INCLUDE}/blosc2.h")
-    cmake_path(HAS_FILENAME Python_Blosc2_INCLUDE HAS_BLOSC2)
-    if(HAS_BLOSC2)
-        set(BLOSC2_INCLUDE_DIR ${Python_INCLUDE})
-        message(STATUS "Found Blosc2 include: ${Python_Blosc2_INCLUDE}")
-    else()
-        message(FATAL_ERROR "No Blosc2 includes found.  Aborting.")
-    endif()
+cmake_path(SET BLOSC2_INCLUDE_DIR NORMALIZE "${BLOSC2_SRC_DIR}/include")
+# Find blosc2.h (sanity check)
+cmake_path(SET BLOSC2_INCLUDE NORMALIZE "${BLOSC2_INCLUDE_DIR}/blosc2.h")
+cmake_path(HAS_FILENAME BLOSC2_INCLUDE HAS_BLOSC2)
+if(HAS_BLOSC2)
+    message(STATUS "Found Blosc2 include: ${BLOSC2_INCLUDE}")
 else()
-    message(FATAL_ERROR "No Python found.  Aborting.")
+    message(FATAL_ERROR "No Blosc2 includes found.  Aborting.")
 endif()
-
-include_directories("${BLOSC2_INCLUDE_DIR}")
 
 add_subdirectory(src)

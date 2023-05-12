@@ -2,32 +2,67 @@
 
 For using BTune you will first have to create and install its wheel.
 
-## Install requirements
-```shell
-pip install -r requirements.txt
-```
-For MacOS you will have to install flatbuffers through brew.
+## Before compiling
+
+For MacOS you will have to install flatbuffers through brew:
+
 ```shell
 brew install flatbuffers
 ```
 
-## Build tensorflowlite
+Also you will need bazel (preferably via bazelisk):
 
 ```shell
-git clone https://github.com/tensorflow/tensorflow.git tensorflow_src
+brew install bazelisk
+```
+
+## Build tflite (dynamically, as Mac does not support static linking yet) and c-blosc2 (always static)
+
+First, clone the repos for tensorflow and c-blosc2:
+
+```shell
+bash prebuild.sh
+```
+
+This will clone the repos in the ``tensorflow_src`` and ``c-blosc2`` directories
+
+For Mac, static compilation is not supported (yet).  You need to compile tensorflow via bazel:
+
+```shell
 cd tensorflow_src
-git checkout v2.11.0
 bazel build -c opt --config=monolithic tensorflow/lite:tensorflowlite
+cd -
+```
+
+If you run into issues, you may need to pass where your python path:
+
+```shell
+cd tensorflow_src
+bazel build -c opt --config=monolithic tensorflow/lite:tensorflowlite --action_env PYTHON_BIN_PATH=/Users/faltet/miniconda3/envs/python-blosc2/bin/python
+cd -
 ```
 
 ## Create the wheel
 
+To create a wheel to be used locally:
+
 ```shell
-cd -
-python setup.py bdist_wheel -DTENSORFLOW_SRC_DIR=<absolute path to tensorflow_src> 
+python setup.py bdist_wheel
 ```
 
-To link tensorflow lite statically pass the `-DBUILD_STATIC_TFLITE=ON` option.
+To create a wheel that can be deployed in manylinux 2014:
+
+```shell
+python -m cibuildwheel --output-dir dist --only 'cp311-manylinux_x86_64'
+```
+
+For Mac:
+
+```shell
+python -m cibuildwheel --output-dir dist --only 'cp310-macosx_x86_64'
+```
+
+To link tensorflow lite statically pass the `-DBUILD_STATIC_TFLITE=ON` option above (default on Linux).
 
 ## Install the wheel
 
