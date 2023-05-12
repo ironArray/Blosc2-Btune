@@ -27,13 +27,13 @@ target_link_directories(blosc2_btune PUBLIC ${BLOSC2_SRC_DIR}/build/blosc)
 add_custom_command(
         TARGET blosc2_btune PRE_BUILD
         COMMAND ${CMAKE_COMMAND} ..
-        WORKING_DIRECTORY "${BLOSC2_SRC_DIR}/build/blosc"
+        WORKING_DIRECTORY "${BLOSC2_SRC_DIR}/build"
 )
 
 add_custom_command(
         TARGET blosc2_btune PRE_BUILD
         COMMAND ${CMAKE_COMMAND} --build . --target blosc2_static -j
-        WORKING_DIRECTORY "${BLOSC2_SRC_DIR}/build/blosc"
+        WORKING_DIRECTORY "${BLOSC2_SRC_DIR}/build"
 )
 
 if (BUILD_STATIC_TFLITE)
