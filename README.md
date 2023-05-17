@@ -47,10 +47,10 @@ pip install dist/blosc2_btune-*.whl --force-reinstall
 For Linux:
 
 ```shell
-cd src
+cd src  # avoid staying in the main package directory
 # Suppose that we have a local C-Blosc2 repo in c-blosc2.bck 
 gcc -o btune_example btune_example.c -L ../c-blosc2.bck/build/blosc -I ../c-blosc2.bck/include/ -lblosc2 -lm
-./btune_example ../../python-blosc2/era5-pds/pressure.b2nd pressure-btune.b2nd
+LD_LIBRARY_PATH=../c-blosc2.bck/build/blosc ./btune_example .../pressure.b2nd pressure-btune.b2nd
 Compression ratio: 3456.0 MB -> 662.0 MB (5.2x)
 Compression time: 17.3 s, 199.8 MB/s
 ```
@@ -58,13 +58,14 @@ Compression time: 17.3 s, 199.8 MB/s
 For Mac:
 
 ```shell
-_skbuild/macosx-10.9-x86_64-3.11/cmake-build/src/btune_example ../python-blosc2/era5-pds/pressure.b2nd pressure-btune.b2nd
+cd src  # avoid staying in the main package directory
+../_skbuild/macosx-10.9-x86_64-3.11/cmake-build/src/btune_example ../pressure.b2nd pressure-btune.b2nd
 ```
 
 You can use `BTUNE_TRACE=1` to see what BTune is doing.
 
 ```shell
-BTUNE_BALANCE=0.1 BTUNE_TRACE=1 ./btune_example <inputfile> <output.b2frame>
+BTUNE_BALANCE=0.1 BTUNE_TRACE=1 ./btune_example .../pressure.b2nd pressure-btune.b2nd
 -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 BTune version: 1.0.0.
 Perfomance Mode: BALANCED, Compression Mode: BALANCED, Bandwidth: 20 GB/s.

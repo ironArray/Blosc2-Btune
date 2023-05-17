@@ -7,23 +7,6 @@
 #define CHUNKSIZE (64 * 1024)
 #define BLOCKSIZE ( 8 * 1024)
 
-static int fsize(FILE *file) {
-    fseek(file, 0, SEEK_END);
-    int size = ftell(file);
-    fseek(file, 0, SEEK_SET);
-    return size;
-}
-
-static int get_nchunks_in_file(FILE *file, int chunksize) {
-    int filesize = fsize(file);
-    int nchunks = filesize / chunksize;
-    if (filesize % CHUNKSIZE != 0) {
-        nchunks++;
-    }
-
-    return nchunks;
-}
-
 
 static int compress(const char* in_fname, const char* out_fname) {
 
