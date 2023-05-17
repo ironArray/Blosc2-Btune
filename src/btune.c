@@ -14,7 +14,7 @@
 #include <assert.h>
 
 #include <blosc2/filters-registry.h>
-#include <blosc2/tunes-registry.h>
+#include <blosc2/tuners-registry.h>
 #include "btune.h"
 #include "btune_model.h"
 #include "entropy_probe.h"
@@ -136,7 +136,7 @@ static void extract_btune_cparams(blosc2_context *context, cparams_btune *cparam
   cparams->blocksize = context->blocksize;
   cparams->shufflesize = context->typesize;
   cparams->nthreads_comp = context->nthreads;
-  btune_struct *btune_params = context->tune_params;
+  btune_struct *btune_params = context->tuner_params;
   if (btune_params->dctx == NULL) {
     cparams->nthreads_decomp = btune_params->nthreads_decomp;
   } else {
@@ -207,7 +207,7 @@ static void init_hard(btune_struct *btune_params) {
 
 // Init when the number of hard is 0
 static void init_without_hards(blosc2_context *ctx) {
-  btune_struct *btune_params = (btune_struct*) ctx->tune_params;
+  btune_struct *btune_params = (btune_struct*) ctx->tuner_params;
   btune_behaviour behaviour = btune_params->config.behaviour;
   int minimum_hards = 0;
   if (!btune_params->config.cparams_hint) {
@@ -317,8 +317,8 @@ static const char* repeat_mode_to_str(btune_repeat_mode repeat_mode) {
 
 
 // Init btune_struct inside blosc2_context
-void btune_init(void *tune_params, blosc2_context * cctx, blosc2_context * dctx) {
-  btune_config *config = (btune_config *)tune_params;
+void btune_init(void *tuner_params, blosc2_context * cctx, blosc2_context * dctx) {
+  btune_config *config = (btune_config *)tuner_params;
 
   // Register entropy codec
   blosc2_codec codec;
@@ -328,11 +328,21 @@ void btune_init(void *tune_params, blosc2_context * cctx, blosc2_context * dctx)
   btune_struct *btune = calloc(sizeof(btune_struct), 1);
   if (config == NULL) {
     memcpy(&btune->config, &BTUNE_CONFIG_DEFAULTS, sizeof(btune_config));
+    config = &btune->config;
   } else {
     memcpy(&btune->config, config, sizeof(btune_config));
   }
 
-  char* envvar = getenv("BTUNE_TRACE");
+  char* envvar = getenv("BTUNE_BALANCE");
+  if (envvar != NULL) {
+    btune->config.comp_balance = atof(envvar);
+  }
+  // If the user does not fill the config, the next fields will be empty
+  // No need to do the same for dctx because btune is only used during compression
+  cctx->schunk->tuner_params = (void *) &btune->config;
+  cctx ->schunk->storage->cparams->tuner_params = (void *) &btune->config;
+  
+  envvar = getenv("BTUNE_TRACE");
   if (envvar != NULL) {
     printf("-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=\n");
     char bandwidth_str[12];
@@ -351,7 +361,7 @@ void btune_init(void *tune_params, blosc2_context * cctx, blosc2_context * dctx)
 
   btune->dctx = dctx;
 
-  // Initlialize codescs and filters
+  // Initialize codecs and filters
   btune_init_codecs(btune);
   add_filter(btune, BLOSC_NOFILTER);
   add_filter(btune, BLOSC_SHUFFLE);
@@ -367,7 +377,7 @@ void btune_init(void *tune_params, blosc2_context * cctx, blosc2_context * dctx)
   btune->nhards = 0;
   btune->nwaitings = 0;
   btune->is_repeating = false;
-  cctx->tune_params = btune;
+  cctx->tuner_params = btune;
 
   // Initial compression parameters
   cparams_btune *best = malloc(sizeof(cparams_btune));
@@ -438,18 +448,19 @@ void btune_init(void *tune_params, blosc2_context * cctx, blosc2_context * dctx)
 
 // Free btune_struct
 void btune_free(blosc2_context *context) {
-  btune_struct *btune_params = context->tune_params;
+  btune_struct *btune_params = context->tuner_params;
   free(btune_params->best);
   free(btune_params->aux_cparams);
   free(btune_params->current_scores);
   free(btune_params->current_cratios);
   free(btune_params);
-  context->tune_params = NULL;
+  context->tuner_params = NULL;
 }
 
 // This must exist because unconditionally called by c-blosc2, otherwise there
 // will be a crash
 void btune_next_blocksize(blosc2_context *context) {
+
 }
 
 // Set the cparams_btune inside blosc2_context
@@ -468,7 +479,8 @@ static void set_btune_cparams(blosc2_context * context, cparams_btune * cparams)
 
   context->splitmode = cparams->splitmode;
   context->clevel = cparams->clevel;
-  btune_struct *btune_params = (btune_struct*) context->tune_params;
+  btune_struct *btune_params = (btune_struct*) context->tuner_params;
+
   // Do not set a too large clevel for ZSTD and BALANCED mode
   if (1/3 <= btune_params->config.comp_balance <= 2/3 &&
       (cparams->compcode == BLOSC_ZSTD || cparams->compcode == BLOSC_ZLIB) &&
@@ -493,9 +505,8 @@ static void set_btune_cparams(blosc2_context * context, cparams_btune * cparams)
 
 // Tune some compression parameters based on the context
 void btune_next_cparams(blosc2_context *context) {
-  btune_struct *btune_params = (btune_struct*) context->tune_params;
+  btune_struct *btune_params = (btune_struct*) context->tuner_params;
   btune_config config = btune_params->config;
-
   // Run inference only for the first chunk
   int compcode;
   uint8_t filter;
@@ -628,6 +639,10 @@ void btune_next_cparams(blosc2_context *context) {
       return;
   }
   set_btune_cparams(context, cparams);
+  if (context->blocksize > context->sourcesize) {
+    // blocksize cannot be greater than sourcesize
+    context->blocksize = context->sourcesize;
+  }
 }
 
 // Computes the score depending on the perf_mode
@@ -691,7 +706,7 @@ static bool cparams_equals(cparams_btune * cp1, cparams_btune * cp2) {
 
 // Processes which btune_state will come next after a readapt or wait
 static void process_waiting_state(blosc2_context *ctx) {
-  btune_struct *btune_params = (btune_struct*) ctx->tune_params;
+  btune_struct *btune_params = (btune_struct*) ctx->tuner_params;
   btune_behaviour behaviour = btune_params->config.behaviour;
   uint32_t minimum_hards = 0;
 
@@ -807,7 +822,7 @@ static void process_waiting_state(blosc2_context *ctx) {
 
 // State transition handling
 static void update_aux(blosc2_context * ctx, bool improved) {
-  btune_struct *btune_params = ctx->tune_params;
+  btune_struct *btune_params = ctx->tuner_params;
   cparams_btune *best = btune_params->best;
   bool first_time = btune_params->aux_index == 1;
   switch (btune_params->state) {
@@ -931,7 +946,7 @@ static void update_aux(blosc2_context * ctx, bool improved) {
 
 // Update btune structs with the compression results
 void btune_update(blosc2_context * context, double ctime) {
-  btune_struct *btune_params = (btune_struct*)(context->tune_params);
+  btune_struct *btune_params = (btune_struct*)(context->tuner_params);
   if (btune_params->state == STOP) {
     return;
   }
@@ -1032,7 +1047,7 @@ void btune_update(blosc2_context * context, double ctime) {
 }
 
 // Blosc2 needs this in order to dynamically load the functions
-tune_info info = {
+tuner_info info = {
     .init="btune_init",
     .next_blocksize="btune_next_blocksize",
     .next_cparams="btune_next_cparams",
