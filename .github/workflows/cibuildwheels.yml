@@ -18,13 +18,13 @@ jobs:
     name: Build wheels on ${{ matrix.os }} (${{ matrix.arch }})
     runs-on: ${{ matrix.os }}
     # Only build wheels when tagging (typically a release)
-    if: startsWith(github.event.ref, 'refs/tags')
+    # if: startsWith(github.event.ref, 'refs/tags')
     strategy:
       matrix:
         # os: [ubuntu-latest, windows-latest, macos-latest]
         # arch: [x86_64, aarch64]
         os: [ubuntu-latest, macos-latest]
-        arch: [x86_64]
+        arch: x86_64
         exclude:
           - os: windows-latest
             arch: aarch64
@@ -133,13 +133,13 @@ jobs:
       - name: Build building extension from sdist package
         run: |
           cd ./dist
-          tar -xzf blosc2-*.tar.gz
-          cd ./blosc2-*/
+          tar -xzf blosc2_*.tar.gz
+          cd ./blosc2_*/
           python setup.py build_ext --inplace
 
       # - name: Test sdist package with pytest
       #   run: |
-      #     cd ./dist/blosc2-*/
+      #     cd ./dist/blosc2_*/
       #     python -m pytest -m "not heavy"
 
   upload_pypi:
