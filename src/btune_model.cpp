@@ -117,15 +117,17 @@ static int get_best_codec_for_chunk(
     blosc2_context *dctx = blosc2_create_dctx(dparams);
 
     // Compress chunk, this will output the instrumentation data
-    int8_t cdata[size];
+    int8_t *cdata = (int8_t *) malloc(size * sizeof(int8_t));
     int csize = blosc2_compress_ctx(cctx, src, size, cdata, sizeof(cdata));
     if (csize < 0) {
+        free(cdata);
         fprintf(stderr, "Error %d compressing chunk\n", csize);
         return csize;
     }
     // Decompress so we can read the instrumentation data
-    int8_t ddata[size];
+    int8_t *ddata = (int8_t *) malloc(size * sizeof(int8_t));
     int dsize = blosc2_decompress_ctx(dctx, cdata, csize, ddata, size);
+    free(cdata);
     BLOSC_ERROR(dsize);
     // >>> ENTROPY PROBER END
     if (trace) {
@@ -155,6 +157,7 @@ static int get_best_codec_for_chunk(
       int best = get_best_codec(interpreter, cratio, cspeed, btune->config.comp_balance);
         codecs[best]++;
     }
+    free(ddata);
 
     // The best codec for the chunk is the codec that wins for most blocks
     int best = -1;
