@@ -10,12 +10,8 @@ cmake_minimum_required(VERSION 3.20)
 project(blosc2_btune LANGUAGES C CXX)
 set (CMAKE_CXX_STANDARD 20)
 
-if (APPLE)
-    option(BUILD_STATIC_TFLITE "Link tflite statically" OFF)
-else()
-    option(BUILD_STATIC_TFLITE "Link tflite statically" ON)
-endif()
-message("BUILD_STATIC_TFLITE: " ${BUILD_STATIC_TFLITE})
+# Only linking tensorflow statically is officially supported at this time
+option(BUILD_STATIC_TFLITE "Link tflite statically" ON)
 
 cmake_path(SET TENSORFLOW_SRC_DIR NORMALIZE "${CMAKE_SOURCE_DIR}/tensorflow_src")
 if(NOT TENSORFLOW_SRC_DIR)

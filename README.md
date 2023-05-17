@@ -2,98 +2,69 @@
 
 For using BTune you will first have to create and install its wheel.
 
-## Before compiling
+**Note:** Remove flatbuffers package in your system (if installed).
+This could be incompatible wit the required version in tensorflow.
+Also, tensorflow comes with its own version, so this is not needed.
 
-For MacOS you will have to install flatbuffers through brew:
+## [Mac only] Clone tensorflow repo and c-blosc2
 
-```shell
-brew install flatbuffers
-```
-
-Also you will need bazel (preferably via bazelisk):
-
-```shell
-brew install bazelisk
-```
-
-## Build tflite (dynamically, as Mac does not support static linking yet) and c-blosc2 (always static)
-
-First, clone the repos for tensorflow and c-blosc2:
+You can do this with the included script:
 
 ```shell
 bash prebuild.sh
 ```
+This will clone the repos in the ``tensorflow_src`` and ``c-blosc2``
+directories.
 
-This will clone the repos in the ``tensorflow_src`` and ``c-blosc2`` directories
-
-For Mac, static compilation is not supported (yet).  You need to compile tensorflow via bazel:
-
-```shell
-cd tensorflow_src
-bazel build -c opt --config=monolithic tensorflow/lite:tensorflowlite
-cd -
-```
-
-If you run into issues, you may need to pass where your python path:
-
-```shell
-cd tensorflow_src
-bazel build -c opt --config=monolithic tensorflow/lite:tensorflowlite --action_env PYTHON_BIN_PATH=/Users/faltet/miniconda3/envs/python-blosc2/bin/python
-cd -
-```
+**Note:** Doing this step in Linux is not ok because docker will badly
+interact with the local ``tensorflow_src`` and ``c-blosc2`` directories.
 
 ## Create the wheel
 
-To create a wheel to be used locally:
+For Linux:
 
 ```shell
-python setup.py bdist_wheel
+CIBW_BEFORE_BUILD="bash prebuild.sh" python -m cibuildwheel --output-dir dist --only 'cp311-manylinux_x86_64'
 ```
 
-To create a wheel that can be deployed in manylinux 2014:
+Please note that the prebuild.sh should be executed from inside the docker
+(handled by CIBuild).
+
+For Mac:
 
 ```shell
-python -m cibuildwheel --output-dir dist --only 'cp311-manylinux_x86_64'
+python -m cibuildwheel --output-dir dist --only 'cp311-macosx_x86_64'
+```
+
+## Install the wheel
+
+```shell
+pip install dist/blosc2_btune-*.whl --force-reinstall
+```
+
+## Compile and run example
+
+For Linux:
+
+```shell
+cd src
+# Suppose that we have a local C-Blosc2 repo in c-blosc2.bck 
+gcc -o btune_example btune_example.c -L ../c-blosc2.bck/build/blosc -I ../c-blosc2.bck/include/ -lblosc2 -lm
+./btune_example ../../python-blosc2/era5-pds/pressure.b2nd pressure-btune.b2nd
+Compression ratio: 3456.0 MB -> 662.0 MB (5.2x)
+Compression time: 17.3 s, 199.8 MB/s
 ```
 
 For Mac:
 
 ```shell
-python -m cibuildwheel --output-dir dist --only 'cp310-macosx_x86_64'
-```
-
-To link tensorflow lite statically pass the `-DBUILD_STATIC_TFLITE=ON` option above (default on Linux).
-
-## Install the wheel
-
-```shell
-pip install dist/blosc2_btune-*.whl
-```
-
-
-## Build the program
-
-```shell
-mkdir build
-cd build
-cmake ..  -DTENSORFLOW_SRC_DIR=<absolute path to tensorflow_src> 
-cmake --build . -j
-```
-
-To link tensorflow lite statically pass the `-DBUILD_STATIC_TFLITE=ON` option.
-
-## Run example
-
-```shell
-./src/btune_example <inputfile> <output.b2frame>
-Compression ratio: 3456.0 MB -> 662.0 MB (5.2x)
-Compression time: 17.3 s, 199.8 MB/s
+_skbuild/macosx-10.9-x86_64-3.11/cmake-build/src/btune_example ../python-blosc2/era5-pds/pressure.b2nd pressure-btune.b2nd
 ```
 
 You can use `BTUNE_TRACE=1` to see what BTune is doing.
 
 ```shell
-BTUNE_TRACE=1 ./src/btune_example <inputfile> <output.b2frame>
+BTUNE_BALANCE=0.1 BTUNE_TRACE=1 ./btune_example <inputfile> <output.b2frame>
 -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 BTune version: 1.0.0.
 Perfomance Mode: BALANCED, Compression Mode: BALANCED, Bandwidth: 20 GB/s.

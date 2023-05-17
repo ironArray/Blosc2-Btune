@@ -11,12 +11,6 @@ include_directories(
     ${TENSORFLOW_SRC_DIR}
 )
 
-if(APPLE)
-    include_directories(
-        /usr/local/include/ # Needed to find flatbuffers.h
-    )
-endif()
-
 add_library(blosc2_btune SHARED btune.c btune_model.cpp json.c entropy_probe.c)
 
 target_link_directories(blosc2_btune
@@ -24,6 +18,7 @@ target_link_directories(blosc2_btune
 )
 target_link_directories(blosc2_btune PUBLIC ${BLOSC2_SRC_DIR}/build/blosc)
 
+# Compile C-Blosc2 statically
 add_custom_command(
         TARGET blosc2_btune PRE_BUILD
         COMMAND ${CMAKE_COMMAND} ..
@@ -59,7 +54,7 @@ else()
     target_link_libraries(blosc2_btune blosc2 tensorflowlite)
 endif()
 
-add_executable("btune_example" "btune_example.c")
-target_link_libraries("btune_example" blosc2_btune blosc2)
+add_executable(btune_example btune_example.c)
+target_link_libraries(btune_example blosc2_btune blosc2)
 
 install(TARGETS blosc2_btune LIBRARY DESTINATION blosc2_btune)
