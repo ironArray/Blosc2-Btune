@@ -7,7 +7,7 @@
 # See LICENSE.txt for details about copyright and rights to use.
 
 [build-system]
-requires = ["setuptools", "scikit-build", "cmake", "ninja", "blosc2"]
+requires = ["setuptools", "scikit-build", "cmake", "ninja"]
 build-backend = "setuptools.build_meta"
 
 [project]
