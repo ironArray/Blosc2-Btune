@@ -639,6 +639,10 @@ void btune_next_cparams(blosc2_context *context) {
       return;
   }
   set_btune_cparams(context, cparams);
+  if (context->blocksize > context->sourcesize) {
+    // blocksize cannot be greater than sourcesize
+    context->blocksize = context->sourcesize;
+  }
 }
 
 // Computes the score depending on the perf_mode
