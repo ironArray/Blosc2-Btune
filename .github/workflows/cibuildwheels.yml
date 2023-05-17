@@ -49,11 +49,6 @@ jobs:
       - name: Install Ninja
         uses: seanmiddleditch/gha-setup-ninja@master
 
-      # - name: Install MSVC amd64
-      #   uses: ilammy/msvc-dev-cmd@v1
-      #   with:
-      #     arch: amd64
-
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
@@ -68,7 +63,7 @@ jobs:
         env:
           CIBW_BUILD: 'cp38-win_amd64 cp39-win_amd64 cp310-win_amd64 cp311-win_amd64'
           # CIBW_TEST_REQUIRES: pytest
-          # CIBW_TEST_COMMAND: python -m pytest -m "not heavy" {project}/tests
+          # CIBW_TEST_COMMAND: python -m pytest {project}/tests
           CIBW_BUILD_VERBOSITY: 1
 
       - name: Build wheels (Linux / Mac OSX)
@@ -79,12 +74,11 @@ jobs:
           python -m cibuildwheel --output-dir wheelhouse
         env:
           CIBW_BEFORE_BUILD: bash prebuild.sh
-          # CIBW_BUILD: 'cp38-* cp39-* cp310-* cp311-*'
-          CIBW_BUILD: 'cp310-* cp311-*'
+          CIBW_BUILD: 'cp38-* cp39-* cp310-* cp311-*'
           CIBW_SKIP: '*-manylinux*_i686 *-musllinux_* ${{ env.CIBW_SKIP}}'
           CIBW_ARCHS_LINUX: ${{ matrix.arch }}
           # CIBW_TEST_REQUIRES: pytest
-          # CIBW_TEST_COMMAND: python -m pytest -m "not heavy" {project}/tests
+          # CIBW_TEST_COMMAND: python -m pytest {project}/tests
           CIBW_BUILD_VERBOSITY: 1
           CIBW_ARCHS_MACOS: "x86_64 arm64"
 
@@ -94,56 +88,8 @@ jobs:
           path: ./wheelhouse/*.whl
 
 
-  build_sdist:
-    name: Build sdist
-    runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        os: [ubuntu-latest]
-        arch: [auto]
-        exclude:
-          - os: [ubuntu-latest]
-            # We don't support 32-bit platforms in python-blosc2
-            arch: x86
-
-    steps:
-      - uses: actions/checkout@v3
-        with:
-          submodules: 'recursive'
-
-      - uses: actions/setup-python@v4
-        name: Setup Python ${{ matrix.python-version }}
-        with:
-          python-version: ${{ matrix.python-version }}
-
-      - name: Install dependencies
-        run: |
-          python -m pip install --upgrade pip
-          python -m pip install -r requirements-build.txt
-
-      - name: Build sdist
-        run: |
-          python -m build --sdist
-
-      - name: Upload sdist package
-        uses: actions/upload-artifact@v3
-        with:
-          path: dist/*.tar.gz
-
-      - name: Build building extension from sdist package
-        run: |
-          cd ./dist
-          tar -xzf blosc2_*.tar.gz
-          cd ./blosc2_*/
-          python setup.py build_ext --inplace
-
-      # - name: Test sdist package with pytest
-      #   run: |
-      #     cd ./dist/blosc2_*/
-      #     python -m pytest -m "not heavy"
-
   upload_pypi:
-    needs: [ build_wheels, build_sdist ]  # last but not least
+    needs: [ build_wheels ]  # last but not least
     runs-on: ubuntu-latest
     # Only upload wheels when tagging (typically a release)
     if: startsWith(github.event.ref, 'refs/tags')
