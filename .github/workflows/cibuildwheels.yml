@@ -80,7 +80,9 @@ jobs:
           # CIBW_TEST_REQUIRES: pytest
           # CIBW_TEST_COMMAND: python -m pytest {project}/tests
           CIBW_BUILD_VERBOSITY: 1
-          CIBW_ARCHS_MACOS: "x86_64 arm64"
+          # ARM64 is not supported yet (probably we need to use aarch64 on src/CMakeLists.txt)
+          # CIBW_ARCHS_MACOS: "x86_64 arm64"
+          CIBW_ARCHS_MACOS: "x86_64"
 
       - name: Upload wheels
         uses: actions/upload-artifact@v3
