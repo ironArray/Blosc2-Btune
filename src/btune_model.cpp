@@ -139,7 +139,7 @@ static int get_best_codec_for_chunk(
     float cratio_std = metadata->cratio.std;
     float cspeed_mean = metadata->cspeed.mean;
     float cspeed_std = metadata->cspeed.std;
-    btune_struct * btune = (btune_struct *)schunk->storage->cparams->tune_params;
+    btune_struct * btune = (btune_struct *)schunk->storage->cparams->tuner_params;
 
     // Read the cratio/cspeed for every block
     int codecs[NCODECS] = {0};
