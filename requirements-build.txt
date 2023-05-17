@@ -1,0 +1,4 @@
+#blosc2
+#flatbuffers
+scikit-build
+cibuildwheel
