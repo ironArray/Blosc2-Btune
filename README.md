@@ -6,19 +6,6 @@ For using BTune you will first have to create and install its wheel.
 This could be incompatible wit the required version in tensorflow.
 Also, tensorflow comes with its own version, so this is not needed.
 
-## [Mac only] Clone tensorflow repo and c-blosc2
-
-You can do this with the included script:
-
-```shell
-bash prebuild.sh
-```
-This will clone the repos in the ``tensorflow_src`` and ``c-blosc2``
-directories.
-
-**Note:** Doing this step in Linux is not ok because docker will badly
-interact with the local ``tensorflow_src`` and ``c-blosc2`` directories.
-
 ## Create the wheel
 
 For Linux:
@@ -27,13 +14,13 @@ For Linux:
 CIBW_BEFORE_BUILD="bash prebuild.sh" python -m cibuildwheel --output-dir dist --only 'cp311-manylinux_x86_64'
 ```
 
-Please note that the prebuild.sh should be executed from inside the docker
+Please note that the prebuild.sh will be executed from inside the docker
 (handled by CIBuild).
 
 For Mac:
 
 ```shell
-python -m cibuildwheel --output-dir dist --only 'cp311-macosx_x86_64'
+CIBW_BEFORE_BUILD="bash prebuild.sh" python -m cibuildwheel --output-dir dist --only 'cp311-macosx_x86_64'
 ```
 
 ## Install the wheel
@@ -48,7 +35,7 @@ For Linux:
 
 ```shell
 cd src  # avoid staying in the main package directory
-# Suppose that we have a local C-Blosc2 repo in c-blosc2.bck 
+# Suppose that we have a local C-Blosc2 repo in c-blosc2.bck (to not collide with the docker one)
 gcc -o btune_example btune_example.c -L ../c-blosc2.bck/build/blosc -I ../c-blosc2.bck/include/ -lblosc2 -lm
 LD_LIBRARY_PATH=../c-blosc2.bck/build/blosc ./btune_example .../pressure.b2nd pressure-btune.b2nd
 Compression ratio: 3456.0 MB -> 662.0 MB (5.2x)
@@ -59,7 +46,9 @@ For Mac:
 
 ```shell
 cd src  # avoid staying in the main package directory
-../_skbuild/macosx-10.9-x86_64-3.11/cmake-build/src/btune_example ../pressure.b2nd pressure-btune.b2nd
+gcc -o btune_example btune_example.c -L ../c-blosc2/build/blosc -I ../c-blosc2/include/ -lblosc2 -lm
+# We don't need DYLD_LIBRARY_PATH here, as we are linking against the static C-Blosc2 library
+./btune_example .../pressure.b2nd pressure-btune.b2nd
 ```
 
 You can use `BTUNE_TRACE=1` to see what BTune is doing.

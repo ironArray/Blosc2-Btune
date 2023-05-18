@@ -12,6 +12,7 @@ then
   git clone --depth=1 -b $TENSORFLOW_VERSION https://github.com/tensorflow/tensorflow.git tensorflow_src
 else
   echo "TensorFlow ($TENSORFLOW_VERSION) already cloned"
+  git pull
 fi
 
 # Checkout C-Blosc2 sources
@@ -19,11 +20,13 @@ BLOSC2_VERSION="main"
 if [ ! -d "c-blosc2" ]
 then
   git clone --depth=1 -b $BLOSC2_VERSION https://github.com/Blosc/c-blosc2.git c-blosc2
-fi
-if [ -d "c-blosc2/build" ]
-then
-  echo "C-Blosc2 ($BLOSC2_VERSION) already cloned"
-  rm -rf c-blosc2/build/*
-else
   mkdir c-blosc2/build
+else
+  echo "C-Blosc2 ($BLOSC2_VERSION) already cloned"
+  git pull
 fi
+
+# Compile static version of C-Blosc2
+cd c-blosc2/build
+cmake ..
+cmake --build . --target blosc2_static -j

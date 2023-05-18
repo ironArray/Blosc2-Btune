@@ -18,19 +18,6 @@ target_link_directories(blosc2_btune
 )
 target_link_directories(blosc2_btune PUBLIC ${BLOSC2_SRC_DIR}/build/blosc)
 
-# Compile C-Blosc2 statically
-add_custom_command(
-        TARGET blosc2_btune PRE_BUILD
-        COMMAND ${CMAKE_COMMAND} ..
-        WORKING_DIRECTORY "${BLOSC2_SRC_DIR}/build"
-)
-
-add_custom_command(
-        TARGET blosc2_btune PRE_BUILD
-        COMMAND ${CMAKE_COMMAND} --build . --target blosc2_static -j
-        WORKING_DIRECTORY "${BLOSC2_SRC_DIR}/build"
-)
-
 if (BUILD_STATIC_TFLITE)
     # This only works in Linux and Mac (at least for v2.11.0)
     add_subdirectory(
