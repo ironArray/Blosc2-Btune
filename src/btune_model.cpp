@@ -281,7 +281,7 @@ int btune_model_inference(
     metadata_t metadata;
     int error = read_metadata(metadata_fname, &metadata);
     if (error) {
-        fprintf(stderr, "Error: Failed to read %s\n", metadata_fname);
+        printf("WARNING: Metadata file not found in %s\n", metadata_fname);
         free(metadata_fname);
         return -1;
     }
@@ -290,7 +290,7 @@ int btune_model_inference(
     // Load model
     std::unique_ptr<tflite::FlatBufferModel> model = tflite::FlatBufferModel::BuildFromFile(model_fname);
     if (model == nullptr) {
-        fprintf(stderr, "Error: Failed to load %s\n", model_fname);
+        printf("WARNING: Model file not found in %s\n", model_fname);
         free(model_fname);
         return -1;
     }
