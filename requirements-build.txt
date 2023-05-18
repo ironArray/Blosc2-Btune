@@ -1,5 +1,3 @@
-#blosc2
-#flatbuffers
 build
 cmake
 scikit-build
