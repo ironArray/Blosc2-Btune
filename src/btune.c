@@ -466,15 +466,14 @@ void btune_next_blocksize(blosc2_context *context) {
 // Set the cparams_btune inside blosc2_context
 static void set_btune_cparams(blosc2_context * context, cparams_btune * cparams){
   context->compcode = cparams->compcode;
-
+  for(int i=0; i < BLOSC2_MAX_FILTERS; i++) {
+      context->filters[i] = 0;
+  }
+  context->filters[BLOSC2_MAX_FILTERS - 1] = cparams->filter;
+  // Bytedelta requires a shuffle before it
   if (cparams->filter == BLOSC_FILTER_BYTEDELTA) {
     context->filters[BLOSC2_MAX_FILTERS - 2] = BLOSC_SHUFFLE;
-    context->filters[BLOSC2_MAX_FILTERS - 1] = BLOSC_FILTER_BYTEDELTA;
     context->filters_meta[BLOSC2_MAX_FILTERS - 1] = context->schunk->typesize;
-  }
-  else {
-    context->filters[BLOSC2_MAX_FILTERS - 2] = 0;
-    context->filters[BLOSC2_MAX_FILTERS - 1] = cparams->filter;
   }
 
   context->splitmode = cparams->splitmode;
