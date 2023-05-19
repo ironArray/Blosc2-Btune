@@ -60,14 +60,12 @@ jobs:
         env:
           CIBW_BEFORE_BUILD: bash prebuild.sh
           CIBW_BUILD: 'cp38-* cp39-* cp310-* cp311-*'
+          CIBW_BUILD: 'cp38-* cp39-* cp310-* cp311-*'
           CIBW_SKIP: '*-manylinux*_i686 *-musllinux_* ${{ env.CIBW_SKIP}}'
           CIBW_ARCHS_LINUX: ${{ matrix.arch }}
           CIBW_TEST_REQUIRES: pytest blosc2
           # Test against the test suite in python-blosc2
-          BTUNE_BALANCE: .1
-          BLOSC_TRACE: 1
-          BTUNE_TRACE: 1
-          CIBW_TEST_COMMAND: python -m pytest -s {project}/python-blosc2/tests
+          CIBW_TEST_COMMAND: BTUNE_MODELS_DIR={project}/models_sample BTUNE_BALANCE=.1 BLOSC_TRACE=1 BTUNE_TRACE=1 python -m pytest -s {project}/python-blosc2/tests
           CIBW_BUILD_VERBOSITY: 1
           # ARM64 is not supported yet (probably we need to use aarch64 on src/CMakeLists.txt)
           # CIBW_ARCHS_MACOS: "x86_64 arm64"

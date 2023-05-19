@@ -1,8 +1,8 @@
 # Blosc2 BTune
 
-For using BTune you will first have to install its wheel.
-
 ## Install the wheel
+
+Start using BTune is easy: just install the binary wheel and go.
 
 ```shell
 pip install blosc2_btune
@@ -22,9 +22,9 @@ You can use `BTUNE_TRACE=1` to see what BTune is doing.
 ```shell
 PYTHONPATH=. BTUNE_BALANCE=0.5 BTUNE_TRACE=1  python examples/schunk_roundtrip.py 
 -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
-BTune version: 1.0.0.
-Perfomance Mode: COMP, Compression balance: 0.500000, Bandwidth: 20 GB/s.
-Behaviour: Waits - 0, Softs - 5, Hards - 11, Repeat Mode - STOP.
+BTune version: 1.0.0
+Perfomance Mode: COMP, Compression balance: 0.500000, Bandwidth: 20 GB/s
+Behaviour: Waits - 0, Softs - 5, Hards - 11, Repeat Mode - STOP
 |    Codec   | Filter | Split | C.Level | Blocksize | Shufflesize | C.Threads | D.Threads |   Score   |  C.Ratio   |   BTune State   | Readapt | Winner
 |       zstd |      0 |     1 |       3 |         0 |           4 |        16 |        16 |   0.00156 |      7.55x |    CODEC_FILTER |    HARD | W
 |       zstd |      0 |     0 |       3 |         0 |           4 |        16 |        16 |   0.00057 |      7.85x |    CODEC_FILTER |    HARD | W
@@ -52,15 +52,15 @@ Furthermore, the Blosc Development Team provides a service in which BTune can us
 a neural network model trained for your data so that it asserts better the combination
 of codecs and filters.
 To use it, once the Blosc Development Team has trained the model, you have to set the 
-`BTUNE_DATA_DIR` to the path were the model files are and BTune will use it right
+`BTUNE_MODELS_DIR` to the path were the model files are and BTune will use it right
 away!
 
 ```shell
-PYTHONPATH=. BTUNE_BALANCE=0.5 BTUNE_TRACE=1  BTUNE_DATA_DIR=./models_sample/ python examples/schunk_roundtrip.py
+PYTHONPATH=. BTUNE_BALANCE=0.5 BTUNE_TRACE=1  BTUNE_MODELS_DIR=./models_sample/ python examples/schunk_roundtrip.py
 -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
-BTune version: 1.0.0.
-Perfomance Mode: COMP, Compression balance: 0.500000, Bandwidth: 20 GB/s.
-Behaviour: Waits - 0, Softs - 5, Hards - 11, Repeat Mode - STOP.
+BTune version: 1.0.0
+Perfomance Mode: COMP, Compression balance: 0.500000, Bandwidth: 20 GB/s
+Behaviour: Waits - 0, Softs - 5, Hards - 11, Repeat Mode - STOP
 INFO: Model files found in the 'models_sample/' directory
 INFO: Created TensorFlow Lite XNNPACK delegate for CPU.
 TIME LOAD MO: 0.000584
@@ -96,4 +96,3 @@ You can also use BTune from a C program. Like in Python, you can activate it onl
 alternatively, you can set the `tune_id` from the compression parameters (aka `cparams`) to `BLOSC_BTUNE`. This will use the default
 BTune configuration, but the advantage of running BTune from C is that you can tune more parameters depending on what
 you are interested in (see `src/btune_example.c`) for more info.
-

@@ -262,9 +262,9 @@ int btune_model_inference(
     }
 
     // Read environement variables
-    const char * dirname = getenv("BTUNE_DATA_DIR");
+    const char * dirname = getenv("BTUNE_MODELS_DIR");
     if (dirname == NULL) {
-        BTUNE_DEBUG("Environment variable BTUNE_DATA_DIR is not defined");
+        BTUNE_DEBUG("Environment variable BTUNE_MODELS_DIR is not defined");
         return -1;
     }
 
