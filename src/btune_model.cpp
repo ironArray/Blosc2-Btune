@@ -108,17 +108,18 @@ static int get_best_codec_for_chunk(
     cparams.instr_codec = true;  // instrumented (cratio/cspeed)
     cparams.blocksize = schunk->blocksize;
     cparams.splitmode = BLOSC_NEVER_SPLIT;
+    cparams.nthreads = 1;
     cparams.filters[BLOSC2_MAX_FILTERS - 1] = BLOSC_NOFILTER;
-    cparams.nthreads = 8;
     blosc2_context *cctx = blosc2_create_cctx(cparams);
 
     // dparams
     blosc2_dparams dparams = BLOSC2_DPARAMS_DEFAULTS;
+    dparams.nthreads = 1;
     blosc2_context *dctx = blosc2_create_dctx(dparams);
 
     // Compress chunk, this will output the instrumentation data
-    int8_t *cdata = (int8_t *) malloc(size * sizeof(int8_t));
-    int csize = blosc2_compress_ctx(cctx, src, size, cdata, sizeof(cdata));
+    int8_t *cdata = (int8_t *) malloc(size * sizeof(int8_t) + BLOSC2_MAX_OVERHEAD);
+    int csize = blosc2_compress_ctx(cctx, src, size, cdata, size * sizeof(int8_t) + BLOSC2_MAX_OVERHEAD);
     if (csize < 0) {
         free(cdata);
         fprintf(stderr, "Error %d compressing chunk\n", csize);
@@ -126,7 +127,7 @@ static int get_best_codec_for_chunk(
     }
     // Decompress so we can read the instrumentation data
     int8_t *ddata = (int8_t *) malloc(size * sizeof(int8_t));
-    int dsize = blosc2_decompress_ctx(dctx, cdata, csize, ddata, size);
+    int dsize = blosc2_decompress_ctx(dctx, cdata, csize, ddata, size * sizeof(int8_t));
     free(cdata);
     BLOSC_ERROR(dsize);
     // >>> ENTROPY PROBER END

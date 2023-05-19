@@ -1,99 +1,98 @@
 # Blosc2 BTune
 
-For using BTune you will first have to create and install its wheel.
-
-**Note:** Remove flatbuffers package in your system (if installed).
-This could be incompatible wit the required version in tensorflow.
-Also, tensorflow comes with its own version, so this is not needed.
-
-## Create the wheel
-
-For Linux:
-
-```shell
-CIBW_BEFORE_BUILD="bash prebuild.sh" python -m cibuildwheel --output-dir dist --only 'cp311-manylinux_x86_64'
-```
-
-Please note that the prebuild.sh will be executed from inside the docker
-(handled by CIBuild).
-
-For Mac:
-
-```shell
-CIBW_BEFORE_BUILD="bash prebuild.sh" python -m cibuildwheel --output-dir dist --only 'cp311-macosx_x86_64'
-```
+For using BTune you will first have to install its wheel.
 
 ## Install the wheel
 
 ```shell
-pip install dist/blosc2_btune-*.whl --force-reinstall
+pip install blosc2_btune
 ```
 
-## Compile and run example
+## Using BTune from Python
 
-For Linux:
-
-```shell
-cd src  # avoid staying in the main package directory
-# Suppose that we have a local C-Blosc2 repo in c-blosc2.bck (to not collide with the docker one)
-gcc -o btune_example btune_example.c -L ../c-blosc2.bck/build/blosc -I ../c-blosc2.bck/include/ -lblosc2 -lm
-LD_LIBRARY_PATH=../c-blosc2.bck/build/blosc ./btune_example .../pressure.b2nd pressure-btune.b2nd
-Compression ratio: 3456.0 MB -> 662.0 MB (5.2x)
-Compression time: 17.3 s, 199.8 MB/s
-```
-
-For Mac:
+To make Blosc2 use BTune from Python, you will only need to set the `BTUNE_BALANCE`
+environment variable to any value between 0 (optimize only speed) and 1 (optimize only cratio).
 
 ```shell
-cd src  # avoid staying in the main package directory
-gcc -o btune_example btune_example.c -L ../c-blosc2/build/blosc -I ../c-blosc2/include/ -lblosc2 -lm
-# We don't need DYLD_LIBRARY_PATH here, as we are linking against the static C-Blosc2 library
-./btune_example .../pressure.b2nd pressure-btune.b2nd
+BTUNE_BALANCE=0.5 python python-blosc2/examples/schunk.py
 ```
 
 You can use `BTUNE_TRACE=1` to see what BTune is doing.
 
 ```shell
-BTUNE_BALANCE=0.1 BTUNE_TRACE=1 ./btune_example .../pressure.b2nd pressure-btune.b2nd
+PYTHONPATH=. BTUNE_BALANCE=0.5 BTUNE_TRACE=1  python examples/schunk_roundtrip.py 
 -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 BTune version: 1.0.0.
-Perfomance Mode: BALANCED, Compression Mode: BALANCED, Bandwidth: 20 GB/s.
-Behaviour: Waits - 0, Softs - 5, Hards - 1, Repeat Mode - STOP.
+Perfomance Mode: COMP, Compression balance: 0.500000, Bandwidth: 20 GB/s.
+Behaviour: Waits - 0, Softs - 5, Hards - 11, Repeat Mode - STOP.
 |    Codec   | Filter | Split | C.Level | Blocksize | Shufflesize | C.Threads | D.Threads |   Score   |  C.Ratio   |   BTune State   | Readapt | Winner
-|        lz4 |      0 |     1 |       9 |         8 |           8 |         1 |         1 |    0.0066 |      2.19x |    CODEC_FILTER |    HARD | W
-|        lz4 |      0 |     0 |       9 |         8 |           8 |         1 |         1 |   0.00594 |      2.61x |    CODEC_FILTER |    HARD | W
-|        lz4 |      1 |     1 |       9 |         8 |           8 |         1 |         1 |   0.00387 |      3.65x |    CODEC_FILTER |    HARD | W
-|        lz4 |      1 |     0 |       9 |         8 |           8 |         1 |         1 |   0.00466 |      3.81x |    CODEC_FILTER |    HARD | -
-|        lz4 |      2 |     1 |       9 |         8 |           8 |         1 |         1 |   0.00293 |      4.85x |    CODEC_FILTER |    HARD | W
-|        lz4 |      2 |     0 |       9 |         8 |           8 |         1 |         1 |   0.00259 |      5.16x |    CODEC_FILTER |    HARD | W
-|    blosclz |      0 |     1 |       9 |         8 |           8 |         1 |         1 |    0.0196 |      2.68x |    CODEC_FILTER |    HARD | -
-|    blosclz |      0 |     0 |       9 |         8 |           8 |         1 |         1 |    0.0112 |      3.13x |    CODEC_FILTER |    HARD | -
-|    blosclz |      1 |     1 |       9 |         8 |           8 |         1 |         1 |    0.0106 |       3.3x |    CODEC_FILTER |    HARD | -
-|    blosclz |      1 |     0 |       9 |         8 |           8 |         1 |         1 |    0.0119 |      3.49x |    CODEC_FILTER |    HARD | -
-|    blosclz |      2 |     1 |       9 |         8 |           8 |         1 |         1 |   0.00948 |      4.33x |    CODEC_FILTER |    HARD | -
-|    blosclz |      2 |     0 |       9 |         8 |           8 |         1 |         1 |   0.00225 |      18.2x |    CODEC_FILTER |    HARD | W
-|    blosclz |      2 |     0 |       7 |         8 |           8 |         1 |         1 |   0.00612 |      4.44x |          CLEVEL |    HARD | -
-|    blosclz |      2 |     0 |       8 |         8 |           8 |         1 |         1 |   0.00628 |      4.42x |          CLEVEL |    SOFT | -
-|    blosclz |      2 |     0 |       8 |         8 |           8 |         1 |         1 |   0.00579 |      4.28x |          CLEVEL |    SOFT | -
-|    blosclz |      2 |     0 |       8 |         8 |           8 |         1 |         1 |   0.00579 |      4.13x |          CLEVEL |    SOFT | -
-|    blosclz |      2 |     0 |       8 |         8 |           8 |         1 |         1 |   0.00619 |         4x |          CLEVEL |    SOFT | -
-|    blosclz |      2 |     0 |       8 |         8 |           8 |         1 |         1 |   0.00701 |      4.08x |          CLEVEL |    SOFT | -
-|        lz4 |      0 |     1 |       9 |         8 |           8 |         1 |         1 |   0.00787 |      1.45x |    CODEC_FILTER |    HARD | -
-|        lz4 |      0 |     0 |       9 |         8 |           8 |         1 |         1 |   0.00657 |      1.51x |    CODEC_FILTER |    HARD | -
-|        lz4 |      1 |     1 |       9 |         8 |           8 |         1 |         1 |   0.00283 |      2.61x |    CODEC_FILTER |    HARD | -
-|        lz4 |      1 |     0 |       9 |         8 |           8 |         1 |         1 |   0.00338 |      2.76x |    CODEC_FILTER |    HARD | -
-|        lz4 |      2 |     1 |       9 |         8 |           8 |         1 |         1 |    0.0024 |      4.14x |    CODEC_FILTER |    HARD | -
-|        lz4 |      2 |     0 |       9 |         8 |           8 |         1 |         1 |   0.00101 |      19.9x |    CODEC_FILTER |    HARD | W
-|    blosclz |      0 |     1 |       9 |         8 |           8 |         1 |         1 |    0.0223 |      1.57x |    CODEC_FILTER |    HARD | -
-|    blosclz |      0 |     0 |       9 |         8 |           8 |         1 |         1 |    0.0138 |      1.95x |    CODEC_FILTER |    HARD | -
-|    blosclz |      1 |     1 |       9 |         8 |           8 |         1 |         1 |   0.00919 |      2.54x |    CODEC_FILTER |    HARD | -
-|    blosclz |      1 |     0 |       9 |         8 |           8 |         1 |         1 |    0.0111 |       2.5x |    CODEC_FILTER |    HARD | -
-|    blosclz |      2 |     1 |       9 |         8 |           8 |         1 |         1 |    0.0087 |      3.97x |    CODEC_FILTER |    HARD | -
-|    blosclz |      2 |     0 |       9 |         8 |           8 |         1 |         1 |   0.00546 |      5.22x |    CODEC_FILTER |    HARD | -
-|        lz4 |      2 |     0 |       9 |         8 |           8 |         1 |         1 |   0.00224 |      4.98x |          CLEVEL |    HARD | -
-|        lz4 |      2 |     0 |       8 |         8 |           8 |         1 |         1 |    0.0025 |      3.83x |          CLEVEL |    HARD | -
-Compression ratio: 3456.0 MB -> 662.0 MB (5.2x)
-Compression time: 17.3 s, 199.8 MB/s
+|       zstd |      0 |     1 |       3 |         0 |           4 |        16 |        16 |   0.00156 |      7.55x |    CODEC_FILTER |    HARD | W
+|       zstd |      0 |     0 |       3 |         0 |           4 |        16 |        16 |   0.00057 |      7.85x |    CODEC_FILTER |    HARD | W
+|       zstd |      1 |     1 |       3 |         0 |           4 |        16 |        16 |  0.000115 |       209x |    CODEC_FILTER |    HARD | W
+|       zstd |      1 |     0 |       3 |         0 |           4 |        16 |        16 |  0.000167 |       218x |    CODEC_FILTER |    HARD | W
+|       zstd |      2 |     1 |       3 |         0 |           4 |        16 |        16 |  0.000134 |       290x |    CODEC_FILTER |    HARD | W
+|       zstd |      2 |     0 |       3 |         0 |           4 |        16 |        16 |  0.000239 |       199x |    CODEC_FILTER |    HARD | -
+|       zlib |      0 |     1 |       3 |         0 |           4 |        16 |        16 |   0.00107 |      5.27x |    CODEC_FILTER |    HARD | -
+|       zlib |      0 |     0 |       3 |         0 |           4 |        16 |        16 |   0.00133 |       5.3x |    CODEC_FILTER |    HARD | -
+|       zlib |      1 |     1 |       3 |         0 |           4 |        16 |        16 |   0.00114 |       111x |    CODEC_FILTER |    HARD | -
+|       zlib |      1 |     0 |       3 |         0 |           4 |        16 |        16 |  0.000902 |       101x |    CODEC_FILTER |    HARD | -
+|       zlib |      2 |     1 |       3 |         0 |           4 |        16 |        16 |   0.00108 |       191x |    CODEC_FILTER |    HARD | -
+|       zlib |      2 |     0 |       3 |         0 |           4 |        16 |        16 |  0.000967 |       186x |    CODEC_FILTER |    HARD | -
+|       zstd |      2 |     1 |       3 |         0 |           4 |        16 |        16 |  0.000307 |       285x |    THREADS_COMP |    HARD | -
+|       zstd |      2 |     1 |       3 |         0 |           4 |        15 |        16 |  0.000902 |       198x |    THREADS_COMP |    HARD | -
+|       zstd |      2 |     1 |       6 |         0 |           4 |        16 |        16 |  0.000637 |       323x |          CLEVEL |    HARD | W
+|       zstd |      2 |     1 |       5 |         0 |           4 |        16 |        16 |   0.00037 |       362x |          CLEVEL |    HARD | W
+|       zstd |      2 |     1 |       3 |         0 |           4 |        16 |        16 |  0.000197 |       290x |          CLEVEL |    HARD | -
+|       zstd |      2 |     1 |       2 |         0 |           4 |        16 |        16 |  0.000236 |       197x |          CLEVEL |    SOFT | -
+|       zstd |      2 |     1 |       3 |         0 |           4 |        16 |        16 |  0.000261 |       287x |          CLEVEL |    SOFT | -
+|       zstd |      2 |     1 |       4 |         0 |           4 |        16 |        16 |  0.000267 |       286x |          CLEVEL |    SOFT | -
 ```
 
-That's all folks!
+Furthermore, the Blosc Development Team provides a service in which BTune can use
+a neural network model trained for your data so that it asserts better the combination
+of codecs and filters.
+To use it, once the Blosc Development Team has trained the model, you have to set the 
+`BTUNE_DATA_DIR` to the path were the model files are and BTune will use it right
+away!
+
+```shell
+PYTHONPATH=. BTUNE_BALANCE=0.5 BTUNE_TRACE=1  BTUNE_DATA_DIR=./models_sample/ python examples/schunk_roundtrip.py
+-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+BTune version: 1.0.0.
+Perfomance Mode: COMP, Compression balance: 0.500000, Bandwidth: 20 GB/s.
+Behaviour: Waits - 0, Softs - 5, Hards - 11, Repeat Mode - STOP.
+INFO: Model files found in the 'models_sample/' directory
+INFO: Created TensorFlow Lite XNNPACK delegate for CPU.
+TIME LOAD MO: 0.000584
+TIME ENTROPY: 0.000402
+TIME INFEREN: 0.000022
+|    Codec   | Filter | Split | C.Level | Blocksize | Shufflesize | C.Threads | D.Threads |   Score   |  C.Ratio   |   BTune State   | Readapt | Winner
+|        lz4 |     34 |     1 |       5 |         0 |           4 |        16 |        16 |  0.000565 |       133x |    CODEC_FILTER |    HARD | W
+|        lz4 |     34 |     0 |       5 |         0 |           4 |        16 |        16 |  0.000203 |       110x |    CODEC_FILTER |    HARD | -
+|        lz4 |     34 |     1 |       5 |         0 |           4 |        16 |        16 |  0.000148 |       122x |    THREADS_COMP |    HARD | W
+|        lz4 |     34 |     1 |       5 |         0 |           4 |        16 |        16 |  9.73e-05 |       122x |          CLEVEL |    HARD | W
+|        lz4 |     34 |     1 |       4 |         0 |           4 |        16 |        16 |  0.000165 |       123x |          CLEVEL |    SOFT | W
+|        lz4 |     34 |     1 |       5 |         0 |           4 |        16 |        16 |  4.39e-05 |       123x |          CLEVEL |    SOFT | W
+|        lz4 |     34 |     1 |       6 |         0 |           4 |        16 |        16 |  4.73e-05 |       124x |          CLEVEL |    SOFT | W
+|        lz4 |     34 |     1 |       5 |         0 |           4 |        16 |        16 |  4.06e-05 |       124x |          CLEVEL |    SOFT | W
+|        lz4 |     34 |     1 |       4 |         0 |           4 |        16 |        16 |  0.000187 |       125x |          CLEVEL |    SOFT | W
+|        lz4 |     34 |     1 |       5 |         0 |           4 |        16 |        16 |   4.4e-05 |       125x |          CLEVEL |    SOFT | -
+|        lz4 |     34 |     1 |       4 |         0 |           4 |        16 |        16 |  0.000179 |       125x |          CLEVEL |    SOFT | W
+|        lz4 |     34 |     1 |       5 |         0 |           4 |        16 |        16 |  5.46e-05 |       124x |          CLEVEL |    SOFT | -
+|        lz4 |     34 |     1 |       4 |         0 |           4 |        16 |        16 |  4.09e-05 |       124x |          CLEVEL |    SOFT | -
+|        lz4 |     34 |     1 |       4 |         0 |           4 |        16 |        16 |  4.38e-05 |       124x |    CODEC_FILTER |    HARD | -
+|        lz4 |     34 |     0 |       4 |         0 |           4 |        16 |        16 |  4.35e-05 |       111x |    CODEC_FILTER |    HARD | -
+|        lz4 |     34 |     1 |       4 |         0 |           4 |        16 |        16 |  4.23e-05 |       123x |    THREADS_COMP |    HARD | W
+|        lz4 |     34 |     1 |       6 |         0 |           4 |        16 |        16 |  4.52e-05 |       123x |          CLEVEL |    HARD | W
+|        lz4 |     34 |     1 |       5 |         0 |           4 |        16 |        16 |  3.88e-05 |       122x |          CLEVEL |    SOFT | -
+|        lz4 |     34 |     1 |       6 |         0 |           4 |        16 |        16 |  3.76e-05 |       122x |          CLEVEL |    SOFT | -
+|        lz4 |     34 |     1 |       5 |         0 |           4 |        16 |        16 |  3.84e-05 |       121x |          CLEVEL |    SOFT | -
+```
+As you can see, you can get much better performance using the trained models.
+
+## Using BTune from C
+
+You can also use BTune from a C program. Like in Python, you can activate it only by using `BTUNE_BALANCE`. Or 
+alternatively, you can set the `tune_id` from the compression parameters (aka `cparams`) to `BLOSC_BTUNE`. This will use the default
+BTune configuration, but the advantage of running BTune from C is that you can tune more parameters depending on what
+you are interested in (see `src/btune_example.c`) for more info.
