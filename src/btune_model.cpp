@@ -133,7 +133,7 @@ static int get_best_codec_for_chunk(
     // >>> ENTROPY PROBER END
     if (trace) {
         blosc_set_timestamp(&current);
-        printf("TIME ENTROPY: %f\n", (float) blosc_elapsed_secs(last, current));
+        printf("INFO: time entropy: %f\n", (float) blosc_elapsed_secs(last, current));
         blosc_set_timestamp(&last);
     }
 
@@ -173,7 +173,7 @@ static int get_best_codec_for_chunk(
     // >>> INFERENCE START
     if (trace) {
         blosc_set_timestamp(&current);
-        printf("TIME INFEREN: %f\n", (float) blosc_elapsed_secs(last, current));
+        printf("INFO: time inference: %f\n", (float) blosc_elapsed_secs(last, current));
     }
 
     return best;
@@ -321,7 +321,7 @@ int btune_model_inference(
 
     if (trace) {
         blosc_set_timestamp(&current);
-        printf("TIME LOAD MO: %f\n", (float) blosc_elapsed_secs(last, current));
+        printf("INFO: time load model: %f\n", (float) blosc_elapsed_secs(last, current));
     }
 
     const void *src = (const void*)ctx->src;
