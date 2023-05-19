@@ -31,30 +31,20 @@ pip install wheelhouse/blosc2_btune-*.whl --force-reinstall
 
 ## Compile and run example
 
-For Linux:
+For Linux and Mac:
 
 ```shell
 cd src  # avoid staying in the main package directory
-# Suppose that we have a local C-Blosc2 repo in c-blosc2.bck (to not collide with the docker one)
-gcc -o btune_example btune_example.c -L ../c-blosc2.bck/build/blosc -I ../c-blosc2.bck/include/ -lblosc2 -lm
-LD_LIBRARY_PATH=../c-blosc2.bck/build/blosc ./btune_example .../pressure.b2nd pressure-btune.b2nd
+gcc -o btune_example btune_example.c -lblosc2 -lm
+./btune_example .../pressure.b2nd pressure-btune.b2nd
 Compression ratio: 3456.0 MB -> 662.0 MB (5.2x)
 Compression time: 17.3 s, 199.8 MB/s
 ```
 
-For Mac:
+You can use `BTUNE_TRACE=1`, `BTUNE_BALANCE=X` and `BTUNE_MODELS_DIR` to see how BTune is doing.
 
 ```shell
-cd src  # avoid staying in the main package directory
-gcc -o btune_example btune_example.c -L ../c-blosc2/build/blosc -I ../c-blosc2/include/ -lblosc2 -lm
-# We don't need DYLD_LIBRARY_PATH here, as we are linking against the static C-Blosc2 library
-./btune_example .../pressure.b2nd pressure-btune.b2nd
-```
-
-You can use `BTUNE_TRACE=1` to see what BTune is doing.
-
-```shell
-BTUNE_BALANCE=0.1 BTUNE_TRACE=1 ./btune_example .../pressure.b2nd pressure-btune.b2nd
+BTUNE_BALANCE=0.1 BTUNE_TRACE=1 BTUNE_MODELS_DIR=../models_sample ./btune_example .../pressure.b2nd pressure-btune.b2nd
 -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 BTune version: 1.0.0.
 Perfomance Mode: BALANCED, Compression Mode: BALANCED, Bandwidth: 20 GB/s.

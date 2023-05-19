@@ -1,8 +1,18 @@
 # Blosc2 BTune
 
-## Install the wheel
+BTune is a dynamic plugin for Blosc2 that helps you find the optimal combination of compression parameters by training a neural network on your most representative datasets.
 
-Start using BTune is easy: just install the binary wheel and go.
+By default, this software uses a brute force approach (a genetic algorithm) to test different combinations of compression parameters that meet your requirements for both compression ratio and speed for every chunk in the dataset. It assigns a score to each combination. After a number of iterations, the software stops and uses the best score (minimal value) found for the rest of the dataset. For a more graphical explanation, visit https://btune.blosc.org.
+
+The process of finding optimal compression parameters in Blosc2 can be slow. Due to the large number of combinations of compression parameters (codec, compression level, filter, split mode, number of threads, etc.), a significant amount of trial and error may be required to find the best combinations. However, the good news is that this process can be significantly accelerated by training a neural network on your own datasets.
+
+To start the training process, provide your datasets (several tens or hundreds of gigabytes, depending on your requirements) to the Blosc Development Team. We will then perform the training and provide neural network models tailored to your needs, along with general tuning advice for Blosc2. In exchange, we request monetary contributions to the project.
+
+If interested, please contact the Blosc Development Team at contact@blosc.org.
+
+## Install the BTune wheel
+
+BTune uses a Python wheel for installation, but it can be used from any application that uses C-Blosc2, whether it is in C, Python, or any other language. Currently, only Linux and Mac installers are supported.
 
 ```shell
 pip install blosc2_btune
@@ -10,8 +20,7 @@ pip install blosc2_btune
 
 ## Using BTune from Python
 
-To make Blosc2 use BTune from Python, you will only need to set the `BTUNE_BALANCE`
-environment variable to any value between 0 (optimize only speed) and 1 (optimize only cratio).
+To use BTune with Blosc2 in Python, set the BTUNE_BALANCE environment variable to a floating-point number between 0 (for optimizing speed) and 1 (for optimizing compression ratio).
 
 ```shell
 BTUNE_BALANCE=0.5 python python-blosc2/examples/schunk.py
@@ -48,12 +57,7 @@ Behaviour: Waits - 0, Softs - 5, Hards - 11, Repeat Mode - STOP
 |       zstd |      2 |     1 |       4 |         0 |           4 |        16 |        16 |  0.000267 |       286x |          CLEVEL |    SOFT | -
 ```
 
-Furthermore, the Blosc Development Team provides a service in which BTune can use
-a neural network model trained for your data so that it asserts better the combination
-of codecs and filters.
-To use it, once the Blosc Development Team has trained the model, you have to set the 
-`BTUNE_MODELS_DIR` to the path were the model files are and BTune will use it right
-away!
+Additionally, the Blosc Development Team offers a service in which BTune can utilize a neural network model trained specifically for your data to better determine the optimal combination of codecs and filters. To use this service, once the Blosc Development Team has trained the model, you need to set the `BTUNE_MODELS_DIR` to the directory containing the model files. BTune will then use the trained model automatically.
 
 ```shell
 PYTHONPATH=. BTUNE_BALANCE=0.5 BTUNE_TRACE=1  BTUNE_MODELS_DIR=./models_sample/ python examples/schunk_roundtrip.py
@@ -88,14 +92,12 @@ TIME INFEREN: 0.000022
 |        lz4 |     34 |     1 |       6 |         0 |           4 |        16 |        16 |  3.76e-05 |       122x |          CLEVEL |    SOFT | -
 |        lz4 |     34 |     1 |       5 |         0 |           4 |        16 |        16 |  3.84e-05 |       121x |          CLEVEL |    SOFT | -
 ```
-As you can see, you can get much better performance using the trained models.
+
+Using trained models leads to much better performance scores, as demonstrated here by a balance between compression speed and compression ratio. Furthermore, the process of finding the best combination is significantly faster with trained models.
 
 ## Using BTune from C
 
-You can also use BTune from a C program. Like in Python, you can activate it only by using `BTUNE_BALANCE`. Or 
-alternatively, you can set the `tuner_id` from the compression parameters (aka `cparams`) to `BLOSC_BTUNE`. This will use the default
-BTune configuration, but the advantage of running BTune from C is that you can tune more parameters depending on what
-you are interested:
+You can also use BTune from a C program. Similar to Python, you can activate it by using `BTUNE_BALANCE`, or alternatively, you can set the `tuner_id` in the compression parameters (aka `cparams`) to `BLOSC_BTUNE`. This will use the default BTune configuration, but the advantage of running BTune from C is that you can tune more parameters depending on what you are interested in.
 
 ```
     // compression params
