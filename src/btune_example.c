@@ -19,7 +19,6 @@ static int compress(const char* in_fname, const char* out_fname) {
 
     // compression params
     blosc2_cparams cparams = BLOSC2_CPARAMS_DEFAULTS;
-    cparams.blocksize = BLOCKSIZE; // If unset there's a division by zero crash
     cparams.nthreads = 16; // Btune may lower this
 
     // btune

@@ -93,6 +93,39 @@ As you can see, you can get much better performance using the trained models.
 ## Using BTune from C
 
 You can also use BTune from a C program. Like in Python, you can activate it only by using `BTUNE_BALANCE`. Or 
-alternatively, you can set the `tune_id` from the compression parameters (aka `cparams`) to `BLOSC_BTUNE`. This will use the default
+alternatively, you can set the `tuner_id` from the compression parameters (aka `cparams`) to `BLOSC_BTUNE`. This will use the default
 BTune configuration, but the advantage of running BTune from C is that you can tune more parameters depending on what
-you are interested in (see `src/btune_example.c`) for more info.
+you are interested:
+
+```
+    // compression params
+    blosc2_cparams cparams = BLOSC2_CPARAMS_DEFAULTS;
+    cparams.nthreads = 16; // Btune may lower this
+    cparams.tuner_id = BLOSC_BTUNE;
+    
+    // BTune config parameters
+    btune_config btune_config = BTUNE_CONFIG_DEFAULTS;
+    btune_config.perf_mode = BTUNE_PERF_COMP; // You can choose BTUNE_PERF_COMP, BTUNE_PERF_DECOMP or BTUNE_PERF_BALANCED
+    btune_config.comp_balance = .5; // Equivalent to BTUNE_BALANCE
+    btune_config.behaviour.nwaits_before_readapt = 1;       // Number of waits before a readapt
+    btune_config.behaviour.nsofts_before_hard = 3;          // Number of soft readapts before a hard readapt
+    btune_config.behaviour.nhards_before_stop = 10;         // Number of hard readapts before stoping
+    btune_config.behaviour.repeat_mode = BTUNE_REPEAT_ALL;  // Repeat all the initial readaptions (BTUNE_REPEAT_ALL), 
+                                                            // only soft readaptions (BTUNE_REPEAT_SOFT)
+                                                            // or stop improving (BTUNE_STOP)
+    // Set the personalized BTune configuration
+    cparams.tuner_params = &btune_config;
+
+    // Create super chunk
+    blosc2_dparams dparams = BLOSC2_DPARAMS_DEFAULTS;
+    dparams.nthreads = 1;
+    blosc2_storage storage = {
+        .cparams=&cparams,
+        .dparams=&dparams,
+        .contiguous=true,
+        .urlpath=(char*)out_fname
+    };
+    blosc2_schunk* schunk_out = blosc2_schunk_new(&storage);
+```
+
+To see the full example see `src/btune_example.c`.
