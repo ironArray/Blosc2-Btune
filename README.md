@@ -11,7 +11,7 @@ Also, tensorflow comes with its own version, so this is not needed.
 For Linux:
 
 ```shell
-CIBW_BEFORE_BUILD="bash prebuild.sh" python -m cibuildwheel --output-dir dist --only 'cp311-manylinux_x86_64'
+CIBW_BEFORE_BUILD="bash prebuild.sh" python -m cibuildwheel --only 'cp311-manylinux_x86_64'
 ```
 
 Please note that the prebuild.sh will be executed from inside the docker
@@ -20,13 +20,13 @@ Please note that the prebuild.sh will be executed from inside the docker
 For Mac:
 
 ```shell
-CIBW_BEFORE_BUILD="bash prebuild.sh" python -m cibuildwheel --output-dir dist --only 'cp311-macosx_x86_64'
+CIBW_BEFORE_BUILD="bash prebuild.sh" python -m cibuildwheel --only 'cp311-macosx_x86_64'
 ```
 
 ## Install the wheel
 
 ```shell
-pip install dist/blosc2_btune-*.whl --force-reinstall
+pip install wheelhouse/blosc2_btune-*.whl --force-reinstall
 ```
 
 ## Compile and run example

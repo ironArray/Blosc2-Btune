@@ -32,18 +32,13 @@ cmake ..
 cmake --build . --target blosc2_static -j
 cd -
 
-# Still need to decide how to test the wheels
-# Checkout Python-Blosc2 sources (just for testing the BTune wheel)
-#PYTHON_BLOSC2_VERSION="main"
-#if [ ! -d "python-blosc2" ]
-#then
-#  git clone --recursive --depth=1 -b $PYTHON_BLOSC2_VERSION https://github.com/Blosc/python-blosc2.git python-blosc2
-#else
-#  echo "Python-Blosc2 ($PYTHON_BLOSC2_VERSION) already cloned"
-#  git pull
-#fi
-#
-## Compile Python-Blosc2 extension
-#cd python-blosc2
-#python setup.py build_ext -i -j4
-#cd -
+# Checkout Python-Blosc2 sources, just for testing the BTune wheel
+# We will use the regular python-blosc2 wheel in combination with BTUNE_BALANCE
+PYTHON_BLOSC2_VERSION="main"
+if [ ! -d "python-blosc2" ]
+then
+  git clone --recursive --depth=1 -b $PYTHON_BLOSC2_VERSION https://github.com/Blosc/python-blosc2.git python-blosc2
+else
+  echo "Python-Blosc2 ($PYTHON_BLOSC2_VERSION) already cloned"
+  git pull
+fi
