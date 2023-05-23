@@ -214,3 +214,39 @@ void register_entropy_codec(blosc2_codec *codec) {
     codec->decoder = NULL;
     blosc2_register_codec(codec);
 }
+
+
+// Get entropy speed for an arange chunk
+float get_arange_speed(blosc2_context *cctx, blosc2_context* dctx, int32_t chunksize) {
+    // Build artificial arange chunk
+    uint8_t *arange_chunk = (uint8_t *) malloc(chunksize);
+    u_int64_t *chunk_p = (uint64_t *) arange_chunk;
+    int niters = chunksize / 8;
+    for(uint64_t i = 0; i < niters; i++) {
+        chunk_p[i] = i;
+    }
+    if (chunksize % 8 != 0) {
+        memset(chunk_p + niters, 0, chunksize % 8);
+    }
+    // Apply entropy
+    uint8_t *cdata = (uint8_t *) malloc(chunksize + BLOSC2_MAX_OVERHEAD);
+    int csize = blosc2_compress_ctx(cctx, arange_chunk, chunksize, cdata, chunksize + BLOSC2_MAX_OVERHEAD);
+    free(arange_chunk);
+    if (csize < 0) {
+        free(cdata);
+        fprintf(stderr, "Error %d compressing arange chunk\n", csize);
+        return csize;
+    }
+    // Read data
+    uint8_t *ddata = (uint8_t *) malloc(chunksize);
+    int dsize = blosc2_decompress_ctx(dctx, cdata, csize, ddata, chunksize);
+    free(cdata);
+    BLOSC_ERROR(dsize);
+
+    blosc2_instr *instr_data = (blosc2_instr *)ddata;
+    float ctime = 1.f / instr_data->cspeed;
+    float ftime = 1.f / instr_data->filter_speed;
+    free(ddata);
+
+    return  1.f / (ctime + ftime);
+}

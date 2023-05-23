@@ -11,8 +11,6 @@
 #include "json.h"
 
 
-#define NCODECS 15
-
 typedef struct {
     float mean;
     float std;
@@ -29,6 +27,7 @@ typedef struct {
     norm_t cratio;
     norm_t cspeed;
     category_t *categories;
+    int ncategories;
 } metadata_t;
 
 
@@ -43,14 +42,14 @@ static int get_best_codec(
     tflite::Interpreter *interpreter,
     float cratio,
     float cspeed,
-    float comp_balance
-)
-{
+    float comp_balance,
+    int ncategories
+) {
     // Fill input tensor
     float* input = interpreter->typed_input_tensor<float>(0);
     *input = cratio;
-    *(input+1) = cspeed;
-    *(input+2) = comp_balance;
+    *(input + 1) = cspeed;
+    *(input + 2) = comp_balance;
 
     // Run inference
     if (interpreter->Invoke() != kTfLiteOk) {
@@ -68,7 +67,7 @@ static int get_best_codec(
 
     int best = 0;
     float max = -1;
-    for (int i = 0; i < NCODECS; i++) {
+    for (int i = 0; i < ncategories; i++) {
         float value = *output;
         output++;
         if (value > max) {
@@ -87,14 +86,14 @@ static float normalize(float value, float mean, float std)
     return value;
 }
 
+
 static int get_best_codec_for_chunk(
     blosc2_schunk *schunk,
     const void *src,
     size_t size,
     tflite::Interpreter *interpreter,
     metadata_t *metadata
-)
-{
+) {
     char * trace = getenv("BTUNE_TRACE");
     blosc_timestamp_t last, current;
     if (trace) {
@@ -106,6 +105,7 @@ static int get_best_codec_for_chunk(
     blosc2_cparams cparams = BLOSC2_CPARAMS_DEFAULTS;
     cparams.compcode = ENTROPY_PROBE_ID;
     cparams.instr_codec = true;  // instrumented (cratio/cspeed)
+    cparams.typesize = schunk->typesize;
     cparams.blocksize = schunk->blocksize;
     cparams.splitmode = BLOSC_NEVER_SPLIT;
     cparams.nthreads = 1;
@@ -117,17 +117,19 @@ static int get_best_codec_for_chunk(
     dparams.nthreads = 1;
     blosc2_context *dctx = blosc2_create_dctx(dparams);
 
+    // Compress arange chunk to get a machine relative speed measure
+    float arange_speed = get_arange_speed(cctx, dctx, size);
     // Compress chunk, this will output the instrumentation data
-    int8_t *cdata = (int8_t *) malloc(size * sizeof(int8_t) + BLOSC2_MAX_OVERHEAD);
-    int csize = blosc2_compress_ctx(cctx, src, size, cdata, size * sizeof(int8_t) + BLOSC2_MAX_OVERHEAD);
+    uint8_t *cdata = (uint8_t *) malloc(size  + BLOSC2_MAX_OVERHEAD);
+    int csize = blosc2_compress_ctx(cctx, src, size, cdata, size + BLOSC2_MAX_OVERHEAD);
     if (csize < 0) {
         free(cdata);
         fprintf(stderr, "Error %d compressing chunk\n", csize);
         return csize;
     }
     // Decompress so we can read the instrumentation data
-    int8_t *ddata = (int8_t *) malloc(size * sizeof(int8_t));
-    int dsize = blosc2_decompress_ctx(dctx, cdata, csize, ddata, size * sizeof(int8_t));
+    uint8_t *ddata = (uint8_t *) malloc(size);
+    int dsize = blosc2_decompress_ctx(dctx, cdata, csize, ddata, size);
     free(cdata);
     BLOSC_ERROR(dsize);
     // >>> ENTROPY PROBER END
@@ -144,33 +146,33 @@ static int get_best_codec_for_chunk(
     float cspeed_std = metadata->cspeed.std;
     btune_struct * btune = (btune_struct *)schunk->storage->cparams->tuner_params;
 
-    // Read the cratio/cspeed for every block
-    int codecs[NCODECS] = {0};
+    // Read the cratio/cspeed for every block and compute mean
     int nblocks = dsize / (int)sizeof(blosc2_instr);
     blosc2_instr *instr_data = (blosc2_instr *)ddata;
+
+    float cratio = 0;
+    float rel_speed = 0;
+    bool special_val = instr_data->flags[0];
     for (int i = 0; i < nblocks; i++) {
-        // Normalize
-        float cratio = normalize(instr_data->cratio, cratio_mean, cratio_std);
-        float cspeed = normalize(instr_data->cspeed, cspeed_mean, cspeed_std);
+	if (!special_val) {
+	    cratio += instr_data->cratio;
+       	    float ctime = 1.f / instr_data->cspeed;
+            float ftime = 1.f / instr_data->filter_speed;
+            rel_speed += 1.f / (ctime + ftime) / arange_speed;
+	}
         instr_data++;
-
-        // Run inference
-      int best = get_best_codec(interpreter, cratio, cspeed, btune->config.comp_balance);
-        codecs[best]++;
+	special_val = instr_data->flags[0];
     }
+    cratio /= nblocks;
+    rel_speed /= nblocks;
+    // Normalize
+    float cratio_norm = normalize(cratio, cratio_mean, cratio_std);
+    float cspeed_norm = normalize(rel_speed, cspeed_mean, cspeed_std);
+    // Run inference
+    int best = get_best_codec(interpreter, cratio_norm, cspeed_norm, btune->config.comp_balance, metadata->ncategories);
     free(ddata);
-
-    // The best codec for the chunk is the codec that wins for most blocks
-    int best = -1;
-    int max = 0;
-    for (int i = 0; i < NCODECS; i++) {
-        int value = codecs[i];
-        if (value > max) {
-            max = value;
-            best = i;
-        }
-    }
-    // >>> INFERENCE START
+    
+    // >>> INFERENCE END
     if (trace) {
         blosc_set_timestamp(&current);
         printf("INFO: time inference: %f\n", (float) blosc_elapsed_secs(last, current));
@@ -220,6 +222,7 @@ static int read_metadata(const char *fname, metadata_t *metadata)
             read_dict(value, &metadata->cspeed);
         }
         else if (strcmp(name, "categories") == 0) {
+	    metadata->ncategories = value->u.array.length;
             metadata->categories = (category_t*)malloc(sizeof(category_t) * value->u.array.length);
             for (int i = 0; i < value->u.array.length; i++) {
                 json_value *cat = value->u.array.values[i];
