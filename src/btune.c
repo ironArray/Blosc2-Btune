@@ -348,7 +348,7 @@ void btune_init(void *tuner_params, blosc2_context * cctx, blosc2_context * dctx
     char bandwidth_str[12];
     bandwidth_to_str(bandwidth_str, btune->config.bandwidth);
     printf("BTune version: %s\n"
-           "Perfomance Mode: %s, Compression balance: %f, Bandwidth: %s\n"
+           "Performance Mode: %s, Compression balance: %f, Bandwidth: %s\n"
            "Behaviour: Waits - %d, Softs - %d, Hards - %d, Repeat Mode - %s\n",
            BTUNE_VERSION_STRING, perf_mode_to_str(btune->config.perf_mode),
            btune->config.comp_balance,
