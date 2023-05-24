@@ -277,6 +277,10 @@ typedef struct {
   // The number of threads for decompression (used if dctx is NULL)
   bool threads_for_comp;
   // Depending on this value the THREADS state will change the compression or decompression threads
+  void * interpreter;
+  // TF Lite model, used for inference
+  void * metadata;
+  // Metadata information used for model inference
 } btune_struct;
 /// @endcond
 

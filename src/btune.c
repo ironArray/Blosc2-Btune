@@ -446,6 +446,7 @@ void btune_free(blosc2_context *context) {
   free(btune_params->aux_cparams);
   free(btune_params->current_scores);
   free(btune_params->current_cratios);
+  btune_model_free(btune_params);
   free(btune_params);
   context->tuner_params = NULL;
 }
@@ -507,7 +508,7 @@ void btune_next_cparams(blosc2_context *context) {
   int nchunk = context->schunk->nchunks;
 
   if (nchunk == 0 || getenv("BTUNE_INFERENCE_ALL")) {
-    int error = btune_model_inference(context, &config, &compcode, &filter, &clevel, &splitmode);
+    int error = btune_model_inference(context, &compcode, &filter, &clevel, &splitmode);
     if (error == 0) {
       btune_params->codecs[0] = compcode;
       btune_params->ncodecs = 1;

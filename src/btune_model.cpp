@@ -94,9 +94,9 @@ static int get_best_codec_for_chunk(
   metadata_t *metadata
 ) {
   char * trace = getenv("BTUNE_TRACE");
-  blosc_timestamp_t last, current;
+  blosc_timestamp_t t0, t1, t2;
   if (trace) {
-    blosc_set_timestamp(&last);
+    blosc_set_timestamp(&t0);
   }
 
   // <<< ENTROPY PROBER START
@@ -133,9 +133,7 @@ static int get_best_codec_for_chunk(
   BLOSC_ERROR(dsize);
   // >>> ENTROPY PROBER END
   if (trace) {
-    blosc_set_timestamp(&current);
-    printf("TRACE: time entropy: %f\n", (float) blosc_elapsed_secs(last, current));
-    blosc_set_timestamp(&last);
+    blosc_set_timestamp(&t1);
   }
 
   // <<< INFERENCE START
@@ -172,8 +170,12 @@ static int get_best_codec_for_chunk(
   free(ddata);
   // >>> INFERENCE END
   if (trace) {
-    blosc_set_timestamp(&current);
-    printf("TRACE: time inference: %f\n", (float) blosc_elapsed_secs(last, current));
+    blosc_set_timestamp(&t2);
+    printf(
+      "TRACE: time entropy %f inference %f\n",
+      (float) blosc_elapsed_secs(t0, t1),
+      (float) blosc_elapsed_secs(t1, t2)
+    );
   }
 
   return best;
@@ -250,15 +252,9 @@ static char * concat_path(const char * dirname, const char * fname) {
   return dest;
 }
 
-int btune_model_inference(
-    blosc2_context * ctx, btune_config * config,  // Input args
-    int * compcode, uint8_t * filter, int * clevel, int32_t * splitmode // Output args
-) {
-  char * trace = getenv("BTUNE_TRACE");
-  blosc_timestamp_t last, current;
-  if (trace) {
-    blosc_set_timestamp(&last);
-  }
+static int load_metadata(blosc2_context * ctx) {
+  btune_struct *btune_params = (btune_struct*) ctx->tuner_params;
+  btune_config *config = &btune_params->config;
 
   // Read environement variables
   const char * dirname = getenv("BTUNE_MODELS_DIR");
@@ -272,20 +268,34 @@ int btune_model_inference(
     config->perf_mode == BTUNE_PERF_DECOMP ? "model_decomp.json" : "model_comp.json"
   );
 
-  char * model_fname = concat_path(
-    dirname,
-    config->perf_mode == BTUNE_PERF_DECOMP ? "model_decomp.tflite" : "model_comp.tflite"
-  );
-
   // Read metadata
-  metadata_t metadata;
-  int error = read_metadata(metadata_fname, &metadata);
+  metadata_t * metadata = (metadata_t*)malloc(sizeof(metadata_t));
+  int error = read_metadata(metadata_fname, metadata);
   if (error) {
     printf("WARNING: Metadata file not found in %s\n", metadata_fname);
     free(metadata_fname);
     return -1;
   }
   free(metadata_fname);
+  btune_params->metadata = (void*)metadata;
+  return 0;
+}
+
+static int load_model(blosc2_context * ctx) {
+  btune_struct *btune_params = (btune_struct*) ctx->tuner_params;
+  btune_config *config = &btune_params->config;
+
+  // Read environement variables
+  const char * dirname = getenv("BTUNE_MODELS_DIR");
+  if (dirname == NULL) {
+    BTUNE_DEBUG("Environment variable BTUNE_MODELS_DIR is not defined");
+    return -1;
+  }
+
+  char * model_fname = concat_path(
+    dirname,
+    config->perf_mode == BTUNE_PERF_DECOMP ? "model_decomp.tflite" : "model_comp.tflite"
+  );
 
   // Load model
   std::unique_ptr<tflite::FlatBufferModel> model = tflite::FlatBufferModel::BuildFromFile(model_fname);
@@ -318,27 +328,70 @@ int btune_model_inference(
   //printf("=== Pre-invoke Interpreter State ===\n");
   //tflite::PrintInterpreterState(interpreter.get());
 
+  btune_params->interpreter = (void*)interpreter.release();
+  return 0;
+}
+
+int btune_model_inference(
+    blosc2_context * ctx,
+    int * compcode, uint8_t * filter, int * clevel, int32_t * splitmode
+) {
+
+  btune_struct *btune_params = (btune_struct*) ctx->tuner_params;
+
+  // Load model and metadata
+  bool trace = getenv("BTUNE_TRACE") && (btune_params->interpreter == NULL || btune_params->metadata == NULL);
+  blosc_timestamp_t last, current;
+  if (trace) {
+    blosc_set_timestamp(&last);
+  }
+
+  if (btune_params->interpreter == NULL) {
+    if (load_model(ctx) != 0) {
+      return -1;
+    }
+  }
+  if (btune_params->metadata == NULL) {
+    if (load_metadata(ctx) != 0) {
+      return -1;
+    }
+  }
+
   if (trace) {
     blosc_set_timestamp(&current);
     printf("TRACE: time load model: %f\n", (float) blosc_elapsed_secs(last, current));
   }
 
+  // Get best category
+  tflite::Interpreter * interpreter = (tflite::Interpreter *)btune_params->interpreter;
+  metadata_t * metadata = (metadata_t*)btune_params->metadata;
+
   const void *src = (const void*)ctx->src;
   int32_t size = ctx->srcsize;
-  int best = get_best_codec_for_chunk(ctx->schunk, src, size, interpreter.get(), &metadata);
+  int best = get_best_codec_for_chunk(ctx->schunk, src, size, interpreter, metadata);
   if (best < 0) {
     return best;
   }
 
-  // Return compcode and filter
-  category_t cat = metadata.categories[best];
+  // Return
+  category_t cat = metadata->categories[best];
   *compcode = cat.codec;
   *filter = cat.filter;
   *clevel = cat.clevel;
   *splitmode = cat.splitmode;
-  free(metadata.categories);
 
-  BTUNE_DEBUG("Inference: category=%d codec=%d filter=%d clevel=%d splitmode=%d\n",
+  BTUNE_DEBUG("Inference: category=%d codec=%d filter=%d clevel=%d splitmode=%d",
               best, *compcode, *filter, *clevel, *splitmode);
   return 0;
+}
+
+void btune_model_free(btune_struct * btune_params) {
+  metadata_t * metadata = (metadata_t *) btune_params->metadata;
+  if (metadata != nullptr) {
+    free(metadata->categories);
+    free(metadata);
+    btune_params->metadata = NULL;
+  }
+  delete btune_params->interpreter;
+  btune_params->interpreter = NULL;
 }
