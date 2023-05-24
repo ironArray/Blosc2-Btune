@@ -186,12 +186,6 @@ static void init_soft(btune_struct *btune_params) {
 
 // Init a hard readapt
 static void init_hard(btune_struct *btune_params) {
-  // In decompression mode, when running inference, do nothing
-  if (btune_params->config.perf_mode == BTUNE_PERF_DECOMP && btune_params->splitmode != BLOSC_AUTO_SPLIT) {
-    btune_params->state = THREADS;
-    return;
-  }
-
   btune_params->state = CODEC_FILTER;
   btune_params->step_size = HARD_STEP_SIZE;
   btune_params->readapt_from = HARD;
@@ -342,8 +336,7 @@ void btune_init(void *tuner_params, blosc2_context * cctx, blosc2_context * dctx
   cctx->schunk->tuner_params = (void *) &btune->config;
   cctx ->schunk->storage->cparams->tuner_params = (void *) &btune->config;
   
-  envvar = getenv("BTUNE_TRACE");
-  if (envvar != NULL) {
+  if (getenv("BTUNE_DEBUG") != NULL) {
     printf("-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=\n");
     char bandwidth_str[12];
     bandwidth_to_str(bandwidth_str, btune->config.bandwidth);
@@ -512,7 +505,8 @@ void btune_next_cparams(blosc2_context *context) {
   int clevel;
   int32_t splitmode;
   int nchunk = context->schunk->nchunks;
-  if (nchunk == 0) {
+
+  if (nchunk == 0 || getenv("BTUNE_INFERENCE_ALL")) {
     int error = btune_model_inference(context, &config, &compcode, &filter, &clevel, &splitmode);
     if (error == 0) {
       btune_params->codecs[0] = compcode;
@@ -521,6 +515,7 @@ void btune_next_cparams(blosc2_context *context) {
       btune_params->nfilters = 1;
       if (config.perf_mode == BTUNE_PERF_DECOMP) {
         btune_params->splitmode = splitmode;
+        btune_params->state = STOP; // Do nothing else
         btune_init_clevels(btune_params, clevel, clevel, clevel);
       }
       else {
@@ -529,11 +524,15 @@ void btune_next_cparams(blosc2_context *context) {
         btune_init_clevels(btune_params, min, max, clevel);
       }
     }
-
-    if (getenv("BTUNE_TRACE")) {
-      printf("|    Codec   | Filter | Split | C.Level | Blocksize | Shufflesize | C.Threads | D.Threads |"
-             "   Score   |  C.Ratio   |   BTune State   | Readapt | Winner\n");
+    else if (config.perf_mode == BTUNE_PERF_DECOMP) {
+      // TODO Fail with an error
+      btune_params->state = STOP;
     }
+  }
+
+  if (getenv("BTUNE_DEBUG") && nchunk == 0 && btune_params->state != STOP) {
+    printf("|    Codec   | Filter | Split | C.Level | Blocksize | Shufflesize | C.Threads | D.Threads |"
+           "   Score   |  C.Ratio   |   BTune State   | Readapt | Winner\n");
   }
 
   *btune_params->aux_cparams = *btune_params->best;
@@ -713,7 +712,7 @@ static void process_waiting_state(blosc2_context *ctx) {
     minimum_hards++;
   }
 
-  char* envvar = getenv("BTUNE_TRACE");
+  char* envvar = getenv("BTUNE_DEBUG");
   if (envvar != NULL) {
     // Print the winner of the readapt
 //  if (btune_params->readapt_from != WAIT && !btune_params->is_repeating) {
@@ -1022,7 +1021,7 @@ void btune_update(blosc2_context * context, double ctime) {
     }
 
     if (!btune_params->is_repeating) {
-      char* envvar = getenv("BTUNE_TRACE");
+      char* envvar = getenv("BTUNE_DEBUG");
       if (envvar != NULL) {
         int split = (cparams->splitmode == BLOSC_ALWAYS_SPLIT) ? 1 : 0;
         const char *compname;
