@@ -31,9 +31,9 @@
 #define BTUNE_MAX_FILTERS 3
 #define BTUNE_MAX_CLEVELS 9
 
-#define BTUNE_DEBUG(msg, ...) \
+#define BTUNE_TRACE(msg, ...) \
     do { \
-         const char *__e = getenv("BTUNE_DEBUG"); \
+         const char *__e = getenv("BTUNE_TRACE"); \
          if (!__e) { break; } \
          fprintf(stderr, "DEBUG: " msg "\n", ##__VA_ARGS__); \
        } while(0)

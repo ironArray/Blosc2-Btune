@@ -336,7 +336,7 @@ void btune_init(void *tuner_params, blosc2_context * cctx, blosc2_context * dctx
   cctx->schunk->tuner_params = (void *) &btune->config;
   cctx ->schunk->storage->cparams->tuner_params = (void *) &btune->config;
   
-  if (getenv("BTUNE_DEBUG") != NULL) {
+  if (getenv("BTUNE_TRACE") != NULL) {
     printf("-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=\n");
     char bandwidth_str[12];
     bandwidth_to_str(bandwidth_str, btune->config.bandwidth);
@@ -531,7 +531,7 @@ void btune_next_cparams(blosc2_context *context) {
     }
   }
 
-  if (getenv("BTUNE_DEBUG") && nchunk == 0 && btune_params->state != STOP) {
+  if (getenv("BTUNE_TRACE") && nchunk == 0 && btune_params->state != STOP) {
     printf("|    Codec   | Filter | Split | C.Level | Blocksize | Shufflesize | C.Threads | D.Threads |"
            "   Score   |  C.Ratio   |   BTune State   | Readapt | Winner\n");
   }
@@ -713,7 +713,7 @@ static void process_waiting_state(blosc2_context *ctx) {
     minimum_hards++;
   }
 
-  char* envvar = getenv("BTUNE_DEBUG");
+  char* envvar = getenv("BTUNE_TRACE");
   if (envvar != NULL) {
     // Print the winner of the readapt
 //  if (btune_params->readapt_from != WAIT && !btune_params->is_repeating) {
@@ -1022,7 +1022,7 @@ void btune_update(blosc2_context * context, double ctime) {
     }
 
     if (!btune_params->is_repeating) {
-      char* envvar = getenv("BTUNE_DEBUG");
+      char* envvar = getenv("BTUNE_TRACE");
       if (envvar != NULL) {
         int split = (cparams->splitmode == BLOSC_ALWAYS_SPLIT) ? 1 : 0;
         const char *compname;

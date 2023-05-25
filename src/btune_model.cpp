@@ -259,7 +259,7 @@ static int load_metadata(blosc2_context * ctx) {
   // Read environement variables
   const char * dirname = getenv("BTUNE_MODELS_DIR");
   if (dirname == NULL) {
-    BTUNE_DEBUG("Environment variable BTUNE_MODELS_DIR is not defined");
+    BTUNE_TRACE("Environment variable BTUNE_MODELS_DIR is not defined");
     return -1;
   }
 
@@ -288,7 +288,7 @@ static int load_model(blosc2_context * ctx) {
   // Read environement variables
   const char * dirname = getenv("BTUNE_MODELS_DIR");
   if (dirname == NULL) {
-    BTUNE_DEBUG("Environment variable BTUNE_MODELS_DIR is not defined");
+    BTUNE_TRACE("Environment variable BTUNE_MODELS_DIR is not defined");
     return -1;
   }
 
@@ -380,7 +380,7 @@ int btune_model_inference(
   *clevel = cat.clevel;
   *splitmode = cat.splitmode;
 
-  BTUNE_DEBUG("Inference: category=%d codec=%d filter=%d clevel=%d splitmode=%d",
+  BTUNE_TRACE("Inference: category=%d codec=%d filter=%d clevel=%d splitmode=%d",
               best, *compcode, *filter, *clevel, *splitmode);
   return 0;
 }
