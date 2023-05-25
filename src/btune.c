@@ -136,7 +136,7 @@ static void extract_btune_cparams(blosc2_context *context, cparams_btune *cparam
   cparams->blocksize = context->blocksize;
   cparams->shufflesize = context->typesize;
   cparams->nthreads_comp = context->nthreads;
-  btune_struct *btune_params = context->tuner_params;
+  btune_struct *btune_params = (btune_struct *) context->tuner_params;
   if (btune_params->dctx == NULL) {
     cparams->nthreads_decomp = btune_params->nthreads_decomp;
   } else {
@@ -438,16 +438,19 @@ void btune_init(void *tuner_params, blosc2_context * cctx, blosc2_context * dctx
   } else {
     btune->step_size = HARD_STEP_SIZE;
   }
+
+  // Initialize inference data
+  btune_model_init(cctx);
 }
 
 // Free btune_struct
 void btune_free(blosc2_context *context) {
-  btune_struct *btune_params = context->tuner_params;
+  btune_model_free(context);
+  btune_struct *btune_params = (btune_struct *) context->tuner_params;
   free(btune_params->best);
   free(btune_params->aux_cparams);
   free(btune_params->current_scores);
   free(btune_params->current_cratios);
-  btune_model_free(btune_params);
   free(btune_params);
   context->tuner_params = NULL;
 }
@@ -455,7 +458,6 @@ void btune_free(blosc2_context *context) {
 // This must exist because unconditionally called by c-blosc2, otherwise there
 // will be a crash
 void btune_next_blocksize(blosc2_context *context) {
-
 }
 
 // Set the cparams_btune inside blosc2_context
@@ -508,7 +510,7 @@ void btune_next_cparams(blosc2_context *context) {
   int32_t splitmode;
   int nchunk = context->schunk->nchunks;
 
-  if (nchunk == 0 || getenv("BTUNE_INFERENCE_ALL")) {
+  if (nchunk == 0 || getenv("BTUNE_INFERENCE")) {
     int error = btune_model_inference(context, &compcode, &filter, &clevel, &splitmode);
     if (error == 0) {
       btune_params->codecs[0] = compcode;
@@ -822,7 +824,7 @@ static void process_waiting_state(blosc2_context *ctx) {
 
 // State transition handling
 static void update_aux(blosc2_context * ctx, bool improved) {
-  btune_struct *btune_params = ctx->tuner_params;
+  btune_struct *btune_params = (btune_struct *) ctx->tuner_params;
   cparams_btune *best = btune_params->best;
   bool first_time = btune_params->aux_index == 1;
   switch (btune_params->state) {

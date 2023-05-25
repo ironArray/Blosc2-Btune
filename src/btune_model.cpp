@@ -174,8 +174,10 @@ static int get_best_codec_for_chunk(
   // >>> INFERENCE END
   if (trace) {
     blosc_set_timestamp(&t2);
-    printf(
-      "TRACE: time entropy %f inference %f\n",
+    category_t cat = metadata->categories[best];
+    BTUNE_TRACE(
+      "Inference category=%d codec=%d filter=%d clevel=%d splitmode=%d time entropy=%f inference=%f",
+      best, cat.codec, cat.filter, cat.clevel, cat.splitmode,
       (float) blosc_elapsed_secs(t0, t1),
       (float) blosc_elapsed_secs(t1, t2)
     );
@@ -255,17 +257,7 @@ static char * concat_path(const char * dirname, const char * fname) {
   return dest;
 }
 
-static int load_metadata(blosc2_context * ctx) {
-  btune_struct *btune_params = (btune_struct*) ctx->tuner_params;
-  btune_config *config = &btune_params->config;
-
-  // Read environement variables
-  const char * dirname = getenv("BTUNE_MODELS_DIR");
-  if (dirname == NULL) {
-    BTUNE_TRACE("Environment variable BTUNE_MODELS_DIR is not defined");
-    return -1;
-  }
-
+static void * load_metadata(btune_config * config, const char * dirname) {
   char * metadata_fname = concat_path(
     dirname,
     config->perf_mode == BTUNE_PERF_DECOMP ? "model_decomp.json" : "model_comp.json"
@@ -277,24 +269,13 @@ static int load_metadata(blosc2_context * ctx) {
   if (error) {
     printf("WARNING: Metadata file not found in %s\n", metadata_fname);
     free(metadata_fname);
-    return -1;
+    return NULL;
   }
   free(metadata_fname);
-  btune_params->metadata = (void*)metadata;
-  return 0;
+  return (void *)metadata;
 }
 
-static int load_model(blosc2_context * ctx) {
-  btune_struct *btune_params = (btune_struct*) ctx->tuner_params;
-  btune_config *config = &btune_params->config;
-
-  // Read environement variables
-  const char * dirname = getenv("BTUNE_MODELS_DIR");
-  if (dirname == NULL) {
-    BTUNE_TRACE("Environment variable BTUNE_MODELS_DIR is not defined");
-    return -1;
-  }
-
+static void * load_model(btune_config * config, const char * dirname) {
   char * model_fname = concat_path(
     dirname,
     config->perf_mode == BTUNE_PERF_DECOMP ? "model_decomp.tflite" : "model_comp.tflite"
@@ -305,7 +286,7 @@ static int load_model(blosc2_context * ctx) {
   if (model == nullptr) {
     printf("WARNING: Model file not found in %s\n", model_fname);
     free(model_fname);
-    return -1;
+    return NULL;
   }
   free(model_fname);
   printf("INFO: Model files found in the '%s/' directory\n", dirname);
@@ -320,19 +301,43 @@ static int load_model(blosc2_context * ctx) {
   builder(&interpreter);
   if (interpreter == nullptr) {
     fprintf(stderr, "Error: Failed to build interpreter\n");
-    return -1;
+    return NULL;
   }
 
   // Allocate tensor buffers.
   if (interpreter->AllocateTensors() != kTfLiteOk) {
     fprintf(stderr, "Error: Failed to allocate tensors\n");
-    return -1;
+    return NULL;
   }
   //printf("=== Pre-invoke Interpreter State ===\n");
   //tflite::PrintInterpreterState(interpreter.get());
 
-  btune_params->interpreter = (void*)interpreter.release();
-  return 0;
+  return (void*)interpreter.release();
+}
+
+void btune_model_init(blosc2_context * ctx) {
+  // Read environement variables
+  const char * dirname = getenv("BTUNE_MODELS_DIR");
+  if (dirname == NULL) {
+    BTUNE_TRACE("Environment variable BTUNE_MODELS_DIR is not defined");
+    return;
+  }
+
+  bool trace = getenv("BTUNE_TRACE");
+  blosc_timestamp_t t0, t1;
+  if (trace) {
+    blosc_set_timestamp(&t0);
+  }
+
+  btune_struct *btune_params = (btune_struct*) ctx->tuner_params;
+  btune_config *config = &btune_params->config;
+  btune_params->interpreter = load_model(config, dirname);
+  btune_params->metadata = load_metadata(config, dirname);
+
+  if (trace) {
+    blosc_set_timestamp(&t1);
+    printf("TRACE: time load model: %f\n", (float) blosc_elapsed_secs(t0, t1));
+  }
 }
 
 int btune_model_inference(
@@ -341,28 +346,8 @@ int btune_model_inference(
 ) {
 
   btune_struct *btune_params = (btune_struct*) ctx->tuner_params;
-
-  // Load model and metadata
-  bool trace = getenv("BTUNE_TRACE") && (btune_params->interpreter == NULL || btune_params->metadata == NULL);
-  blosc_timestamp_t last, current;
-  if (trace) {
-    blosc_set_timestamp(&last);
-  }
-
-  if (btune_params->interpreter == NULL) {
-    if (load_model(ctx) != 0) {
-      return -1;
-    }
-  }
-  if (btune_params->metadata == NULL) {
-    if (load_metadata(ctx) != 0) {
-      return -1;
-    }
-  }
-
-  if (trace) {
-    blosc_set_timestamp(&current);
-    printf("TRACE: time load model: %f\n", (float) blosc_elapsed_secs(last, current));
+  if (btune_params->interpreter == NULL || btune_params->metadata == NULL) {
+    return -1;
   }
 
   // Get best category
@@ -383,12 +368,11 @@ int btune_model_inference(
   *clevel = cat.clevel;
   *splitmode = cat.splitmode;
 
-  BTUNE_TRACE("Inference: category=%d codec=%d filter=%d clevel=%d splitmode=%d",
-              best, *compcode, *filter, *clevel, *splitmode);
   return 0;
 }
 
-void btune_model_free(btune_struct * btune_params) {
+void btune_model_free(blosc2_context * ctx) {
+  btune_struct *btune_params = (btune_struct *) ctx->tuner_params;
   metadata_t * metadata = (metadata_t *) btune_params->metadata;
   if (metadata != nullptr) {
     free(metadata->categories);
