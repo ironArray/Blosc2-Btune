@@ -281,6 +281,8 @@ typedef struct {
   // TF Lite model, used for inference
   void * metadata;
   // Metadata information used for model inference
+  int arange_speed;
+  // Entropy speed for an arange chunk.
 } btune_struct;
 /// @endcond
 

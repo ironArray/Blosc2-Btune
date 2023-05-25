@@ -99,6 +99,7 @@ static int get_best_codec_for_chunk(
     blosc_set_timestamp(&t0);
   }
 
+  btune_struct *btune = (btune_struct *)schunk->storage->cparams->tuner_params;
   // <<< ENTROPY PROBER START
   // cparams
   blosc2_cparams cparams = BLOSC2_CPARAMS_DEFAULTS;
@@ -115,9 +116,11 @@ static int get_best_codec_for_chunk(
   blosc2_dparams dparams = BLOSC2_DPARAMS_DEFAULTS;
   dparams.nthreads = 1;
   blosc2_context *dctx = blosc2_create_dctx(dparams);
+  if (btune->arange_speed == -1) {
+    // Compress arange chunk to get a machine relative speed measure
+    btune->arange_speed = get_arange_speed(cctx, dctx, size);
+  }
 
-  // Compress arange chunk to get a machine relative speed measure
-  float arange_speed = get_arange_speed(cctx, dctx, size);
   // Compress chunk, this will output the instrumentation data
   uint8_t *cdata = (uint8_t *) malloc(size  + BLOSC2_MAX_OVERHEAD);
   int csize = blosc2_compress_ctx(cctx, src, size, cdata, size + BLOSC2_MAX_OVERHEAD);
@@ -141,7 +144,7 @@ static int get_best_codec_for_chunk(
   float cratio_std = metadata->cratio.std;
   float cspeed_mean = metadata->cspeed.mean;
   float cspeed_std = metadata->cspeed.std;
-  btune_struct * btune = (btune_struct *)schunk->storage->cparams->tuner_params;
+
 
   // Read the cratio/cspeed for every block and compute mean
   int nblocks = dsize / (int)sizeof(blosc2_instr);
@@ -155,7 +158,7 @@ static int get_best_codec_for_chunk(
       cratio += instr_data->cratio;
       float ctime = 1.f / instr_data->cspeed;
       float ftime = 1.f / instr_data->filter_speed;
-      rel_speed += 1.f / (ctime + ftime) / arange_speed;
+      rel_speed += 1.f / (ctime + ftime) / btune->arange_speed;
     }
     instr_data++;
     special_val = instr_data->flags[0];

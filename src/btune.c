@@ -326,6 +326,7 @@ void btune_init(void *tuner_params, blosc2_context * cctx, blosc2_context * dctx
   } else {
     memcpy(&btune->config, config, sizeof(btune_config));
   }
+  btune->arange_speed = -1; // This is initialized the first time inference is performed
 
   char* envvar = getenv("BTUNE_BALANCE");
   if (envvar != NULL) {
