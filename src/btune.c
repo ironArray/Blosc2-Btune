@@ -508,9 +508,12 @@ void btune_next_cparams(blosc2_context *context) {
   uint8_t filter;
   int clevel;
   int32_t splitmode;
-  int nchunk = context->schunk->nchunks;
 
-  if (nchunk == 0 || getenv("BTUNE_INFERENCE")) {
+  if (btune_params->inference_count != 0) {
+    if (btune_params->inference_count > 0) {
+      btune_params->inference_count--;
+    }
+
     int error = btune_model_inference(context, &compcode, &filter, &clevel, &splitmode);
     if (error == 0) {
       btune_params->codecs[0] = compcode;
@@ -534,6 +537,7 @@ void btune_next_cparams(blosc2_context *context) {
     }
   }
 
+  int nchunk = context->schunk->nchunks;
   if (getenv("BTUNE_TRACE") && nchunk == 0 && btune_params->state != STOP) {
     printf("|    Codec   | Filter | Split | C.Level | Blocksize | Shufflesize | C.Threads | D.Threads |"
            "   Score   |  C.Ratio   |   BTune State   | Readapt | Winner\n");

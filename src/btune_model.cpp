@@ -21,6 +21,7 @@ typedef struct {
   uint8_t filter;
   int clevel;
   int32_t splitmode;
+  unsigned long count; // Count the number of times the category is inferred
 } category_t;
 
 typedef struct {
@@ -119,10 +120,10 @@ static int get_best_codec_for_chunk(
   if (btune->arange_speed < 0) {
     // Compress arange chunk to get a machine relative speed measure
     btune->arange_speed = get_arange_speed(cctx, dctx, size);
-  }
-  if (btune->arange_speed < 0) {
-      fprintf(stderr, "Error %d computing arange speed\n", (int)btune->arange_speed);
-      return btune->arange_speed;
+    if (btune->arange_speed < 0) {
+        fprintf(stderr, "Error %d computing arange speed\n", (int)btune->arange_speed);
+        return btune->arange_speed;
+    }
   }
 
   // Compress chunk, this will output the instrumentation data
@@ -230,7 +231,7 @@ static int read_metadata(const char *fname, metadata_t *metadata) {
     }
     else if (strcmp(name, "categories") == 0) {
       metadata->ncategories = value->u.array.length;
-      metadata->categories = (category_t*)malloc(sizeof(category_t) * value->u.array.length);
+      metadata->categories = (category_t*)calloc(value->u.array.length, sizeof(category_t));
       for (int i = 0; i < value->u.array.length; i++) {
         json_value *cat = value->u.array.values[i];
         json_value *codec = cat->u.array.values[0];
@@ -320,24 +321,41 @@ static void * load_model(btune_config * config, const char * dirname) {
 }
 
 void btune_model_init(blosc2_context * ctx) {
-  // Read environement variables
-  const char * dirname = getenv("BTUNE_MODELS_DIR");
-  if (dirname == NULL) {
-    BTUNE_TRACE("Environment variable BTUNE_MODELS_DIR is not defined");
-    return;
-  }
-
+  // Trace time
   bool trace = getenv("BTUNE_TRACE");
   blosc_timestamp_t t0, t1;
   if (trace) {
     blosc_set_timestamp(&t0);
   }
 
+  // Read BTUNE_INFERENCE
   btune_struct *btune_params = (btune_struct*) ctx->tuner_params;
+  const char * inference = getenv("BTUNE_INFERENCE");
+  btune_params->inference_count = 1;
+  if (inference != NULL) {
+    sscanf(inference, "%d", &btune_params->inference_count);
+    if (btune_params->inference_count == 0) {
+      btune_params->inference_count = -1; // Means all chunks
+    }
+  }
+
+  // Load model and metadata
+  const char * dirname = getenv("BTUNE_MODELS_DIR");
+  if (dirname == NULL) {
+    BTUNE_TRACE("Environment variable BTUNE_MODELS_DIR is not defined");
+    btune_params->inference_count = 0;
+    return;
+  }
   btune_config *config = &btune_params->config;
   btune_params->interpreter = load_model(config, dirname);
   btune_params->metadata = load_metadata(config, dirname);
 
+  if (btune_params->interpreter == NULL || btune_params->metadata == NULL) {
+    btune_params->inference_count = 0;
+    return;
+  }
+
+  // Trace time
   if (trace) {
     blosc_set_timestamp(&t1);
     printf("TRACE: time load model: %f\n", (float) blosc_elapsed_secs(t0, t1));
@@ -367,6 +385,7 @@ int btune_model_inference(
 
   // Return
   category_t cat = metadata->categories[best];
+  cat.count++;
   *compcode = cat.codec;
   *filter = cat.filter;
   *clevel = cat.clevel;
@@ -377,12 +396,14 @@ int btune_model_inference(
 
 void btune_model_free(blosc2_context * ctx) {
   btune_struct *btune_params = (btune_struct *) ctx->tuner_params;
+
+  delete btune_params->interpreter;
+  btune_params->interpreter = NULL;
+
   metadata_t * metadata = (metadata_t *) btune_params->metadata;
   if (metadata != nullptr) {
     free(metadata->categories);
     free(metadata);
     btune_params->metadata = NULL;
   }
-  delete btune_params->interpreter;
-  btune_params->interpreter = NULL;
 }

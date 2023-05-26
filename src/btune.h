@@ -283,6 +283,8 @@ typedef struct {
   // Metadata information used for model inference
   int arange_speed;
   // Entropy speed for an arange chunk.
+  int inference_count;
+  // Number of times to run inference
 } btune_struct;
 /// @endcond
 
