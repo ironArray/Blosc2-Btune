@@ -311,6 +311,7 @@ static const char* repeat_mode_to_str(btune_repeat_mode repeat_mode) {
 
 
 // Init btune_struct inside blosc2_context
+// TODO CHECK CONFIG ENUMS (bandwidth range...)
 void btune_init(void *tuner_params, blosc2_context * cctx, blosc2_context * dctx) {
   btune_config *config = (btune_config *)tuner_params;
 
@@ -318,20 +319,34 @@ void btune_init(void *tuner_params, blosc2_context * cctx, blosc2_context * dctx
   blosc2_codec codec;
   register_entropy_codec(&codec);
 
-  // TODO CHECK CONFIG ENUMS (bandwidth range...)
+  // Allocate memory
   btune_struct *btune = calloc(sizeof(btune_struct), 1);
+
+  // Configuration
   if (config == NULL) {
     memcpy(&btune->config, &BTUNE_CONFIG_DEFAULTS, sizeof(btune_config));
     config = &btune->config;
   } else {
     memcpy(&btune->config, config, sizeof(btune_config));
   }
-  btune->arange_speed = -1; // This is initialized the first time inference is performed
+
+  if (btune->config.perf_mode == BTUNE_PERF_AUTO) {
+    const char* perf_mode = getenv("BTUNE_PERF_MODE");
+    if (perf_mode && strcmp(perf_mode, "DECOMP") == 0) {
+      btune->config.perf_mode = BTUNE_PERF_DECOMP;
+    }
+    else {
+      btune->config.perf_mode = BTUNE_PERF_COMP;
+    }
+  }
 
   char* envvar = getenv("BTUNE_BALANCE");
   if (envvar != NULL) {
     btune->config.comp_balance = atof(envvar);
   }
+
+  btune->arange_speed = -1; // This is initialized the first time inference is performed
+
   // If the user does not fill the config, the next fields will be empty
   // No need to do the same for dctx because btune is only used during compression
   cctx->schunk->tuner_params = (void *) &btune->config;

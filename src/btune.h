@@ -63,9 +63,9 @@ enum bandwidth_units{
  * Depending on this value BTune will prioritize the compression/decompression speed,
  * the compression ratio or both.
 */
-float const BTUNE_COMP_HSP = 0.1;           //!< Optimizes the speed, even accepting memcpy.
+float const BTUNE_COMP_HSP = 0.1;       //!< Optimizes the speed, even accepting memcpy.
 float const BTUNE_COMP_BALANCED = 0.5;  //!< Optimizes both, the speed and compression ratio.
-float const BTUNE_COMP_HCR = 0.9;         //!< Optimizes the compression ratio.
+float const BTUNE_COMP_HCR = 0.9;       //!< Optimizes the compression ratio.
 
 /**
  * @brief Performance mode enumeration.
@@ -77,7 +77,8 @@ float const BTUNE_COMP_HCR = 0.9;         //!< Optimizes the compression ratio.
 typedef enum {
   BTUNE_PERF_COMP,     //!< Optimizes the compression and transmission times.
   BTUNE_PERF_DECOMP,   //!< Optimizes the decompression and transmission times.
-  BTUNE_PERF_BALANCED  //!< Optimizes the compression, transmission and decompression times.
+  BTUNE_PERF_BALANCED, //!< Optimizes the compression, transmission and decompression times.
+  BTUNE_PERF_AUTO,     //!< Gets mode from environment variable, defaults to PERF_COMP
 } btune_performance_mode;
 
 /**
@@ -160,7 +161,7 @@ typedef struct {
 */
 static const btune_config BTUNE_CONFIG_DEFAULTS = {
     2 * BTUNE_GBPS10,
-    BTUNE_PERF_COMP,
+    BTUNE_PERF_AUTO,
     BTUNE_COMP_BALANCED,
     {0, 5, 10, BTUNE_STOP},
     false
