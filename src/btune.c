@@ -332,8 +332,20 @@ void btune_init(void *tuner_params, blosc2_context * cctx, blosc2_context * dctx
 
   if (btune->config.perf_mode == BTUNE_PERF_AUTO) {
     const char* perf_mode = getenv("BTUNE_PERF_MODE");
-    if (perf_mode && strcmp(perf_mode, "DECOMP") == 0) {
-      btune->config.perf_mode = BTUNE_PERF_DECOMP;
+    if (perf_mode != NULL) {
+      if (strcmp(perf_mode, "COMP") == 0) {
+        btune->config.perf_mode = BTUNE_PERF_COMP;
+      }
+      else if (strcmp(perf_mode, "DECOMP") == 0) {
+        btune->config.perf_mode = BTUNE_PERF_DECOMP;
+      }
+      else if (strcmp(perf_mode, "BALANCED") == 0) {
+        btune->config.perf_mode = BTUNE_PERF_BALANCED;
+      }
+      else {
+        BTUNE_TRACE("Unsupported %s compression mode, default to COMP", perf_mode);
+        btune->config.perf_mode = BTUNE_PERF_COMP;
+      }
     }
     else {
       btune->config.perf_mode = BTUNE_PERF_COMP;
@@ -524,7 +536,13 @@ void btune_next_cparams(blosc2_context *context) {
   int clevel;
   int32_t splitmode;
 
-  if (btune_params->inference_count != 0) {
+  if (btune_params->inference_count == 0) {
+    // The decompression mode only works with inference, stop tweaking
+    if (config.perf_mode == BTUNE_PERF_DECOMP) {
+      btune_params->state = STOP; // TODO Fail with an error
+    }
+  }
+  else {
     if (btune_params->inference_count > 0) {
       btune_params->inference_count--;
     }
@@ -545,10 +563,6 @@ void btune_next_cparams(blosc2_context *context) {
         int max = (clevel < 9) ? (clevel + 1) : clevel;
         btune_init_clevels(btune_params, min, max, clevel);
       }
-    }
-    else if (config.perf_mode == BTUNE_PERF_DECOMP) {
-      // TODO Fail with an error
-      btune_params->state = STOP;
     }
   }
 
