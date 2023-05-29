@@ -11,7 +11,7 @@
 #define MAX_FARDISTANCE (65535 + MAX_DISTANCE - 1)
 
 // The hash length (1 << HASH_LOG) can be tuned for performance (12 -> 15)
-#define HASH_LOG (14U)
+#define HASH_LOG (13U)
 
 #define HASH_FUNCTION(v, s, h)              \
     {                                       \
