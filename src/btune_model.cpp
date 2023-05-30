@@ -117,12 +117,12 @@ static int get_best_codec_for_chunk(
   blosc2_dparams dparams = BLOSC2_DPARAMS_DEFAULTS;
   dparams.nthreads = 1;
   blosc2_context *dctx = blosc2_create_dctx(dparams);
-  if (btune->arange_speed < 0) {
-    // Compress arange chunk to get a machine relative speed measure
-    btune->arange_speed = get_arange_speed(cctx, dctx, size);
-    if (btune->arange_speed < 0) {
-        fprintf(stderr, "Error %d computing arange speed\n", (int)btune->arange_speed);
-        return btune->arange_speed;
+  if (btune->zeros_speed < 0) {
+    // Compress zeros chunk to get a machine relative speed measure
+    btune->zeros_speed = get_zeros_speed(cctx, dctx, size);
+    if (btune->zeros_speed < 0) {
+        fprintf(stderr, "Error %d computing zeros speed\n", (int)btune->zeros_speed);
+        return btune->zeros_speed;
     }
   }
 
@@ -163,7 +163,7 @@ static int get_best_codec_for_chunk(
       cratio += instr_data->cratio;
       float ctime = 1.f / instr_data->cspeed;
       float ftime = 1.f / instr_data->filter_speed;
-      rel_speed += 1.f / (ctime + ftime) / btune->arange_speed;
+      rel_speed += 1.f / (ctime + ftime) / btune->zeros_speed;
     }
     instr_data++;
     special_val = instr_data->flags[0];

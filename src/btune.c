@@ -357,7 +357,7 @@ void btune_init(void *tuner_params, blosc2_context * cctx, blosc2_context * dctx
     btune->config.comp_balance = atof(envvar);
   }
 
-  btune->arange_speed = -1; // This is initialized the first time inference is performed
+  btune->zeros_speed = -1; // This is initialized the first time inference is performed
 
   // If the user does not fill the config, the next fields will be empty
   // No need to do the same for dctx because btune is only used during compression
