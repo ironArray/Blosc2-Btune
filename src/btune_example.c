@@ -28,6 +28,8 @@ static int compress(const char* in_fname, const char* out_fname) {
     btune_config.comp_balance = .5;
     btune_config.behaviour.nhards_before_stop = 10;
     btune_config.behaviour.repeat_mode = BTUNE_REPEAT_ALL;
+    btune_config.use_inference = 2;
+    btune_config.models_dir = "../models_sample/";
     cparams.tuner_id = BLOSC_BTUNE;
     cparams.tuner_params = &btune_config;
 

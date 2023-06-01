@@ -346,21 +346,26 @@ void btune_model_init(blosc2_context * ctx) {
   btune_struct *btune_params = (btune_struct*) ctx->tuner_params;
   const char *inference = getenv("BTUNE_USE_INFERENCE");
   btune_params->inference_count = 1;
+  btune_config *config = &btune_params->config;
   if (inference != NULL) {
     sscanf(inference, "%d", &btune_params->inference_count);
-    if (btune_params->inference_count == 0) {
-      btune_params->inference_count = -1; // Means all chunks
-    }
+    config->use_inference = btune_params->inference_count;
+  } else {
+    btune_params->inference_count = config->use_inference;
   }
 
   // Load model and metadata
   const char * dirname = getenv("BTUNE_MODELS_DIR");
   if (dirname == NULL) {
-    BTUNE_TRACE("Environment variable BTUNE_MODELS_DIR is not defined");
-    btune_params->inference_count = 0;
-    return;
+    if (config->models_dir == NULL) {
+      BTUNE_TRACE("Environment variable BTUNE_MODELS_DIR is not defined");
+      btune_params->inference_count = 0;
+      return;
+    } else {
+      dirname = config->models_dir;
+    }
   }
-  btune_config *config = &btune_params->config;
+  config->models_dir = dirname;
   btune_params->interpreter = load_model(config, dirname);
   btune_params->metadata = load_metadata(config, dirname);
 

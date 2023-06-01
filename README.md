@@ -109,6 +109,8 @@ You can also use BTune from a C program. Similar to Python, you can activate it 
     btune_config btune_config = BTUNE_CONFIG_DEFAULTS;
     btune_config.perf_mode = BTUNE_PERF_COMP; // You can choose BTUNE_PERF_COMP, BTUNE_PERF_DECOMP or BTUNE_PERF_BALANCED
     btune_config.comp_balance = .5; // Equivalent to BTUNE_BALANCE
+    btune_config.use_inference = 2; // Number of times to perform inference, equivalent to BTUNE_USE_INFERENCE
+    btune_config.models_dir = "../models_dir/"; // Equivalent to BTUNE_MODELS_DIR
     btune_config.behaviour.nwaits_before_readapt = 1;       // Number of waits before a readapt
     btune_config.behaviour.nsofts_before_hard = 3;          // Number of soft readapts before a hard readapt
     btune_config.behaviour.nhards_before_stop = 10;         // Number of hard readapts before stoping

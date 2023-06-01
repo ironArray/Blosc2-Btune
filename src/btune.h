@@ -148,9 +148,9 @@ typedef struct {
    * that this hard readapt is not considered for the number of initial hard readapts.
    * @see #btune_behaviour
   */
-  //int use_inference;
+  int use_inference;
   //!< Number of times inference is applied. If -1, always apply inference.
-  // char *models_dir;
+  const char *models_dir;
   //!< The directory where the desired models and meta to use are stored.
 
 } btune_config;
@@ -169,7 +169,8 @@ static const btune_config BTUNE_CONFIG_DEFAULTS = {
     BTUNE_COMP_BALANCED,
     {0, 5, 10, BTUNE_STOP},
     false,
-    //1
+    1,
+    NULL,
 };
 
 /// @cond DEV
