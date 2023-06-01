@@ -13,6 +13,9 @@ int btune_model_inference(
 
 void btune_model_free(blosc2_context * ctx);
 
+int most_predicted(btune_struct *btune_params, int *compcode,
+                   uint8_t *filter, int *clevel, int32_t *splitmode);
+
 #ifdef __cplusplus
 }
 #endif

@@ -99,6 +99,10 @@ static int get_best_codec_for_chunk(
   if (trace) {
     blosc_set_timestamp(&t0);
   }
+  if (size < BLOSC_MIN_BUFFERSIZE) {
+    printf("WARNING: Chunk size too small for performing inference, it must be at least %d\n", BLOSC_MIN_BUFFERSIZE);
+    return -1;
+  }
 
   btune_struct *btune = (btune_struct *)schunk->storage->cparams->tuner_params;
   // <<< ENTROPY PROBER START
@@ -117,26 +121,36 @@ static int get_best_codec_for_chunk(
   blosc2_dparams dparams = BLOSC2_DPARAMS_DEFAULTS;
   dparams.nthreads = 1;
   blosc2_context *dctx = blosc2_create_dctx(dparams);
-  if (btune->zeros_speed < 0) {
+  if (btune->zeros_speed < 0.) {
     // Compress zeros chunk to get a machine relative speed measure
-    btune->zeros_speed = get_zeros_speed(cctx, dctx, size);
-    if (btune->zeros_speed < 0) {
+    btune->zeros_speed = get_zeros_speed(size);
+    if (btune->zeros_speed < 0.) {
         fprintf(stderr, "Error %d computing zeros speed\n", (int)btune->zeros_speed);
         return btune->zeros_speed;
     }
   }
 
   // Compress chunk, this will output the instrumentation data
-  uint8_t *cdata = (uint8_t *) malloc(size  + BLOSC2_MAX_OVERHEAD);
-  int csize = blosc2_compress_ctx(cctx, src, size, cdata, size + BLOSC2_MAX_OVERHEAD);
+  // `compressed_size` should be
+  // BLOSC2_MAX_OVERHEAD + sizeof(blosc2_instr) * nblocks + sizeof(int32_t) * nblocks + sizeof(int32_t)
+  // but we won't always know nblocks before compression
+  int compressed_size = BLOSC2_MAX_OVERHEAD + size;
+  uint8_t *cdata = (uint8_t *) malloc(compressed_size);
+  int csize = blosc2_compress_ctx(cctx, src, size, cdata, compressed_size);
   if (csize < 0) {
     free(cdata);
     fprintf(stderr, "Error %d compressing chunk\n", csize);
     return csize;
   }
+  if (csize == 0) {
+    csize = compressed_size;
+  }
   // Decompress so we can read the instrumentation data
-  uint8_t *ddata = (uint8_t *) malloc(size);
-  int dsize = blosc2_decompress_ctx(dctx, cdata, csize, ddata, size);
+  int decomp_size = cctx->nblocks * sizeof(blosc2_instr);
+  uint8_t *ddata = (uint8_t *) malloc(decomp_size);
+  int dsize = blosc2_decompress_ctx(dctx, cdata, csize, ddata, decomp_size);
+  blosc2_free_ctx(cctx);
+  blosc2_free_ctx(dctx);
   free(cdata);
   BLOSC_ERROR(dsize);
   // >>> ENTROPY PROBER END
@@ -328,9 +342,9 @@ void btune_model_init(blosc2_context * ctx) {
     blosc_set_timestamp(&t0);
   }
 
-  // Read BTUNE_INFERENCE
+  // Read BTUNE_USE_INFERENCE
   btune_struct *btune_params = (btune_struct*) ctx->tuner_params;
-  const char * inference = getenv("BTUNE_INFERENCE");
+  const char *inference = getenv("BTUNE_USE_INFERENCE");
   btune_params->inference_count = 1;
   if (inference != NULL) {
     sscanf(inference, "%d", &btune_params->inference_count);
@@ -384,12 +398,39 @@ int btune_model_inference(
   }
 
   // Return
-  category_t cat = metadata->categories[best];
-  cat.count++;
-  *compcode = cat.codec;
-  *filter = cat.filter;
-  *clevel = cat.clevel;
-  *splitmode = cat.splitmode;
+  category_t *cat = &metadata->categories[best];
+  cat->count++;
+  *compcode = cat->codec;
+  *filter = cat->filter;
+  *clevel = cat->clevel;
+  *splitmode = cat->splitmode;
+
+  return 0;
+}
+
+int most_predicted(btune_struct *btune_params, int *compcode,
+                   uint8_t *filter, int *clevel, int32_t *splitmode) {
+  // Get most predicted category
+  metadata_t *meta = (metadata_t *) btune_params->metadata;
+  if (meta == NULL) {
+    printf("WARNING: Empty metadata, no inference performed\n");
+    return -1;
+  }
+  int best_idx = 0;
+  int max_count = meta->categories[best_idx].count;
+  int count;
+  for (int i = 1; i < meta->ncategories; ++i) {
+    count = meta->categories[i].count;
+    if (count > max_count) {
+      best_idx = i;
+      max_count = count;
+    }
+  }
+  // Set parameters
+  *compcode = meta->categories[best_idx].codec;
+  *filter = meta->categories[best_idx].filter;
+  *clevel = meta->categories[best_idx].clevel;
+  *splitmode = meta->categories[best_idx].splitmode;
 
   return 0;
 }

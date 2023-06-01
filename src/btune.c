@@ -329,6 +329,7 @@ void btune_init(void *tuner_params, blosc2_context * cctx, blosc2_context * dctx
   } else {
     memcpy(&btune->config, config, sizeof(btune_config));
   }
+  btune->inference_ended = false;
 
   if (btune->config.perf_mode == BTUNE_PERF_AUTO) {
     const char* perf_mode = getenv("BTUNE_PERF_MODE");
@@ -535,34 +536,39 @@ void btune_next_cparams(blosc2_context *context) {
   uint8_t filter;
   int clevel;
   int32_t splitmode;
+  int error = -1;
 
-  if (btune_params->inference_count == 0) {
-    // The decompression mode only works with inference, stop tweaking
-    if (config.perf_mode == BTUNE_PERF_DECOMP) {
-      btune_params->state = STOP; // TODO Fail with an error
-    }
-  }
-  else {
+  if (btune_params->inference_count != 0) {
     if (btune_params->inference_count > 0) {
       btune_params->inference_count--;
     }
 
-    int error = btune_model_inference(context, &compcode, &filter, &clevel, &splitmode);
-    if (error == 0) {
-      btune_params->codecs[0] = compcode;
-      btune_params->ncodecs = 1;
-      btune_params->filters[0] = filter;
-      btune_params->nfilters = 1;
+    error = btune_model_inference(context, &compcode, &filter, &clevel, &splitmode);
+  } else {
+    if (!btune_params->inference_ended){
+      // The decompression mode only works with inference, stop tweaking
       if (config.perf_mode == BTUNE_PERF_DECOMP) {
-        btune_params->splitmode = splitmode;
-        btune_params->state = STOP; // Do nothing else
-        btune_init_clevels(btune_params, clevel, clevel, clevel);
+        btune_params->state = STOP; // TODO Fail with an error
       }
-      else {
-        int min = (clevel > 1) ? (clevel - 1) : clevel;
-        int max = (clevel < 9) ? (clevel + 1) : clevel;
-        btune_init_clevels(btune_params, min, max, clevel);
-      }
+      error = most_predicted(btune_params, &compcode, &filter, &clevel, &splitmode);
+      btune_params->inference_ended = true;
+    }
+  }
+
+  if (error == 0) {
+    btune_params->codecs[0] = compcode;
+    btune_params->ncodecs = 1;
+    btune_params->filters[0] = filter;
+    btune_params->nfilters = 1;
+    if (config.perf_mode == BTUNE_PERF_DECOMP) {
+      btune_params->splitmode = splitmode;
+      btune_params->state = STOP; // Do nothing else
+      btune_init_clevels(btune_params, clevel, clevel, clevel);
+    }
+    else {
+      int min = (clevel > 1) ? (clevel - 1) : clevel;
+      int max = (clevel < 9) ? (clevel + 1) : clevel;
+      btune_init_clevels(btune_params, min, max, clevel);
     }
   }
 
@@ -599,7 +605,9 @@ void btune_next_cparams(blosc2_context *context) {
               ) {
         cparams->clevel = 3;
       }
-      btune_params->aux_index++;
+      if (btune_params->inference_ended) {
+        btune_params->aux_index++;
+      }
       break;
     }
 
