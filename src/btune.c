@@ -531,7 +531,6 @@ static void set_btune_cparams(blosc2_context * context, cparams_btune * cparams)
 void btune_next_cparams(blosc2_context *context) {
   btune_struct *btune_params = (btune_struct*) context->tuner_params;
   btune_config config = btune_params->config;
-  // Run inference only for the first chunk
   int compcode;
   uint8_t filter;
   int clevel;
@@ -546,10 +545,6 @@ void btune_next_cparams(blosc2_context *context) {
     error = btune_model_inference(context, &compcode, &filter, &clevel, &splitmode);
   } else {
     if (!btune_params->inference_ended){
-      // The decompression mode only works with inference, stop tweaking
-      if (config.perf_mode == BTUNE_PERF_DECOMP) {
-        btune_params->state = STOP; // TODO Fail with an error
-      }
       error = most_predicted(btune_params, &compcode, &filter, &clevel, &splitmode);
       btune_params->inference_ended = true;
     }
@@ -561,8 +556,6 @@ void btune_next_cparams(blosc2_context *context) {
     btune_params->filters[0] = filter;
     btune_params->nfilters = 1;
     if (config.perf_mode == BTUNE_PERF_DECOMP) {
-      btune_params->splitmode = splitmode;
-      btune_params->state = STOP; // Do nothing else
       btune_init_clevels(btune_params, clevel, clevel, clevel);
     }
     else {
@@ -730,7 +723,7 @@ static bool has_improved(btune_struct *btune_params, double score_coef, double c
   if (comp_balance <= 1.) {
     return cratio_coef > 1;
   }
-  fprintf(stderr, "WARNING: unknown compression mode, it must be between 0. and 1.0\n");
+  fprintf(stderr, "WARNING: unknown compression balance, it must be between 0. and 1.0\n");
   return false;
 }
 

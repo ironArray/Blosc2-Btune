@@ -113,13 +113,12 @@ static int get_best_codec_for_chunk(
   cparams.typesize = schunk->typesize;
   cparams.blocksize = schunk->blocksize;
   cparams.splitmode = BLOSC_NEVER_SPLIT;
-  cparams.nthreads = 1;
+  cparams.nthreads = 4;
   cparams.filters[BLOSC2_MAX_FILTERS - 1] = BLOSC_NOFILTER;
   blosc2_context *cctx = blosc2_create_cctx(cparams);
 
   // dparams
   blosc2_dparams dparams = BLOSC2_DPARAMS_DEFAULTS;
-  dparams.nthreads = 1;
   blosc2_context *dctx = blosc2_create_dctx(dparams);
   if (btune->zeros_speed < 0.) {
     // Compress zeros chunk to get a machine relative speed measure

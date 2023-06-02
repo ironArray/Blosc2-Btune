@@ -220,6 +220,7 @@ float get_zeros_speed(int32_t chunksize) {
   // Compress
   uint8_t *cdata = (uint8_t *) malloc(chunksize + BLOSC2_MAX_OVERHEAD);
   blosc2_cparams cparams = BLOSC2_CPARAMS_DEFAULTS;
+  cparams.nthreads = 4;
   blosc2_context *cctx = blosc2_create_cctx(cparams);
   blosc_set_timestamp(&t0);
   int csize = blosc2_compress_ctx(cctx, zeros_chunk, chunksize, cdata, chunksize + BLOSC2_MAX_OVERHEAD);
