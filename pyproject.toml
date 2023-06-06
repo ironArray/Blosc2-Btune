@@ -22,7 +22,7 @@ license = {text = "GNU Affero General Public License version 3"}
 classifiers = [
     "Programming Language :: Python :: 3",
     "Programming Language :: C",
-    "Programming Language :: C++"
+    "Programming Language :: C++",
     "Development Status :: 4 - Beta",
     "Intended Audience :: Developers",
     "License :: OSI Approved :: GNU Affero General Public License version 3",
