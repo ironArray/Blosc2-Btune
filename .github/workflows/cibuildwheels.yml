@@ -53,14 +53,14 @@ jobs:
       # Build all wheels
       - name: Sets env vars for tagging
         run: |
-          echo "CIBW_BUILD='cp38-* cp39-* cp310-* cp311-*'" >> $GITHUB_ENV
+          echo "CIBW_BUILD=cp38-* cp39-* cp310-* cp311-*" >> $GITHUB_ENV
         if: startsWith(github.ref, 'refs/tags') == true
 
       # This step is run when not tagging (typically a PR)
       # Build just one wheel
       - name: Sets env vars when not tagging
         run: |
-          echo "CIBW_BUILD=cp38-* cp39-*" >> $GITHUB_ENV
+          echo "CIBW_BUILD=cp38-*" >> $GITHUB_ENV
         if: startsWith(github.ref, 'refs/tags') != true
 
       - name: Build wheels (Linux / Mac OSX)
