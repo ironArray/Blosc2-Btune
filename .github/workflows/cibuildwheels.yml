@@ -57,11 +57,11 @@ jobs:
         if: startsWith(github.ref, 'refs/tags')
 
       # This step is run when not tagging (typically a PR)
-      # Build just 1 wheel
+      # Build just one wheel
       - name: Sets env vars when not tagging
         run: |
           echo "CIBW_BUILD='cp38-*'" >> $GITHUB_ENV
-        if: !startsWith(github.ref, 'refs/tags')
+        if: ! startsWith(github.ref, 'refs/tags')
 
       - name: Build wheels (Linux / Mac OSX)
         if: runner.os != 'Windows'
