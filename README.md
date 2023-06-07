@@ -15,7 +15,7 @@ If interested, please contact the Blosc Development Team at contact@blosc.org.
 BTune uses a Python wheel for installation, but it can be used from any application that uses C-Blosc2, whether it is in C, Python, or any other language. Currently, only Linux and Mac installers are supported.
 
 ```shell
-pip install blosc2_btune
+pip install blosc2-btune
 ```
 
 ## Using BTune from Python
