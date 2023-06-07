@@ -17,8 +17,6 @@ jobs:
   build_wheels:
     name: Build wheels on ${{ matrix.os }} (${{ matrix.arch }})
     runs-on: ${{ matrix.os }}
-    # Only build wheels when tagging (typically a release)
-    # if: startsWith(github.event.ref, 'refs/tags')
     strategy:
       matrix:
         os: [ubuntu-latest, macos-latest]
@@ -51,6 +49,20 @@ jobs:
           python -m pip install --upgrade pip
           python -m pip install -r requirements-build.txt
 
+      # This step is run when tagging (typically a release)
+      - name: Sets env vars for tagging
+        run: |
+          # Build all wheels
+          echo "CIBW_BUILD='cp38-* cp39-* cp310-* cp311-*'" >> $GITHUB_ENV
+        if: startsWith(github.ref, 'refs/tags')
+
+      # This step is run when not tagging (typically a PR)
+      - name: Sets env vars when not tagging
+        run: |
+          # Build just 1 wheel for testing
+          echo "CIBW_BUILD='cp38-*'" >> $GITHUB_ENV
+        if: !startsWith(github.ref, 'refs/tags')
+
       - name: Build wheels (Linux / Mac OSX)
         if: runner.os != 'Windows'
         run: |
@@ -59,8 +71,6 @@ jobs:
           python -m cibuildwheel --output-dir wheelhouse
         env:
           CIBW_BEFORE_BUILD: bash prebuild.sh
-          CIBW_BUILD: 'cp38-* cp39-* cp310-* cp311-*'
-          # CIBW_BUILD: 'cp38-*'
           CIBW_SKIP: '*-manylinux*_i686 *-musllinux_* ${{ env.CIBW_SKIP}}'
           CIBW_ARCHS_LINUX: ${{ matrix.arch }}
           CIBW_TEST_REQUIRES: pytest blosc2
