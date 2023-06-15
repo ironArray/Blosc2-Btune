@@ -11,7 +11,7 @@ include_directories(
     ${TENSORFLOW_SRC_DIR}
 )
 
-add_library(blosc2_btune SHARED btune.c btune_model.cpp json.c entropy_probe.c)
+add_library(blosc2_btune MODULE btune.c btune_model.cpp json.c entropy_probe.c)
 
 target_link_directories(blosc2_btune
     PUBLIC ${BLOSC2_SRC_DIR}/build/blosc
@@ -42,6 +42,7 @@ else()
 endif()
 
 add_executable(btune_example btune_example.c)
-target_link_libraries(btune_example blosc2_btune blosc2)
+target_link_directories(btune_example PUBLIC ${BLOSC2_SRC_DIR}/build/blosc)
+target_link_libraries(btune_example blosc2 m pthread dl)
 
 install(TARGETS blosc2_btune LIBRARY DESTINATION blosc2_btune)
