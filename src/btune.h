@@ -169,7 +169,7 @@ static const btune_config BTUNE_CONFIG_DEFAULTS = {
     BTUNE_COMP_BALANCED,
     {0, 5, 10, BTUNE_STOP},
     false,
-    1,
+    -1,
     NULL,
 };
 
