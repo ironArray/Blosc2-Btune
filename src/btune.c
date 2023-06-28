@@ -84,25 +84,27 @@ static void add_filter(btune_struct *btune_params, uint8_t filter) {
 // Get the codecs list for btune
 static void btune_init_codecs(btune_struct *btune_params) {
   const char * all_codecs = blosc2_list_compressors();
-  if (2/3 <= btune_params->config.comp_balance <= 1.) {
-    // In HCR mode only try with ZSTD and ZLIB
-    if (strstr(all_codecs, "zstd") != NULL) {
-      add_codec(btune_params, BLOSC_ZSTD);
-    }
-    if (strstr(all_codecs, "zlib") != NULL) {
-      add_codec(btune_params, BLOSC_ZLIB);
-    }
-    // And disable LZ4HC as it compress typically less
-    // add_codec(btune_params, BLOSC_LZ4HC);
-  } else {
-    // In all other modes, LZ4 is mandatory
-    add_codec(btune_params, BLOSC_LZ4);
-    if (1/3 <= btune_params->config.comp_balance <= 2/3) {
-      // In BALANCE mode give BLOSCLZ a chance
-      add_codec(btune_params, BLOSC_BLOSCLZ);
-    }
-    if (btune_params->config.perf_mode == BTUNE_PERF_DECOMP) {
-      add_codec(btune_params, BLOSC_LZ4HC);
+  if (btune_params->config.comp_balance <= 1.) {
+    if (0.666666 <= btune_params->config.comp_balance) {
+      // In HCR mode only try with ZSTD and ZLIB
+      if (strstr(all_codecs, "zstd") != NULL) {
+        add_codec(btune_params, BLOSC_ZSTD);
+      }
+      if (strstr(all_codecs, "zlib") != NULL) {
+        add_codec(btune_params, BLOSC_ZLIB);
+      }
+      // And disable LZ4HC as it compress typically less
+      // add_codec(btune_params, BLOSC_LZ4HC);
+    } else {
+      // In all other modes, LZ4 is mandatory
+      add_codec(btune_params, BLOSC_LZ4);
+      if (0.333333 <= btune_params->config.comp_balance) {
+        // In BALANCE mode give BLOSCLZ a chance
+        add_codec(btune_params, BLOSC_BLOSCLZ);
+      }
+      if (btune_params->config.perf_mode == BTUNE_PERF_DECOMP) {
+        add_codec(btune_params, BLOSC_LZ4HC);
+      }
     }
   }
 }
