@@ -18,6 +18,7 @@
 #include "btune.h"
 #include "btune_model.h"
 #include "entropy_probe.h"
+#include "btune-private.h"
 
 
 // Disable different states

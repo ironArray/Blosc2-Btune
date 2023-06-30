@@ -41,8 +41,8 @@ else()
     target_link_libraries(blosc2_btune blosc2 tensorflowlite)
 endif()
 
-add_executable(btune_example btune_example.c)
-target_link_directories(btune_example PUBLIC ${BLOSC2_SRC_DIR}/build/blosc)
-target_link_libraries(btune_example blosc2 m pthread dl)
+# Add btune.h to wheel
+install(FILES btune.h DESTINATION ${CMAKE_INSTALL_INCLUDEDIR} COMPONENT DEV)
+
 
 install(TARGETS blosc2_btune LIBRARY DESTINATION blosc2_btune)
