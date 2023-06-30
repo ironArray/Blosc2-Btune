@@ -1,6 +1,6 @@
-# Blosc2 BTune
+# Blosc2 Btune
 
-For using BTune you will first have to create and install its wheel.
+For using Btune you will first have to create and install its wheel.
 
 **Note:** Remove flatbuffers package in your system (if installed).
 This could be incompatible wit the required version in tensorflow.
@@ -41,15 +41,15 @@ Compression ratio: 3456.0 MB -> 662.0 MB (5.2x)
 Compression time: 17.3 s, 199.8 MB/s
 ```
 
-You can use `BTUNE_TRACE=1`, `BTUNE_BALANCE=X` and `BTUNE_MODELS_DIR` to see how BTune is doing.
+You can use `BTUNE_TRACE=1`, `BTUNE_BALANCE=X` and `BTUNE_MODELS_DIR` to see how Btune is doing.
 
 ```shell
 BTUNE_BALANCE=0.1 BTUNE_TRACE=1 BTUNE_MODELS_DIR=./models ./btune_example .../pressure.b2nd pressure-btune.b2nd
 -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
-BTune version: 1.0.0.
+Btune version: 1.0.0.
 Perfomance Mode: BALANCED, Compression Mode: BALANCED, Bandwidth: 20 GB/s.
 Behaviour: Waits - 0, Softs - 5, Hards - 1, Repeat Mode - STOP.
-|    Codec   | Filter | Split | C.Level | Blocksize | Shufflesize | C.Threads | D.Threads |   Score   |  C.Ratio   |   BTune State   | Readapt | Winner
+|    Codec   | Filter | Split | C.Level | Blocksize | Shufflesize | C.Threads | D.Threads |   Score   |  C.Ratio   |   Btune State   | Readapt | Winner
 |        lz4 |      0 |     1 |       9 |         8 |           8 |         1 |         1 |    0.0066 |      2.19x |    CODEC_FILTER |    HARD | W
 |        lz4 |      0 |     0 |       9 |         8 |           8 |         1 |         1 |   0.00594 |      2.61x |    CODEC_FILTER |    HARD | W
 |        lz4 |      1 |     1 |       9 |         8 |           8 |         1 |         1 |   0.00387 |      3.65x |    CODEC_FILTER |    HARD | W

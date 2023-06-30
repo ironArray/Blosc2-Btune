@@ -377,7 +377,7 @@ void btune_init(void *tuner_params, blosc2_context * cctx, blosc2_context * dctx
     printf("-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=\n");
     char bandwidth_str[12];
     bandwidth_to_str(bandwidth_str, btune->config.bandwidth);
-    printf("BTune version: %s\n"
+    printf("Btune version: %s\n"
            "Performance Mode: %s, Compression balance: %f, Bandwidth: %s\n"
            "Behaviour: Waits - %d, Softs - %d, Hards - %d, Repeat Mode - %s\n",
            BTUNE_VERSION_STRING, perf_mode_to_str(btune->config.perf_mode),
@@ -576,7 +576,7 @@ void btune_next_cparams(blosc2_context *context) {
   int nchunk = context->schunk->nchunks;
   if (getenv("BTUNE_TRACE") && nchunk == 0 && btune_params->state != STOP) {
     printf("|    Codec   | Filter | Split | C.Level | Blocksize | Shufflesize | C.Threads | D.Threads |"
-           "   Score   |  C.Ratio   |   BTune State   | Readapt | Winner\n");
+           "   Score   |  C.Ratio   |   Btune State   | Readapt | Winner\n");
   }
 
   *btune_params->aux_cparams = *btune_params->best;

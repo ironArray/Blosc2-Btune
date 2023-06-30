@@ -20,7 +20,7 @@
 #include "context.h"
 
 
-// Internal BTune compression parameters
+// Internal Btune compression parameters
 typedef struct {
     int compcode;
     // The compressor code
@@ -56,26 +56,26 @@ typedef struct {
     // The decompression time obtained with this cparams
 } cparams_btune;
 
-// BTune struct
+// Btune struct
 typedef struct {
   btune_config config;
-  // The BTune config
+  // The Btune config
   int codecs[BTUNE_MAX_CODECS];
-  // The codec list used by BTune
+  // The codec list used by Btune
   uint8_t ncodecs;
-  // Number of codecs used by BTune
+  // Number of codecs used by Btune
   uint8_t filters[BTUNE_MAX_FILTERS];
-  // The filter list used by BTune
+  // The filter list used by Btune
   uint8_t nfilters;
-  // Number of filters used by BTune
+  // Number of filters used by Btune
   int32_t splitmode;
   // Splitmode
   uint8_t clevels[BTUNE_MAX_CLEVELS];
-  // The clevels list used by BTune
+  // The clevels list used by Btune
   uint8_t nclevels;
-  // Number of clevels used by BTune
+  // Number of clevels used by Btune
   cparams_btune * best;
-  // The best cparams optained with BTune
+  // The best cparams optained with Btune
   cparams_btune * aux_cparams;
   // The aux cparams for updating the best
   double * current_scores;
@@ -89,9 +89,9 @@ typedef struct {
   int clevel_index;
   // The index for the clevel array
   int steps_count;
-  // The count of steps made by BTune
+  // The count of steps made by Btune
   btune_state state;
-  // The state of BTune
+  // The state of Btune
   int step_size;
   // The step size within clevels and blocksizes
   int nwaitings;
@@ -101,9 +101,9 @@ typedef struct {
   int nhards;
   // The total count of hard readapts
   bool is_repeating;
-  // If BTune has completed the initial readapts
+  // If Btune has completed the initial readapts
   readapt_type readapt_from;
-  // If BTune is making a hard or soft readapt, or is WAITING
+  // If Btune is making a hard or soft readapt, or is WAITING
   int max_threads;
   // The maximum number of threads used
   blosc2_context * dctx;
@@ -126,10 +126,10 @@ typedef struct {
 /// @endcond
 
 /**
- * @brief BTune initializer.
+ * @brief Btune initializer.
  *
- * This method initializes BTune in the compression context and then it will be used automatically.
- * On each compression, BTune overwrites the compression parameters in the context and, depending
+ * This method initializes Btune in the compression context and then it will be used automatically.
+ * On each compression, Btune overwrites the compression parameters in the context and, depending
  * on the results obtained and its configuration, will adjust them.
  * Example of use:
  * @code{.c}
@@ -140,9 +140,9 @@ typedef struct {
  * blosc2_schunk * schunk = blosc2_schunk_new(&storage);
  * btune_init(&config, schunk->cctx, schunk->dctx);
  * @endcode
- * @param config The BTune configuration determines its behaviour and how will optimize.
- * @param cctx The compression context where BTune tunes the compression parameters. It <b>can not</b> be NULL.
- * @param dctx If not NULL, BTune will modify the number of threads for decompression inside this context.
+ * @param config The Btune configuration determines its behaviour and how will optimize.
+ * @param cctx The compression context where Btune tunes the compression parameters. It <b>can not</b> be NULL.
+ * @param dctx If not NULL, Btune will modify the number of threads for decompression inside this context.
 */
 void btune_init(void * config, blosc2_context* cctx, blosc2_context* dctx);
 

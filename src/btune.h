@@ -8,9 +8,9 @@
 ***********************************************************************/
 
 /** @file  btune.h
- * @brief BTune header file.
+ * @brief Btune header file.
  *
- * This file contains the public methods and structures needed to use BTune.
+ * This file contains the public methods and structures needed to use Btune.
  */
 
 #ifndef BTUNE_H
@@ -43,10 +43,10 @@
 #define BTUNE_ID 1
 
 /**
- * @brief BTune units enumeration.
+ * @brief Btune units enumeration.
  *
  * This enumeration provides the most common units of bandwidth for its use
- * in the BTune config. The bandwidth units are expressed in kB/s.
+ * in the Btune config. The bandwidth units are expressed in kB/s.
 */
 enum bandwidth_units{
   BTUNE_MBPS = 1024,                                  //!< A 1 MB/s bandwidth expressed in kB/s, 1024 kB/s.
@@ -61,8 +61,8 @@ enum bandwidth_units{
 /**
  * @brief Compression mode enumeration.
  *
- * The compression mode alters the BTune criteria for improvement.
- * Depending on this value BTune will prioritize the compression/decompression speed,
+ * The compression mode alters the Btune criteria for improvement.
+ * Depending on this value Btune will prioritize the compression/decompression speed,
  * the compression ratio or both.
 */
 float const BTUNE_COMP_HSP = 0.1;       //!< Optimizes the speed, even accepting memcpy.
@@ -72,8 +72,8 @@ float const BTUNE_COMP_HCR = 0.9;       //!< Optimizes the compression ratio.
 /**
  * @brief Performance mode enumeration.
  *
- * The performance mode alters the BTune scoring function used for improvement.
- * Depending on this value BTune will consider for the scoring either the compression time or
+ * The performance mode alters the Btune scoring function used for improvement.
+ * Depending on this value Btune will consider for the scoring either the compression time or
  * the decompression time, or both.
 */
 typedef enum {
@@ -86,17 +86,17 @@ typedef enum {
 /**
  * @brief Repeat mode enumeration.
  *
- * Changes the way BTune behaves when it has completed all the initial readaptations.
+ * Changes the way Btune behaves when it has completed all the initial readaptations.
  * @see #btune_behaviour
 */
 typedef enum {
-  BTUNE_STOP,         //!< BTune will stop improving.
-  BTUNE_REPEAT_SOFT,  //!< BTune will repeat only the soft readapts continuously.
-  BTUNE_REPEAT_ALL,   //!< BTune will repeat the initial readaptations continuously.
+  BTUNE_STOP,         //!< Btune will stop improving.
+  BTUNE_REPEAT_SOFT,  //!< Btune will repeat only the soft readapts continuously.
+  BTUNE_REPEAT_ALL,   //!< Btune will repeat the initial readaptations continuously.
 } btune_repeat_mode;
 
 /**
- * @brief BTune behaviour struct.
+ * @brief Btune behaviour struct.
  *
  * This specifies the number of initial hard readapts,
  * the number of soft readapts between each hard readapt and the number of waits,
@@ -109,24 +109,24 @@ typedef struct {
   uint32_t nwaits_before_readapt;
   /**< Number of waiting states before a readapt.
    *
-   * During a waiting state BTune will not alter any compression parameter.
+   * During a waiting state Btune will not alter any compression parameter.
   */
   uint32_t nsofts_before_hard;
   //!< Number of soft readapts before a hard readapt.
   uint32_t nhards_before_stop;
   //!< Number of initial hard readapts.
   btune_repeat_mode repeat_mode;
-  /**< BTune repeat mode.
+  /**< Btune repeat mode.
    *
    * Once completed the initial hard readapts, the repeat mode will determine
-   * if BTune continues repeating readapts or stops permanently.
+   * if Btune continues repeating readapts or stops permanently.
   */
 } btune_behaviour;
 
 /**
- * @brief BTune configuration struct.
+ * @brief Btune configuration struct.
  *
- * The btune_config struct contains all the parameters used by BTune which determine
+ * The btune_config struct contains all the parameters used by Btune which determine
  * how the compression parameters will be tuned.
 */
 typedef struct {
@@ -136,17 +136,17 @@ typedef struct {
    * Used to calculate the transmission times.
   */
   btune_performance_mode perf_mode;
-  //!< The BTune performance mode.
+  //!< The Btune performance mode.
   float comp_balance;
-  //!< The BTune compression mode (between 0 (speed) and 1 (cratio)).
+  //!< The Btune compression mode (between 0 (speed) and 1 (cratio)).
   btune_behaviour behaviour;
-  //!< The BTune behaviour config.
+  //!< The Btune behaviour config.
   bool cparams_hint;
   /**< Whether use the cparams specified in the context or not.
    *
-   * When true, this will force BTune to use the cparams provided inside the context, note
+   * When true, this will force Btune to use the cparams provided inside the context, note
    * that after a hard readapt the cparams will change.
-   * When false, BTune will start from a hard readapt to determine the best cparams, note
+   * When false, Btune will start from a hard readapt to determine the best cparams, note
    * that this hard readapt is not considered for the number of initial hard readapts.
    * @see #btune_behaviour
   */
@@ -158,9 +158,9 @@ typedef struct {
 } btune_config;
 
 /**
- * @brief BTune default configuration.
+ * @brief Btune default configuration.
  *
- * This default configuration of BTune is meant for optimizing memory bandwidth, compression speed,
+ * This default configuration of Btune is meant for optimizing memory bandwidth, compression speed,
  * decompression speed and the compression ratio (BALANCED options). It behaves as follows:
  * it starts with a hard readapt (cparams_hint false) and then repeats 5 soft readapts and
  * a hard readapt 1 times before stopping completely.
@@ -176,7 +176,7 @@ static const btune_config BTUNE_CONFIG_DEFAULTS = {
 };
 
 /// @cond DEV
-// Internal BTune state enumeration.
+// Internal Btune state enumeration.
 typedef enum {
     CODEC_FILTER,
     SHUFFLE_SIZE,
@@ -187,7 +187,7 @@ typedef enum {
     STOP,
 } btune_state;
 
-// Internal BTune readapt type
+// Internal Btune readapt type
 typedef enum {
     WAIT,
     SOFT,
