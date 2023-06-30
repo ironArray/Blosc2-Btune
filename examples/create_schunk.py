@@ -16,23 +16,16 @@ chunknitems = 200 * 1000
 cparams = { "typesize": 4}
 dparams = {}
 contiguous = True
-urlpath = "arange_random.b2frame"
+urlpath = "linspace.b2frame"
 
 storage = {"contiguous": contiguous, "urlpath": urlpath, "cparams": cparams, "dparams": dparams}
 blosc2.remove_urlpath(urlpath)
 
 # Create the SChunk
-arange_chunk = np.arange(chunknitems)
-random_chunk = np.random.randint(low=1, size=chunknitems)
+chunk = np.linspace(0, 10, chunknitems)
 schunk = blosc2.SChunk(chunksize=chunknitems * 4, **storage)
-
 for i in range(nchunks):
-    if i % 2 != 0:
-        schunk[i * chunknitems: (i+1) * chunknitems] = arange_chunk * i
-    else:
-        schunk[i * chunknitems: (i+1) * chunknitems] = np.random.randint(low=1, size=chunknitems)
-
-
+    schunk[i * chunknitems: (i + 1) * chunknitems] = chunk
 
 print("SChunk succesfully created!")
 # blosc2.remove_urlpath(urlpath)
