@@ -27,10 +27,10 @@ cd examples
 
 ## Using Btune from Python
 
-To use Btune with Blosc2 in Python, set the `BTUNE_BALANCE` environment variable to a floating-point number between 0 (to optimize speed) and 1 (to optimize compression ratio). Additionally, you can use `BTUNE_PERF_MODE` to optimize compression, decompression, or to achieve a balance between the two by setting it to `COMP`, `DECOMP`, or `BALANCED`, respectively.
+To use Btune with Blosc2 in Python, set the `BTUNE_TRADEOFF` environment variable to a floating-point number between 0 (to optimize speed) and 1 (to optimize compression ratio). Additionally, you can use `BTUNE_PERF_MODE` to optimize compression, decompression, or to achieve a balance between the two by setting it to `COMP`, `DECOMP`, or `BALANCED`, respectively.
 
 ```shell
-BTUNE_BALANCE=0.5 BTUNE_PERF_MODE=COMP python create_schunk.py
+BTUNE_TRADEOFF=0.5 BTUNE_PERF_MODE=COMP python create_schunk.py
 SChunk succesfully created!
 ```
 
@@ -40,7 +40,7 @@ with random data chunks.
 You can set `BTUNE_TRACE=1` to see what Btune is doing.
 
 ```shell
-BTUNE_BALANCE=0.5 BTUNE_PERF_MODE=COMP BTUNE_TRACE=1  python create_schunk.py 
+BTUNE_TRADEOFF=0.5 BTUNE_PERF_MODE=COMP BTUNE_TRACE=1  python create_schunk.py 
 -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 Btune version: 1.0.0
 Performance Mode: COMP, Compression balance: 0.500000, Bandwidth: 20 GB/s
@@ -71,7 +71,7 @@ The Blosc Development Team offers a service in which Btune uses neural network m
 To determine the number of chunks for performing inference, use `BTUNE_USE_INFERENCE`. If set to -1, it performs inference on all chunks. If set to a number greater than 0, it performs inference on this number of chunks and then tweaks parameters for the rest of the chunks. If set to 0, it does not perform inference at all. The default is -1.
 
 ```shell
-BTUNE_BALANCE=0.5 BTUNE_PERF_MODE=COMP BTUNE_TRACE=1  BTUNE_MODELS_DIR=./models/ BTUNE_USE_INFERENCE=3 python create_schunk.py
+BTUNE_TRADEOFF=0.5 BTUNE_PERF_MODE=COMP BTUNE_TRACE=1  BTUNE_MODELS_DIR=./models/ BTUNE_USE_INFERENCE=3 python create_schunk.py
 -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 Btune version: 1.0.0
 Performance Mode: COMP, Compression balance: 0.500000, Bandwidth: 20 GB/s
@@ -99,7 +99,7 @@ Using trained models leads to significantly better performance scores, as demons
 
 ## Using Btune from C
 
-You can also use Btune from C. Similar to the Python examples above, you can activate it by setting the `BTUNE_BALANCE` environment variable. Alternatively, you can set the `tuner_id` in the compression parameters, also known as `cparams`, to the value of `BLOSC_BTUNE`. This will use the default Btune configuration. However, running Btune from C offers the advantage of tuning more parameters based on your interests:
+You can also use Btune from C. Similar to the Python examples above, you can activate it by setting the `BTUNE_TRADEOFF` environment variable. Alternatively, you can set the `tuner_id` in the compression parameters, also known as `cparams`, to the value of `BLOSC_BTUNE`. This will use the default Btune configuration. However, running Btune from C offers the advantage of tuning more parameters based on your interests:
 
 ```
     // compression params
@@ -110,7 +110,7 @@ You can also use Btune from C. Similar to the Python examples above, you can act
     // Btune config parameters
     btune_config btune_config = BTUNE_CONFIG_DEFAULTS;
     btune_config.perf_mode = BTUNE_PERF_COMP; // You can choose BTUNE_PERF_COMP, BTUNE_PERF_DECOMP or BTUNE_PERF_BALANCED
-    btune_config.comp_balance = .5; // Equivalent to BTUNE_BALANCE
+    btune_config.tradeoff = .5; // Equivalent to BTUNE_TRADEOFF
     btune_config.use_inference = 2; // Equivalent to BTUNE_USE_INFERENCE
     btune_config.models_dir = "../models/"; // Equivalent to BTUNE_MODELS_DIR
     btune_config.behaviour.nwaits_before_readapt = 1;       // Number of waits before a readapt
