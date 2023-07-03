@@ -17,7 +17,7 @@ def print_libpath():
     if system == "Linux":
         libname = "libblosc2_btune.so"
     elif system == "Darwin":
-        libname = "libblosc2_btune.dylib"
+        libname = "libblosc2_btune.so"
     elif system == "Windows":
         libname = "libblosc2_btune.dll"
     else:

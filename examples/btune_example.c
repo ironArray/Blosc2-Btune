@@ -1,5 +1,7 @@
-#include "btune.h"
+#include <btune.h>
 #include <blosc2/tuners-registry.h>
+#include "blosc2.h"
+
 
 #define KB  1024.
 #define MB  (1024*KB)
@@ -25,11 +27,11 @@ static int compress(const char* in_fname, const char* out_fname) {
     // btune
     btune_config btune_config = BTUNE_CONFIG_DEFAULTS;
     //btune_config.perf_mode = BTUNE_PERF_DECOMP;
-    btune_config.comp_balance = .5;
+    btune_config.tradeoff = .5;
     btune_config.behaviour.nhards_before_stop = 10;
     btune_config.behaviour.repeat_mode = BTUNE_REPEAT_ALL;
     btune_config.use_inference = 2;
-    btune_config.models_dir = "../models_sample/";
+    btune_config.models_dir = "./models/";
     cparams.tuner_id = BLOSC_BTUNE;
     cparams.tuner_params = &btune_config;
 

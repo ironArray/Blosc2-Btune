@@ -30,7 +30,7 @@ cmake ..
 cmake --build . --target blosc2_static -j
 cd -
 
-# Checkout Python-Blosc2 sources, just for testing the BTune wheel
+# Checkout Python-Blosc2 sources, just for testing the Btune wheel
 # We will use the regular python-blosc2 wheel in combination with BTUNE_BALANCE
 PYTHON_BLOSC2_VERSION="main"
 if [ ! -d "python-blosc2" ]

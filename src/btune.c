@@ -18,6 +18,7 @@
 #include "btune.h"
 #include "btune_model.h"
 #include "entropy_probe.h"
+#include "btune-private.h"
 
 
 // Disable different states
@@ -84,8 +85,8 @@ static void add_filter(btune_struct *btune_params, uint8_t filter) {
 // Get the codecs list for btune
 static void btune_init_codecs(btune_struct *btune_params) {
   const char * all_codecs = blosc2_list_compressors();
-  // Already checked that 0. <= comp_balance <= 1.
-  if (0.666666 <= btune_params->config.comp_balance) {
+  // Already checked that 0. <= tradeoff <= 1.
+  if (0.666666 <= btune_params->config.tradeoff) {
     // In HCR mode only try with ZSTD and ZLIB
     if (strstr(all_codecs, "zstd") != NULL) {
       add_codec(btune_params, BLOSC_ZSTD);
@@ -98,8 +99,8 @@ static void btune_init_codecs(btune_struct *btune_params) {
   } else {
     // In all other modes, LZ4 is mandatory
     add_codec(btune_params, BLOSC_LZ4);
-    if (0.333333 <= btune_params->config.comp_balance) {
-      // In BALANCE mode give BLOSCLZ a chance
+    if (0.333333 <= btune_params->config.tradeoff) {
+      // In BALANCED mode give BLOSCLZ a chance
       add_codec(btune_params, BLOSC_BLOSCLZ);
     }
     if (btune_params->config.perf_mode == BTUNE_PERF_DECOMP) {
@@ -354,14 +355,14 @@ void btune_init(void *tuner_params, blosc2_context * cctx, blosc2_context * dctx
     }
   }
 
-  char* envvar = getenv("BTUNE_BALANCE");
+  char* envvar = getenv("BTUNE_TRADEOFF");
   if (envvar != NULL) {
-    btune->config.comp_balance = atof(envvar);
+    btune->config.tradeoff = atof(envvar);
   }
-  if (btune->config.comp_balance < 0. || btune->config.comp_balance > 1.) {
-    BTUNE_TRACE("Unsupported %f compression balance, it must be between 0. and 1., "
-                "default to %f", btune->config.comp_balance, BTUNE_CONFIG_DEFAULTS.comp_balance);
-    btune->config.comp_balance = BTUNE_CONFIG_DEFAULTS.comp_balance;
+  if (btune->config.tradeoff < 0. || btune->config.tradeoff > 1.) {
+    BTUNE_TRACE("Unsupported %f compression tradeoff, it must be between 0. and 1., "
+                "default to %f", btune->config.tradeoff, BTUNE_CONFIG_DEFAULTS.tradeoff);
+    btune->config.tradeoff = BTUNE_CONFIG_DEFAULTS.tradeoff;
   }
 
 
@@ -376,11 +377,11 @@ void btune_init(void *tuner_params, blosc2_context * cctx, blosc2_context * dctx
     printf("-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=\n");
     char bandwidth_str[12];
     bandwidth_to_str(bandwidth_str, btune->config.bandwidth);
-    printf("BTune version: %s\n"
-           "Performance Mode: %s, Compression balance: %f, Bandwidth: %s\n"
+    printf("Btune version: %s\n"
+           "Performance Mode: %s, Compression tradeoff: %f, Bandwidth: %s\n"
            "Behaviour: Waits - %d, Softs - %d, Hards - %d, Repeat Mode - %s\n",
            BTUNE_VERSION_STRING, perf_mode_to_str(btune->config.perf_mode),
-           btune->config.comp_balance,
+           btune->config.tradeoff,
            bandwidth_str,
            btune->config.behaviour.nwaits_before_readapt,
            btune->config.behaviour.nsofts_before_hard,
@@ -417,7 +418,7 @@ void btune_init(void *tuner_params, blosc2_context * cctx, blosc2_context * dctx
   btune->aux_cparams = aux;
   best->compcode = btune->codecs[0];
   aux->compcode = btune->codecs[0];
-  if (2/3 <= btune->config.comp_balance <= 1.) {
+  if (2/3 <= btune->config.tradeoff <= 1.) {
     best->clevel = 8;
     aux->clevel = 8;
   }
@@ -513,13 +514,13 @@ static void set_btune_cparams(blosc2_context * context, cparams_btune * cparams)
   btune_struct *btune_params = (btune_struct*) context->tuner_params;
 
   // Do not set a too large clevel for ZSTD and BALANCED mode
-  if (1/3 <= btune_params->config.comp_balance <= 2/3 &&
+  if (1/3 <= btune_params->config.tradeoff <= 2/3 &&
       (cparams->compcode == BLOSC_ZSTD || cparams->compcode == BLOSC_ZLIB) &&
       cparams->clevel >= 3) {
     cparams->clevel = 3;
   }
   // Do not set a too large clevel for HCR mode
-  if (2/3 <= btune_params->config.comp_balance <= 1.0 && cparams->clevel >= 6) {
+  if (2/3 <= btune_params->config.tradeoff <= 1.0 && cparams->clevel >= 6) {
     cparams->clevel = 6;
   }
   if (cparams->blocksize) {
@@ -575,7 +576,7 @@ void btune_next_cparams(blosc2_context *context) {
   int nchunk = context->schunk->nchunks;
   if (getenv("BTUNE_TRACE") && nchunk == 0 && btune_params->state != STOP) {
     printf("|    Codec   | Filter | Split | C.Level | Blocksize | Shufflesize | C.Threads | D.Threads |"
-           "   Score   |  C.Ratio   |   BTune State   | Readapt | Winner\n");
+           "   Score   |  C.Ratio   |   Btune State   | Readapt | Winner\n");
   }
 
   *btune_params->aux_cparams = *btune_params->best;
@@ -713,24 +714,24 @@ static double mean(double const * array, int size) {
   return sum / size;
 }
 
-// Determines if btune has improved depending on the comp_balance
+// Determines if btune has improved depending on the tradeoff
 static bool has_improved(btune_struct *btune_params, double score_coef, double cratio_coef) {
-  float comp_balance = btune_params->config.comp_balance;
-  if (comp_balance <= 1/3) {
+  float tradeoff = btune_params->config.tradeoff;
+  if (tradeoff <= 1/3) {
     return (((cratio_coef > 1) && (score_coef > 1)) ||
             ((cratio_coef > 0.5) && (score_coef > 2)) ||
             ((cratio_coef > 0.67) && (score_coef > 1.3)) ||
             ((cratio_coef > 2) && (score_coef > 0.7)));
   }
-  if (comp_balance <= 2/3) {
+  if (tradeoff <= 2/3) {
     return (((cratio_coef > 1) && (score_coef > 1)) ||
             ((cratio_coef > 1.1) && (score_coef > 0.8)) ||
             ((cratio_coef > 1.3) && (score_coef > 0.5)));
   }
-  if (comp_balance <= 1.) {
+  if (tradeoff <= 1.) {
     return cratio_coef > 1;
   }
-  fprintf(stderr, "WARNING: unknown compression balance, it must be between 0. and 1.0\n");
+  fprintf(stderr, "WARNING: unknown tradeoff, it must be between 0. and 1.0\n");
   return false;
 }
 

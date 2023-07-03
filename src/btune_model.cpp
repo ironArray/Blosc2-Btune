@@ -43,14 +43,14 @@ static int get_best_codec(
   tflite::Interpreter *interpreter,
   float cratio,
   float cspeed,
-  float comp_balance,
+  float tradeoff,
   int ncategories
 ) {
   // Fill input tensor
   float* input = interpreter->typed_input_tensor<float>(0);
   *input = cratio;
   *(input + 1) = cspeed;
-  *(input + 2) = comp_balance;
+  *(input + 2) = tradeoff;
 
   // Run inference
   if (interpreter->Invoke() != kTfLiteOk) {
@@ -187,7 +187,7 @@ static int get_best_codec_for_chunk(
   float cratio_norm = normalize(cratio, cratio_mean, cratio_std);
   float cspeed_norm = normalize(rel_speed, cspeed_mean, cspeed_std);
   // Run inference
-  int best = get_best_codec(interpreter, cratio_norm, cspeed_norm, btune->config.comp_balance, metadata->ncategories);
+  int best = get_best_codec(interpreter, cratio_norm, cspeed_norm, btune->config.tradeoff, metadata->ncategories);
   free(ddata);
   // >>> INFERENCE END
   if (trace) {
@@ -302,12 +302,12 @@ static void * load_model(btune_config * config, const char * dirname) {
   // Load model
   std::unique_ptr<tflite::FlatBufferModel> model = tflite::FlatBufferModel::BuildFromFile(model_fname);
   if (model == nullptr) {
-    printf("WARNING: Model file not found in %s\n", model_fname);
+    printf("WARNING: Model files not found in %s\n", model_fname);
     free(model_fname);
     return NULL;
   }
   free(model_fname);
-  printf("INFO: Model files found in the '%s/' directory\n", dirname);
+  printf("INFO: Model files found in the '%s' directory\n", dirname);
 
   // Build the interpreter with the InterpreterBuilder.
   // Note: all Interpreters should be built with the InterpreterBuilder,

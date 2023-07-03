@@ -1,6 +1,9 @@
 #ifndef BTUNE_MODEL_H
 #define BTUNE_MODEL_H
 
+#include <blosc2.h>
+#include "btune-private.h"
+
 #ifdef __cplusplus
 extern "C" {
 #endif
