@@ -31,40 +31,42 @@ To use Btune with Blosc2 in Python, set the `BTUNE_TRADEOFF` environment variabl
 
 ```shell
 BTUNE_TRADEOFF=0.5 BTUNE_PERF_MODE=COMP python create_schunk.py
+WARNING: Empty metadata, no inference performed
 SChunk succesfully created!
 ```
 
-This creates an empty SChunk on dosk and append chunks alternating arange data chunks 
-with random data chunks.
+This creates a SChunk on disk with some data. The warning message
+`Empty metadata, no inference performed`
+should be ignored as long as we are not using the trained models.
 
 You can set `BTUNE_TRACE=1` to see what Btune is doing.
 
 ```shell
-BTUNE_TRADEOFF=0.5 BTUNE_PERF_MODE=COMP BTUNE_TRACE=1  python create_schunk.py 
+BTUNE_TRACE=1 BTUNE_TRADEOFF=0.5 BTUNE_PERF_MODE=COMP python create_schunk.py
 -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 Btune version: 1.0.0
-Performance Mode: COMP, Compression balance: 0.500000, Bandwidth: 20 GB/s
+Performance Mode: COMP, Compression tradeoff: 0.500000, Bandwidth: 20 GB/s
 Behaviour: Waits - 0, Softs - 5, Hards - 11, Repeat Mode - STOP
 TRACE: Environment variable BTUNE_MODELS_DIR is not defined
 WARNING: Empty metadata, no inference performed
 |    Codec   | Filter | Split | C.Level | Blocksize | Shufflesize | C.Threads | D.Threads |   Score   |  C.Ratio   |   Btune State   | Readapt | Winner
-|        lz4 |      0 |     1 |       6 |         0 |           4 |        16 |        16 |  0.000284 |   2.5e+04x |    CODEC_FILTER |    HARD | S
-|        lz4 |      0 |     0 |       6 |         0 |           4 |        16 |        16 |   0.00054 |         2x |    CODEC_FILTER |    HARD | W
-|        lz4 |      1 |     1 |       6 |         0 |           4 |        16 |        16 |  0.000139 |   2.5e+04x |    CODEC_FILTER |    HARD | S
-|        lz4 |      1 |     0 |       6 |         0 |           4 |        16 |        16 |  8.12e-05 |       103x |    CODEC_FILTER |    HARD | W
-|        lz4 |      2 |     1 |       6 |         0 |           4 |        16 |        16 |  0.000349 |   2.5e+04x |    CODEC_FILTER |    HARD | S
-|        lz4 |      2 |     0 |       6 |         0 |           4 |        16 |        16 |  0.000185 |       198x |    CODEC_FILTER |    HARD | W
-|    blosclz |      0 |     1 |       6 |         0 |           4 |        16 |        16 |  4.99e-05 |   2.5e+04x |    CODEC_FILTER |    HARD | S
-|    blosclz |      0 |     0 |       6 |         0 |           4 |        16 |        16 |  0.000985 |      1.99x |    CODEC_FILTER |    HARD | -
-|    blosclz |      1 |     1 |       6 |         0 |           4 |        16 |        16 |  0.000101 |   2.5e+04x |    CODEC_FILTER |    HARD | S
-|    blosclz |      1 |     0 |       6 |         0 |           4 |        16 |        16 |  0.000113 |      59.2x |    CODEC_FILTER |    HARD | -
+|        lz4 |      0 |     1 |       6 |         0 |           4 |        16 |        16 |  0.000551 |         1x |    CODEC_FILTER |    HARD | W
+|        lz4 |      0 |     0 |       6 |         0 |           4 |        16 |        16 |  0.000245 |         1x |    CODEC_FILTER |    HARD | -
+|        lz4 |      1 |     1 |       6 |         0 |           4 |        16 |        16 |  0.000386 |      1.61x |    CODEC_FILTER |    HARD | W
+|        lz4 |      1 |     0 |       6 |         0 |           4 |        16 |        16 |  0.000318 |      1.57x |    CODEC_FILTER |    HARD | -
+|        lz4 |      2 |     1 |       6 |         0 |           4 |        16 |        16 |  0.000827 |      5.25x |    CODEC_FILTER |    HARD | W
+|        lz4 |      2 |     0 |       6 |         0 |           4 |        16 |        16 |  0.000718 |       5.4x |    CODEC_FILTER |    HARD | W
+|    blosclz |      0 |     1 |       6 |         0 |           4 |        16 |        16 |  0.000231 |         1x |    CODEC_FILTER |    HARD | -
+|    blosclz |      0 |     0 |       6 |         0 |           4 |        16 |        16 |  0.000109 |         1x |    CODEC_FILTER |    HARD | -
+|    blosclz |      1 |     1 |       6 |         0 |           4 |        16 |        16 |  0.000531 |      1.62x |    CODEC_FILTER |    HARD | -
+|    blosclz |      1 |     0 |       6 |         0 |           4 |        16 |        16 |   0.00129 |      1.58x |    CODEC_FILTER |    HARD | -
 SChunk succesfully created!
 ```
 
 You can see in the column `Winner` if the combination is a winner (`W`), it does not improve
 the previous winner (`-`) or it is a special value chunk meaning that it is really easy to 
-compress no matter the compression parameters (`S`) so Btune cannot determine whether
-this is a winner or not. 
+compress no matter the compression parameters (`S`), so Btune cannot determine whether
+this is a winner or not in this last case. 
 
 The Blosc Development Team offers a service in which Btune uses neural network models trained specifically for your data to determine the optimal combination of codecs and filters. To use these models, set `BTUNE_MODELS_DIR` to the directory containing the model files after the Blosc Development Team has completed training. Btune will then automatically use the trained model.
 
@@ -74,24 +76,24 @@ To determine the number of chunks for performing inference, use `BTUNE_USE_INFER
 BTUNE_TRADEOFF=0.5 BTUNE_PERF_MODE=COMP BTUNE_TRACE=1  BTUNE_MODELS_DIR=./models/ BTUNE_USE_INFERENCE=3 python create_schunk.py
 -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 Btune version: 1.0.0
-Performance Mode: COMP, Compression balance: 0.500000, Bandwidth: 20 GB/s
+Performance Mode: COMP, Compression tradeoff: 0.500000, Bandwidth: 20 GB/s
 Behaviour: Waits - 0, Softs - 5, Hards - 11, Repeat Mode - STOP
-INFO: Model files found in the './models//' directory
-TRACE: time load model: 0.000091
-TRACE: Inference category=6 codec=1 filter=2 clevel=5 splitmode=2 time entropy=0.001048 inference=0.000015
+INFO: Model files found in the './models/' directory
+TRACE: time load model: 0.000077
+TRACE: Inference category=4 codec=1 filter=0 clevel=5 splitmode=2 time entropy=0.000666 inference=0.000015
 |    Codec   | Filter | Split | C.Level | Blocksize | Shufflesize | C.Threads | D.Threads |   Score   |  C.Ratio   |   Btune State   | Readapt | Winner
-|        lz4 |      2 |     1 |       5 |         0 |           4 |        16 |        16 |  0.000489 |   2.5e+04x |    CODEC_FILTER |    HARD | S
-TRACE: Inference category=7 codec=1 filter=34 clevel=5 splitmode=2 time entropy=0.000252 inference=0.000003
-|        lz4 |     34 |     1 |       5 |         0 |           4 |        16 |        16 |   0.00011 |       133x |    CODEC_FILTER |    HARD | W
-TRACE: Inference category=6 codec=1 filter=2 clevel=5 splitmode=2 time entropy=0.000095 inference=0.000002
-|        lz4 |      2 |     1 |       5 |         0 |           4 |        16 |        16 |  0.000123 |   2.5e+04x |    CODEC_FILTER |    HARD | S
-|        lz4 |      2 |     1 |       5 |         0 |           4 |        16 |        16 |   8.4e-05 |       184x |    CODEC_FILTER |    HARD | W
-|        lz4 |      2 |     0 |       5 |         0 |           4 |        16 |        16 |  0.000117 |   2.5e+04x |    CODEC_FILTER |    HARD | S
-|        lz4 |      2 |     1 |       5 |         0 |           4 |        16 |        16 |   0.00013 |       159x |    THREADS_COMP |    HARD | -
-|        lz4 |      2 |     1 |       5 |         0 |           4 |        15 |        16 |  0.000473 |   2.5e+04x |    THREADS_COMP |    HARD | S
-|        lz4 |      2 |     1 |       5 |         0 |           4 |        16 |        16 |  0.000401 |       152x |          CLEVEL |    HARD | -
-|        lz4 |      2 |     1 |       6 |         0 |           4 |        16 |        16 |   0.00013 |   2.5e+04x |          CLEVEL |    SOFT | S
-|        lz4 |      2 |     1 |       5 |         0 |           4 |        16 |        16 |  0.000134 |      67.3x |          CLEVEL |    SOFT | -
+|        lz4 |      0 |     1 |       5 |         0 |           4 |        16 |        16 |  0.000499 |      1.01x |    CODEC_FILTER |    HARD | W
+TRACE: Inference category=4 codec=1 filter=0 clevel=5 splitmode=2 time entropy=0.000202 inference=0.000003
+|        lz4 |      0 |     1 |       5 |         0 |           4 |        16 |        16 |  0.000274 |      1.01x |    CODEC_FILTER |    HARD | -
+TRACE: Inference category=4 codec=1 filter=0 clevel=5 splitmode=2 time entropy=0.000235 inference=0.000003
+|        lz4 |      0 |     1 |       5 |         0 |           4 |        16 |        16 |  0.000136 |      1.01x |    CODEC_FILTER |    HARD | -
+|        lz4 |      0 |     1 |       5 |         0 |           4 |        16 |        16 |  0.000138 |      1.01x |    CODEC_FILTER |    HARD | -
+|        lz4 |      0 |     0 |       5 |         0 |           4 |        16 |        16 |  0.000126 |         1x |    CODEC_FILTER |    HARD | -
+|        lz4 |      0 |     1 |       5 |         0 |           4 |        16 |        16 |  0.000139 |      1.01x |    THREADS_COMP |    HARD | W
+|        lz4 |      0 |     1 |       5 |         0 |           4 |        16 |        16 |  0.000138 |      1.01x |          CLEVEL |    HARD | -
+|        lz4 |      0 |     1 |       6 |         0 |           4 |        16 |        16 |  0.000135 |      1.01x |          CLEVEL |    SOFT | -
+|        lz4 |      0 |     1 |       5 |         0 |           4 |        16 |        16 |  0.000135 |      1.01x |          CLEVEL |    SOFT | -
+|        lz4 |      0 |     1 |       4 |         0 |           4 |        16 |        16 |  0.000136 |      1.01x |          CLEVEL |    SOFT | -
 SChunk succesfully created!
 ```
 
@@ -135,3 +137,16 @@ You can also use Btune from C. Similar to the Python examples above, you can act
 ```
 
 See the full example in `examples/btune_example.c`.
+If you would like to run this C example, run:
+
+### Linux
+```shell
+gcc -o btune_example btune_example.c -lblosc2 -lm -I $CONDA_PREFIX/include/ -L $CONDA_PREFIX/lib64/
+BTUNE_TRACE=1 LD_LIBRARY_PATH=$CONDA_PREFIX/lib64 ./btune_example linspace.b2frame out.b2frame
+```
+
+### MacOS
+```shell
+gcc -o btune_example btune_example.c -lblosc2 -lm -I $CONDA_PREFIX/include/ -L $CONDA_PREFIX/lib/
+BTUNE_TRACE=1 DYLD_LIBRARY_PATH=$CONDA_PREFIX/lib ./btune_example linspace.b2frame out.b2frame
+```

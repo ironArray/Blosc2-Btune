@@ -41,10 +41,10 @@ Compression ratio: 3456.0 MB -> 662.0 MB (5.2x)
 Compression time: 17.3 s, 199.8 MB/s
 ```
 
-You can use `BTUNE_TRACE=1`, `BTUNE_BALANCE=X` and `BTUNE_MODELS_DIR` to see how Btune is doing.
+You can use `BTUNE_TRACE=1`, `BTUNE_TRADEOFF=X` and `BTUNE_MODELS_DIR` to see how Btune is doing.
 
 ```shell
-BTUNE_BALANCE=0.1 BTUNE_TRACE=1 BTUNE_MODELS_DIR=./models ./btune_example .../pressure.b2nd pressure-btune.b2nd
+BTUNE_TRADEOFF=0.1 BTUNE_TRACE=1 BTUNE_MODELS_DIR=./models ./btune_example .../pressure.b2nd pressure-btune.b2nd
 -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 Btune version: 1.0.0.
 Perfomance Mode: BALANCED, Compression Mode: BALANCED, Bandwidth: 20 GB/s.
