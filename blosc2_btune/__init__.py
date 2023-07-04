@@ -6,7 +6,7 @@
 #
 # See LICENSE.txt for details about copyright and rights to use.
 
-VERSION = "1.0.0"
+VERSION = "1.0.1.dev"
 
 import os
 import platform
