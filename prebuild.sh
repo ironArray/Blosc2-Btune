@@ -25,6 +25,8 @@ else
 fi
 
 # Compile static version of C-Blosc2
+rm -rf c-blosc2/build
+mkdir c-blosc2/build
 cd c-blosc2/build
 cmake ..
 cmake --build . --target blosc2_static -j
