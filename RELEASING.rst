@@ -22,7 +22,8 @@ Follow the steps in README-DEVELOPERS.md file for locally creating and
 installing the wheel, then test it::
 
   $ cd python-blosc2
-  $ BTUNE_TRADEOFF=0.5 BTUNE_MODELS_DIR=../examples/models python -m pytest
+  $ python setup.py build_ext -i -j
+  $ BTUNE_TRADEOFF=0.5 BTUNE_USE_INFERENCE=3 BTUNE_MODELS_DIR=../examples/models python -m pytest
 
 
 Tagging

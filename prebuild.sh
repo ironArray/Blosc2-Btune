@@ -21,6 +21,9 @@ then
   git clone --depth=1 -b $BLOSC2_VERSION https://github.com/Blosc/c-blosc2.git c-blosc2
   mkdir c-blosc2/build
 else
+  cd c-blosc2
+  git pull
+  cd ..
   echo "C-Blosc2 ($BLOSC2_VERSION) already cloned"
 fi
 
@@ -37,5 +40,9 @@ if [ ! -d "python-blosc2" ]
 then
   git clone --recursive --depth=1 -b $PYTHON_BLOSC2_VERSION https://github.com/Blosc/python-blosc2.git python-blosc2
 else
+  cd python-blosc2
+  git pull
+  git submodule update
+  cd ..
   echo "Python-Blosc2 ($PYTHON_BLOSC2_VERSION) already cloned"
 fi
