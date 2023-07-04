@@ -16,14 +16,13 @@ fi
 
 # Checkout C-Blosc2 sources
 BLOSC2_VERSION="main"
-if [-d "c-blosc2" ]
+if [ ! -d "c-blosc2" ]
 then
-    rm -rf c-blosc2/build
-#else
-#  echo "C-Blosc2 ($BLOSC2_VERSION) already cloned"
+  git clone --depth=1 -b $BLOSC2_VERSION https://github.com/Blosc/c-blosc2.git c-blosc2
+  mkdir c-blosc2/build
+else
+  echo "C-Blosc2 ($BLOSC2_VERSION) already cloned"
 fi
-git clone --depth=1 -b $BLOSC2_VERSION https://github.com/Blosc/c-blosc2.git c-blosc2
-mkdir c-blosc2/build
 
 # Compile static version of C-Blosc2
 cd c-blosc2/build
@@ -34,9 +33,9 @@ cd -
 # Checkout Python-Blosc2 sources, just for testing the Btune wheel
 # We will use the regular python-blosc2 wheel in combination with BTUNE_BALANCE
 PYTHON_BLOSC2_VERSION="main"
-if [-d "python-blosc2" ]
+if [ ! -d "python-blosc2" ]
 then
-  rm -rf python-blosc2
-fi
   git clone --recursive --depth=1 -b $PYTHON_BLOSC2_VERSION https://github.com/Blosc/python-blosc2.git python-blosc2
-#  echo "Python-Blosc2 ($PYTHON_BLOSC2_VERSION) already cloned"
+else
+  echo "Python-Blosc2 ($PYTHON_BLOSC2_VERSION) already cloned"
+fi
