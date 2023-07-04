@@ -10,6 +10,9 @@ cmake_minimum_required(VERSION 3.20)
 project(blosc2_btune LANGUAGES C CXX)
 set (CMAKE_CXX_STANDARD 20)
 
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -c")
+
+
 # Only linking tensorflow statically is officially supported at this time
 option(BUILD_STATIC_TFLITE "Link tflite statically" ON)
 
