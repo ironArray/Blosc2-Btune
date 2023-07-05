@@ -2,7 +2,7 @@
 
 Btune is a dynamic plugin for Blosc2 that assists in finding the optimal combination of compression parameters. It works by training a neural network on your most representative datasets.
 
-By default, this software uses a genetic algorithm to test different combinations of compression parameters that meet your requirements for both compression ratio and speed for every chunk in the dataset. It assigns a score to each combination and, after a number of iterations, the software stops and uses the best score (minimal value) found for the rest of the dataset. For a more graphical explanation, visit https://btune.blosc.org.
+By default, this software uses a genetic algorithm to test different combinations of compression parameters that meet your requirements for both compression ratio and speed for every chunk in the dataset. It assigns a score to each combination and, after a number of iterations, the software stops and uses the best score (minimal value) found for the rest of the dataset. For more info and a graphical visualization, visit https://btune.blosc.org.
 
 The process of finding optimal compression parameters in Blosc2 can be slow because of the large number of combinations of compression parameters (codec, compression level, filter, split mode, number of threads, etc.). This can require a significant amount of trial and error to find the best combinations. However, you can significantly accelerate this process by training a neural network on your own datasets.
 
@@ -66,9 +66,11 @@ SChunk succesfully created!
 You can see in the column `Winner` if the combination is a winner (`W`), it does not improve
 the previous winner (`-`) or it is a special value chunk meaning that it is really easy to 
 compress no matter the compression parameters (`S`), so Btune cannot determine whether
-this is a winner or not in this last case. 
+this is a winner or not in this last case.
 
-The Blosc Development Team offers a service in which Btune uses neural network models trained specifically for your data to determine the optimal combination of codecs and filters. To use these models, set `BTUNE_MODELS_DIR` to the directory containing the model files after the Blosc Development Team has completed training. Btune will then automatically use the trained model.
+## Btune Model
+
+The Blosc Development Team offers **Btune Model**, a service in which Btune uses neural network models trained specifically for your data to determine the optimal combination of codecs and filters. To use these models, set `BTUNE_MODELS_DIR` to the directory containing the model files after the Blosc Development Team has completed training. Btune will then automatically use the trained model.  See https://btune.blosc.org for more info on how this works.
 
 To determine the number of chunks for performing inference, use `BTUNE_USE_INFERENCE`. If set to -1, it performs inference on all chunks. If set to a number greater than 0, it performs inference on this number of chunks and then tweaks parameters for the rest of the chunks. If set to 0, it does not perform inference at all. The default is -1.
 
@@ -97,7 +99,7 @@ TRACE: Inference category=4 codec=1 filter=0 clevel=5 splitmode=2 time entropy=0
 SChunk succesfully created!
 ```
 
-Using trained models leads to significantly better performance scores, as demonstrated by the balance between compression speed and compression ratio. Moreover, the process of finding the best combination is much faster with trained models.
+Using Btune Model leads to significantly better performance scores, as demonstrated by the balance between compression speed and compression ratio. Moreover, the process of finding the best combination is much faster with trained models.
 
 ## Using Btune from C
 
@@ -150,3 +152,7 @@ BTUNE_TRACE=1 LD_LIBRARY_PATH=$CONDA_PREFIX/lib64 ./btune_example linspace.b2fra
 gcc -o btune_example btune_example.c -lblosc2 -lm -I $CONDA_PREFIX/include/ -L $CONDA_PREFIX/lib/
 BTUNE_TRACE=1 DYLD_LIBRARY_PATH=$CONDA_PREFIX/lib ./btune_example linspace.b2frame out.b2frame
 ```
+
+## Platform support
+
+Right now, we support Btune on just Intel Linux and Intel Mac platforms.  There is an ongoing effort on bringing Windows and ARM wheels.  When this would be done, we will inform about this.
