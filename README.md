@@ -68,9 +68,9 @@ the previous winner (`-`) or it is a special value chunk meaning that it is real
 compress no matter the compression parameters (`S`), so Btune cannot determine whether
 this is a winner or not in this last case.
 
-## Btune Model
+## Btune Models
 
-The Blosc Development Team offers **Btune Model**, a service in which Btune uses neural network models trained specifically for your data to determine the optimal combination of codecs and filters. To use these models, set `BTUNE_MODELS_DIR` to the directory containing the model files after the Blosc Development Team has completed training. Btune will then automatically use the trained model.  See https://btune.blosc.org for more info on how this works.
+The Blosc Development Team offers **Btune Models**, a service in which Btune uses neural network models trained specifically for your data to determine the optimal combination of codecs and filters. To use these models, set `BTUNE_MODELS_DIR` to the directory containing the models files after the Blosc Development Team has completed training. Btune will then automatically use the trained model; keep reading for how this works.
 
 To determine the number of chunks for performing inference, use `BTUNE_USE_INFERENCE`. If set to -1, it performs inference on all chunks. If set to a number greater than 0, it performs inference on this number of chunks and then tweaks parameters for the rest of the chunks. If set to 0, it does not perform inference at all. The default is -1.
 
@@ -99,7 +99,7 @@ TRACE: Inference category=4 codec=1 filter=0 clevel=5 splitmode=2 time entropy=0
 SChunk succesfully created!
 ```
 
-Using Btune Model leads to significantly better performance scores, as demonstrated by the balance between compression speed and compression ratio. Moreover, the process of finding the best combination is much faster with trained models.
+Using Btune Models leads to significantly better performance scores, as demonstrated by the balance between compression speed and compression ratio. Moreover, the process of finding the best combination is much faster with trained models.  See https://btune.blosc.org for more info.
 
 ## Using Btune from C
 
