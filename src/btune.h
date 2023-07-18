@@ -65,9 +65,10 @@ enum bandwidth_units{
  * Depending on this value Btune will prioritize the compression/decompression speed,
  * the compression ratio or both.
 */
-float const BTUNE_COMP_HSP = 0.1;       //!< Optimizes the speed, even accepting memcpy.
-float const BTUNE_COMP_BALANCED = 0.5;  //!< Optimizes both, the speed and compression ratio.
-float const BTUNE_COMP_HCR = 0.9;       //!< Optimizes the compression ratio.
+#define BTUNE_COMP_HSP 0.1F      //!< Optimizes the speed, even accepting memcpy.
+#define BTUNE_COMP_BALANCED 0.5F  //!< Optimizes both, the speed and compression ratio.
+#define BTUNE_COMP_HCR 0.9F       //!< Optimizes the compression ratio.
+
 
 /**
  * @brief Performance mode enumeration.
