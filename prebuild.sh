@@ -16,6 +16,8 @@ fi
 
 # Checkout C-Blosc2 sources
 BLOSC2_VERSION="main"
+# We need to remove binaries from previous architectures
+rm -rf c-blosc2
 if [ ! -d "c-blosc2" ]
 then
   git clone --depth=1 -b $BLOSC2_VERSION https://github.com/Blosc/c-blosc2.git c-blosc2
@@ -24,7 +26,6 @@ else
   cd c-blosc2
   git pull
   cd ..
-  rm -rf c-blosc2/build
   echo "C-Blosc2 ($BLOSC2_VERSION) already cloned"
 fi
 
@@ -37,6 +38,7 @@ cd -
 # Checkout Python-Blosc2 sources, just for testing the Btune wheel
 # We will use the regular python-blosc2 wheel in combination with BTUNE_BALANCE
 PYTHON_BLOSC2_VERSION="main"
+rm -rf python-blosc2
 if [ ! -d "python-blosc2" ]
 then
   git clone --recursive --depth=1 -b $PYTHON_BLOSC2_VERSION https://github.com/Blosc/python-blosc2.git python-blosc2
