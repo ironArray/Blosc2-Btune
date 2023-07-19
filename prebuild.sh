@@ -24,6 +24,7 @@ else
   cd c-blosc2
   git pull
   cd ..
+  rm -rf c-blosc2/build
   echo "C-Blosc2 ($BLOSC2_VERSION) already cloned"
 fi
 
