@@ -17,10 +17,16 @@ CIBW_BEFORE_BUILD="bash prebuild.sh" python -m cibuildwheel --only 'cp311-manyli
 Please note that the prebuild.sh will be executed from inside the docker
 (handled by CIBuild).
 
-For Mac:
+For Mac x86_64:
 
 ```shell
-CIBW_BEFORE_BUILD="bash prebuild.sh" python -m cibuildwheel --only 'cp311-macosx_x86_64'
+CMAKE_OSX_ARCHITECTURES=x86_64 CIBW_BEFORE_BUILD="bash prebuild.sh" python -m cibuildwheel --only 'cp311-macosx_x86_64'
+```
+
+For Mac arm64:
+
+```shell
+CMAKE_OSX_ARCHITECTURES=arm64 CIBW_BEFORE_BUILD="bash prebuild.sh" python -m cibuildwheel --only 'cp311-macosx_arm64'
 ```
 
 ## Install the wheel
