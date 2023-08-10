@@ -513,16 +513,6 @@ static void set_btune_cparams(blosc2_context * context, cparams_btune * cparams)
   context->clevel = cparams->clevel;
   btune_struct *btune_params = (btune_struct*) context->tuner_params;
 
-  // Do not set a too large clevel for ZSTD and BALANCED mode
-  if (1/3 <= btune_params->config.tradeoff <= 2/3 &&
-      (cparams->compcode == BLOSC_ZSTD || cparams->compcode == BLOSC_ZLIB) &&
-      cparams->clevel >= 3) {
-    cparams->clevel = 3;
-  }
-  // Do not set a too large clevel for HCR mode
-  if (2/3 <= btune_params->config.tradeoff <= 1.0 && cparams->clevel >= 6) {
-    cparams->clevel = 6;
-  }
   if (cparams->blocksize) {
     context->blocksize = cparams->blocksize;
   }
@@ -597,15 +587,21 @@ void btune_next_cparams(blosc2_context *context) {
         cparams->splitmode = btune_params->splitmode;
       }
 
-      // The first tuning of ZSTD in some modes should start in clevel 3
       btune_performance_mode perf_mode = config.perf_mode;
-      if (
-              (perf_mode == BTUNE_PERF_COMP || perf_mode == BTUNE_PERF_BALANCED) &&
-              (cparams->compcode == BLOSC_ZSTD || cparams->compcode == BLOSC_ZLIB) &&
-              (btune_params->nhards == 0)
-              ) {
-        cparams->clevel = 3;
+      if (error == 0) {
+        cparams->clevel = clevel;
       }
+      else {
+        // The first tuning of ZSTD in some modes should start in clevel 3
+        if (
+          (perf_mode == BTUNE_PERF_COMP || perf_mode == BTUNE_PERF_BALANCED) &&
+          (cparams->compcode == BLOSC_ZSTD || cparams->compcode == BLOSC_ZLIB) &&
+          (btune_params->nhards == 0)
+          ) {
+          cparams->clevel = 3;
+        }
+      }
+
       if (btune_params->inference_ended) {
         btune_params->aux_index++;
       }
