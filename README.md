@@ -30,37 +30,37 @@ cd examples
 To use Btune with Blosc2 in Python, set the `BTUNE_TRADEOFF` environment variable to a floating-point number between 0 (to optimize speed) and 1 (to optimize compression ratio). Additionally, you can use `BTUNE_PERF_MODE` to optimize compression, decompression, or to achieve a balance between the two by setting it to `COMP`, `DECOMP`, or `BALANCED`, respectively.
 
 ```shell
-BTUNE_TRADEOFF=0.5 BTUNE_PERF_MODE=COMP python create_schunk.py
+BTUNE_TRADEOFF=0.5 BTUNE_PERF_MODE=COMP python create_ndarray.py
 WARNING: Empty metadata, no inference performed
-SChunk succesfully created!
+NDArray succesfully created!
 ```
 
-This creates a SChunk on disk with some data. The warning message
+This creates a NDArray on disk with some data. The warning message
 `Empty metadata, no inference performed`
 should be ignored as long as we are not using the trained models.
 
 You can set `BTUNE_TRACE=1` to see what Btune is doing.
 
 ```shell
-BTUNE_TRACE=1 BTUNE_TRADEOFF=0.5 BTUNE_PERF_MODE=COMP python create_schunk.py
+BTUNE_TRACE=1 BTUNE_TRADEOFF=0.5 BTUNE_PERF_MODE=COMP python create_ndarray.py
 -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
-Btune version: 1.0.0
+Btune version: 1.0.1.dev
 Performance Mode: COMP, Compression tradeoff: 0.500000, Bandwidth: 20 GB/s
 Behaviour: Waits - 0, Softs - 5, Hards - 11, Repeat Mode - STOP
 TRACE: Environment variable BTUNE_MODELS_DIR is not defined
 WARNING: Empty metadata, no inference performed
 |    Codec   | Filter | Split | C.Level | Blocksize | Shufflesize | C.Threads | D.Threads |   Score   |  C.Ratio   |   Btune State   | Readapt | Winner
-|        lz4 |      0 |     1 |       6 |         0 |           4 |        16 |        16 |  0.000551 |         1x |    CODEC_FILTER |    HARD | W
-|        lz4 |      0 |     0 |       6 |         0 |           4 |        16 |        16 |  0.000245 |         1x |    CODEC_FILTER |    HARD | -
-|        lz4 |      1 |     1 |       6 |         0 |           4 |        16 |        16 |  0.000386 |      1.61x |    CODEC_FILTER |    HARD | W
-|        lz4 |      1 |     0 |       6 |         0 |           4 |        16 |        16 |  0.000318 |      1.57x |    CODEC_FILTER |    HARD | -
-|        lz4 |      2 |     1 |       6 |         0 |           4 |        16 |        16 |  0.000827 |      5.25x |    CODEC_FILTER |    HARD | W
-|        lz4 |      2 |     0 |       6 |         0 |           4 |        16 |        16 |  0.000718 |       5.4x |    CODEC_FILTER |    HARD | W
-|    blosclz |      0 |     1 |       6 |         0 |           4 |        16 |        16 |  0.000231 |         1x |    CODEC_FILTER |    HARD | -
-|    blosclz |      0 |     0 |       6 |         0 |           4 |        16 |        16 |  0.000109 |         1x |    CODEC_FILTER |    HARD | -
-|    blosclz |      1 |     1 |       6 |         0 |           4 |        16 |        16 |  0.000531 |      1.62x |    CODEC_FILTER |    HARD | -
-|    blosclz |      1 |     0 |       6 |         0 |           4 |        16 |        16 |   0.00129 |      1.58x |    CODEC_FILTER |    HARD | -
-SChunk succesfully created!
+|        lz4 |      0 |     1 |       8 |         0 |           8 |         4 |         4 |  9.74e-05 |      1.97x |    CODEC_FILTER |    HARD | W
+|        lz4 |      0 |     0 |       8 |         0 |           8 |         4 |         4 |  6.13e-05 |      2.07x |    CODEC_FILTER |    HARD | W
+|        lz4 |      1 |     1 |       8 |         0 |           8 |         4 |         4 |  2.72e-05 |      3.97x |    CODEC_FILTER |    HARD | W
+|        lz4 |      1 |     0 |       8 |         0 |           8 |         4 |         4 |   1.8e-05 |      3.91x |    CODEC_FILTER |    HARD | -
+|        lz4 |      2 |     1 |       8 |         0 |           8 |         4 |         4 |     3e-05 |      4.52x |    CODEC_FILTER |    HARD | W
+|        lz4 |      2 |     0 |       8 |         0 |           8 |         4 |         4 |  2.23e-05 |      4.46x |    CODEC_FILTER |    HARD | -
+|    blosclz |      0 |     1 |       8 |         0 |           8 |         4 |         4 |  8.03e-05 |      1.99x |    CODEC_FILTER |    HARD | -
+|    blosclz |      0 |     0 |       8 |         0 |           8 |         4 |         4 |  6.01e-05 |      2.09x |    CODEC_FILTER |    HARD | -
+|    blosclz |      1 |     1 |       8 |         0 |           8 |         4 |         4 |  3.12e-05 |      3.97x |    CODEC_FILTER |    HARD | -
+|    blosclz |      1 |     0 |       8 |         0 |           8 |         4 |         4 |   4.4e-05 |      3.82x |    CODEC_FILTER |    HARD | -
+NDArray succesfully created!
 ```
 
 You can see in the column `Winner` if the combination is a winner (`W`), it does not improve
@@ -75,28 +75,28 @@ The Blosc Development Team offers **Btune Models**, a service in which Btune use
 To determine the number of chunks for performing inference, use `BTUNE_USE_INFERENCE`. If set to -1, it performs inference on all chunks. If set to a number greater than 0, it performs inference on this number of chunks and then tweaks parameters for the rest of the chunks. If set to 0, it does not perform inference at all. The default is -1.
 
 ```shell
-BTUNE_TRADEOFF=0.5 BTUNE_PERF_MODE=COMP BTUNE_TRACE=1  BTUNE_MODELS_DIR=./models/ BTUNE_USE_INFERENCE=3 python create_schunk.py
+BTUNE_TRADEOFF=0.5 BTUNE_PERF_MODE=COMP BTUNE_TRACE=1  BTUNE_MODELS_DIR=./models/ BTUNE_USE_INFERENCE=3 python create_ndarray.py
 -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
-Btune version: 1.0.0
+Btune version: 1.0.1.dev
 Performance Mode: COMP, Compression tradeoff: 0.500000, Bandwidth: 20 GB/s
 Behaviour: Waits - 0, Softs - 5, Hards - 11, Repeat Mode - STOP
 INFO: Model files found in the './models/' directory
-TRACE: time load model: 0.000077
-TRACE: Inference category=4 codec=1 filter=0 clevel=5 splitmode=2 time entropy=0.000666 inference=0.000015
+TRACE: time load model: 0.000071
+TRACE: Inference category=7 codec=1 filter=35 clevel=5 splitmode=2 time entropy=0.000218 inference=0.000012
 |    Codec   | Filter | Split | C.Level | Blocksize | Shufflesize | C.Threads | D.Threads |   Score   |  C.Ratio   |   Btune State   | Readapt | Winner
-|        lz4 |      0 |     1 |       5 |         0 |           4 |        16 |        16 |  0.000499 |      1.01x |    CODEC_FILTER |    HARD | W
-TRACE: Inference category=4 codec=1 filter=0 clevel=5 splitmode=2 time entropy=0.000202 inference=0.000003
-|        lz4 |      0 |     1 |       5 |         0 |           4 |        16 |        16 |  0.000274 |      1.01x |    CODEC_FILTER |    HARD | -
-TRACE: Inference category=4 codec=1 filter=0 clevel=5 splitmode=2 time entropy=0.000235 inference=0.000003
-|        lz4 |      0 |     1 |       5 |         0 |           4 |        16 |        16 |  0.000136 |      1.01x |    CODEC_FILTER |    HARD | -
-|        lz4 |      0 |     1 |       5 |         0 |           4 |        16 |        16 |  0.000138 |      1.01x |    CODEC_FILTER |    HARD | -
-|        lz4 |      0 |     0 |       5 |         0 |           4 |        16 |        16 |  0.000126 |         1x |    CODEC_FILTER |    HARD | -
-|        lz4 |      0 |     1 |       5 |         0 |           4 |        16 |        16 |  0.000139 |      1.01x |    THREADS_COMP |    HARD | W
-|        lz4 |      0 |     1 |       5 |         0 |           4 |        16 |        16 |  0.000138 |      1.01x |          CLEVEL |    HARD | -
-|        lz4 |      0 |     1 |       6 |         0 |           4 |        16 |        16 |  0.000135 |      1.01x |          CLEVEL |    SOFT | -
-|        lz4 |      0 |     1 |       5 |         0 |           4 |        16 |        16 |  0.000135 |      1.01x |          CLEVEL |    SOFT | -
-|        lz4 |      0 |     1 |       4 |         0 |           4 |        16 |        16 |  0.000136 |      1.01x |          CLEVEL |    SOFT | -
-SChunk succesfully created!
+|        lz4 |     35 |     1 |       5 |         0 |           8 |         4 |         4 |   5.4e-05 |      3.97x |    CODEC_FILTER |    HARD | W
+TRACE: Inference category=7 codec=1 filter=35 clevel=5 splitmode=2 time entropy=0.000120 inference=0.000003
+|        lz4 |     35 |     1 |       5 |         0 |           8 |         4 |         4 |  2.01e-05 |      3.97x |    CODEC_FILTER |    HARD | -
+TRACE: Inference category=7 codec=1 filter=35 clevel=5 splitmode=2 time entropy=0.000104 inference=0.000002
+|        lz4 |     35 |     1 |       5 |         0 |           8 |         4 |         4 |  1.92e-05 |      3.97x |    CODEC_FILTER |    HARD | -
+|        lz4 |     35 |     1 |       5 |         0 |           8 |         4 |         4 |   2.1e-05 |      3.97x |    CODEC_FILTER |    HARD | -
+|        lz4 |     35 |     0 |       5 |         0 |           8 |         4 |         4 |  1.96e-05 |      3.91x |    CODEC_FILTER |    HARD | -
+|        lz4 |     35 |     1 |       5 |         0 |           8 |         4 |         4 |  1.95e-05 |      3.97x |    THREADS_COMP |    HARD | W
+|        lz4 |     35 |     1 |       5 |         0 |           8 |         4 |         4 |  1.96e-05 |      3.97x |          CLEVEL |    HARD | -
+|        lz4 |     35 |     1 |       6 |         0 |           8 |         4 |         4 |  2.25e-05 |      3.97x |          CLEVEL |    SOFT | -
+|        lz4 |     35 |     1 |       5 |         0 |           8 |         4 |         4 |  1.99e-05 |      3.97x |          CLEVEL |    SOFT | -
+|        lz4 |     35 |     1 |       4 |         0 |           8 |         4 |         4 |  1.91e-05 |      3.97x |          CLEVEL |    SOFT | -
+NDArray succesfully created!
 ```
 
 Using Btune Models leads to significantly better performance scores, as demonstrated by the balance between compression speed and compression ratio. Moreover, the process of finding the best combination is much faster with trained models.  See https://btune.blosc.org for more info.

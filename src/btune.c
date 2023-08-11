@@ -563,7 +563,7 @@ void btune_next_cparams(blosc2_context *context) {
     }
   }
 
-  int nchunk = context->schunk->nchunks;
+  int nchunk = context->schunk->current_nchunk;
   if (getenv("BTUNE_TRACE") && nchunk == 0 && btune_params->state != STOP) {
     printf("|    Codec   | Filter | Split | C.Level | Blocksize | Shufflesize | C.Threads | D.Threads |"
            "   Score   |  C.Ratio   |   Btune State   | Readapt | Winner\n");
