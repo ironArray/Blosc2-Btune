@@ -81,6 +81,7 @@ static int compress(const char* in_fname, const char* out_fname) {
     // Free resources
     blosc2_schunk_free(schunk_in);
     blosc2_schunk_free(schunk_out);
+    return 0;
 }
 
 

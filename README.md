@@ -70,7 +70,7 @@ this is a winner or not in this last case.
 
 ## Btune Models
 
-The Blosc Development Team offers **Btune Models**, a service in which Btune uses neural network models trained specifically for your data to determine the optimal combination of codecs and filters. To use these models, set `BTUNE_MODELS_DIR` to the directory containing the models files after the Blosc Development Team has completed training. Btune will then automatically use the trained model; keep reading for how this works.
+The Blosc Development Team offers **Btune Models**, a service in which we provide neural network models trained specifically for your data to determine the optimal combination of codecs and filters. To use these models, set `BTUNE_MODELS_DIR` to the directory containing the models files after the Blosc Development Team has completed training. Btune will then automatically use the trained model; keep reading for how this works.
 
 To determine the number of chunks for performing inference, use `BTUNE_USE_INFERENCE`. If set to -1, it performs inference on all chunks. If set to a number greater than 0, it performs inference on this number of chunks and then tweaks parameters for the rest of the chunks. If set to 0, it does not perform inference at all. The default is -1.
 
@@ -99,11 +99,11 @@ TRACE: Inference category=7 codec=1 filter=35 clevel=5 splitmode=2 time entropy=
 NDArray succesfully created!
 ```
 
-Using Btune Models leads to significantly better performance scores, as demonstrated by the balance between compression speed and compression ratio. Moreover, the process of finding the best combination is much faster with trained models.  See https://btune.blosc.org for more info.
+Using Btune Models usually leads to significantly better performance scores, as demonstrated by the table above. Moreover, the process of finding the best combination is much faster with trained models.  See https://btune.blosc.org for more info.
 
 ## Using Btune from C
 
-You can also use Btune from C. Similar to the Python examples above, you can activate it by setting the `BTUNE_TRADEOFF` environment variable. Alternatively, you can set the `tuner_id` in the compression parameters, also known as `cparams`, to the value of `BLOSC_BTUNE`. This will use the default Btune configuration. However, running Btune from C offers the advantage of tuning more parameters based on your interests:
+You can also use Btune from C. Similar to the Python examples above, you can activate it by setting the `BTUNE_TRADEOFF` environment variable. Alternatively, you can set the `tuner_id` in the compression parameters, also known as `cparams`, to the value of `BLOSC_BTUNE`. This will use the default Btune configuration. However, running Btune from C offers the advantage of being able to tune way more parameters, depending on your preferences:
 
 ```
     // compression params
@@ -138,21 +138,20 @@ You can also use Btune from C. Similar to the Python examples above, you can act
     blosc2_schunk* schunk_out = blosc2_schunk_new(&storage);
 ```
 
-See the full example in `examples/btune_example.c`.
-If you would like to run this C example, run:
+See the full example in `examples/btune_example.c`. You can compile and run this example as follows:
 
 ### Linux
 ```shell
 gcc -o btune_example btune_example.c -lblosc2 -lm -I $CONDA_PREFIX/include/ -L $CONDA_PREFIX/lib64/
-BTUNE_TRACE=1 LD_LIBRARY_PATH=$CONDA_PREFIX/lib64 ./btune_example linspace.b2frame out.b2frame
+BTUNE_TRACE=1 LD_LIBRARY_PATH=$CONDA_PREFIX/lib64 ./btune_example rand_int.b2nd out.b2nd
 ```
 
 ### MacOS
 ```shell
 gcc -o btune_example btune_example.c -lblosc2 -lm -I $CONDA_PREFIX/include/ -L $CONDA_PREFIX/lib/
-BTUNE_TRACE=1 DYLD_LIBRARY_PATH=$CONDA_PREFIX/lib ./btune_example linspace.b2frame out.b2frame
+BTUNE_TRACE=1 DYLD_LIBRARY_PATH=$CONDA_PREFIX/lib ./btune_example rand_int.b2nd out.b2nd
 ```
 
 ## Platform support
 
-Right now, we support Btune on just Intel Linux and Intel Mac platforms.  There is an ongoing effort on bringing Windows and ARM wheels.  When this would be done, we will inform about this.
+Right now, we support Btune on Intel/ARM64 Linux, Intel/ARM64 Mac and Intel Windows platforms, and we are providing wheels for all of these.
