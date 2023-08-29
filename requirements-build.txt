@@ -1,4 +1,5 @@
 build
 cmake
+blosc2
 scikit-build
 cibuildwheel
