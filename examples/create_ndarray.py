@@ -1,10 +1,12 @@
-#######################################################################
-# Copyright (c) 2019-present, Blosc Development Team <blosc@blosc.org>
-# All rights reserved.
+##############################################################################
+# Btune for Blosc2 - Automatically choose the best codec/filter for your data
 #
-# This source code is licensed under a BSD-style license (found in the
-# LICENSE file in the root directory of this source tree)
-#######################################################################
+# Copyright (c) 2023 The Blosc Developers <blosc@blosc.org>
+# https://btune.blosc.org
+# License: GNU Affero General Public License v3.0
+# See LICENSE.txt for details about copyright and rights to use.
+##############################################################################
+
 
 import numpy as np
 import blosc2

@@ -1,10 +1,11 @@
-# Blosc - Blocked Shuffling and Compression Library
+##############################################################################
+# Btune for Blosc2 - Automatically choose the best codec/filter for your data
 #
-# Copyright (C) 2021  The Blosc Developers <blosc@blosc.org>
-# https://blosc.org
-# License: BSD 3-Clause (see LICENSE.txt)
-#
+# Copyright (c) 2023 The Blosc Developers <blosc@blosc.org>
+# https://btune.blosc.org
+# License: GNU Affero General Public License v3.0
 # See LICENSE.txt for details about copyright and rights to use.
+##############################################################################
 
 include_directories(
     ${BLOSC2_INCLUDE_DIR}

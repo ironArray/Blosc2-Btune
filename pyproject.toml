@@ -1,10 +1,11 @@
-# Blosc - Blocked Shuffling and Compression Library
+##############################################################################
+# Btune for Blosc2 - Automatically choose the best codec/filter for your data
 #
-# Copyright (C) 2021  The Blosc Developers <blosc@blosc.org>
-# https://blosc.org
-# License: BSD 3-Clause (see LICENSE.txt)
-#
+# Copyright (c) 2023 The Blosc Developers <blosc@blosc.org>
+# https://btune.blosc.org
+# License: GNU Affero General Public License v3.0
 # See LICENSE.txt for details about copyright and rights to use.
+##############################################################################
 
 [build-system]
 requires = ["setuptools", "scikit-build", "cmake", "ninja"]
@@ -16,7 +17,7 @@ dynamic = ["version", "readme"]
 authors = [
     {name = "Blosc Development Team", email = "contact@blosc.org"},
 ]
-description = "BTUNE plugin for Blosc2. Automatically choose the best codec/filter for your data."
+description = "Btune plugin for Blosc2. Automatically choose the best codec/filter for your data."
 keywords = ["plugin", "blosc2"]
 license = {text = "GNU Affero General Public License version 3"}
 classifiers = [

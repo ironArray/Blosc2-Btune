@@ -1,11 +1,11 @@
-/**********************************************************************
-  Optimize Blosc2 parameters using deep/machine learning.
+/*********************************************************************
+  Btune for Blosc2 - Automatically choose the best codec/filter for your data
 
   Copyright (c) 2023 The Blosc Developers <blosc@blosc.org>
+  https://btune.blosc.org
   License: GNU Affero General Public License v3.0
-
-  See COPYING.txt for details about copyright and rights to use.
-***********************************************************************/
+  See LICENSE.txt for details about copyright and rights to use.
+**********************************************************************/
 
 /** @file  btune-private.h
  * @brief Btune private header file.

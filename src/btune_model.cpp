@@ -1,3 +1,12 @@
+/*********************************************************************
+  Btune for Blosc2 - Automatically choose the best codec/filter for your data
+
+  Copyright (c) 2023 The Blosc Developers <blosc@blosc.org>
+  https://btune.blosc.org
+  License: GNU Affero General Public License v3.0
+  See LICENSE.txt for details about copyright and rights to use.
+**********************************************************************/
+
 #include <tensorflow/lite/core/interpreter.h>
 #include <tensorflow/lite/kernels/register.h>
 #include <tensorflow/lite/model.h>
