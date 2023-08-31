@@ -23,11 +23,11 @@ classifiers = [
     "Programming Language :: Python :: 3",
     "Programming Language :: C",
     "Programming Language :: C++",
-    "Development Status :: 4 - Beta",
+    "Development Status :: 5 - Production/Stable",
     "Intended Audience :: Developers",
     "License :: OSI Approved :: GNU Affero General Public License v3 or later (AGPLv3+)",
     "Topic :: Software Development :: Libraries :: Python Modules",
-    #"Operating System :: Microsoft :: Windows",
+    "Operating System :: Microsoft :: Windows",
     "Operating System :: Unix",
 ]
 dependencies = [
