@@ -32,7 +32,8 @@ classifiers = [
     "Operating System :: Unix",
 ]
 dependencies = [
-    #"blosc2"  # python-blosc2 is not a runtime dependency
+    # python-blosc2 is not a strict runtime dependency, but it is handy
+    "blosc2"
 ]
 
 [tool.setuptools.dynamic]
