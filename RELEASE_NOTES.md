@@ -4,6 +4,12 @@ Release notes for Btune
 Changes from 1.0.0 to 1.0.1
 ===========================
 
+#XXX version-specific blurb XXX#
+
+
+Changes from 1.0.0 to 1.0.1
+===========================
+
 * New binary wheels for Mac arm64
 
 * Fixed the license (full AGPLv3 now)
