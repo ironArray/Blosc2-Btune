@@ -154,4 +154,4 @@ BTUNE_TRACE=1 DYLD_LIBRARY_PATH=$CONDA_PREFIX/lib ./btune_example rand_int.b2nd 
 
 ## Platform support
 
-Right now, we support Btune on Intel/ARM64 Linux, Intel/ARM64 Mac and Intel Windows platforms, and we are providing wheels for all of these.
+Right now, we support Btune on Intel/ARM64 Linux and Intel/ARM64 Mac, and we are providing binary wheels for these.
