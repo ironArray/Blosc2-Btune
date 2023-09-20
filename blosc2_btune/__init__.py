@@ -7,7 +7,7 @@
 # See LICENSE.txt for details about copyright and rights to use.
 ##############################################################################
 
-VERSION = "1.0.2.dev"
+VERSION = "1.0.2"
 
 import os
 import platform

@@ -1,10 +1,13 @@
 Release notes for Btune
 =======================
 
-Changes from 1.0.0 to 1.0.1
+Changes from 1.0.1 to 1.0.2
 ===========================
 
-#XXX version-specific blurb XXX#
+* Call blosc2_init() during Btune initialization to get
+  access to user defined codecs and filters.
+
+* Updated to use latest C-Blosc2 sources.
 
 
 Changes from 1.0.0 to 1.0.1
