@@ -372,7 +372,7 @@ void btune_init(void *tuner_params, blosc2_context * cctx, blosc2_context * dctx
   // If the user does not fill the config, the next fields will be empty
   // No need to do the same for dctx because btune is only used during compression
   cctx->schunk->tuner_params = (void *) &btune->config;
-  cctx ->schunk->storage->cparams->tuner_params = (void *) &btune->config;
+  cctx->schunk->storage->cparams->tuner_params = (void *) &btune->config;
   
   if (getenv("BTUNE_TRACE") != NULL) {
     printf("-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=\n");
@@ -564,8 +564,7 @@ void btune_next_cparams(blosc2_context *context) {
     }
   }
 
-  int nchunk = context->schunk->current_nchunk;
-  if (getenv("BTUNE_TRACE") && nchunk == 0 && btune_params->state != STOP) {
+  if (getenv("BTUNE_TRACE") && btune_params->steps_count == 0 && btune_params->state != STOP) {
     printf("|    Codec   | Filter | Split | C.Level | Blocksize | Shufflesize | C.Threads | D.Threads |"
            "   Score   |  C.Ratio   |   Btune State   | Readapt | Winner\n");
   }
