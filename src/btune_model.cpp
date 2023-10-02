@@ -97,7 +97,7 @@ static float normalize(float value, float mean, float std) {
 
 
 static int get_best_codec_for_chunk(
-  blosc2_schunk *schunk,
+  blosc2_context *src_ctx,
   const void *src,
   size_t size,
   tflite::Interpreter *interpreter,
@@ -113,14 +113,14 @@ static int get_best_codec_for_chunk(
     return -1;
   }
 
-  btune_struct *btune = (btune_struct *)schunk->storage->cparams->tuner_params;
+  btune_struct *btune = (btune_struct *)src_ctx->tuner_params;
   // <<< ENTROPY PROBER START
   // cparams
   blosc2_cparams cparams = BLOSC2_CPARAMS_DEFAULTS;
   cparams.compcode = ENTROPY_PROBE_ID;
   cparams.instr_codec = true;  // instrumented (cratio/cspeed)
-  cparams.typesize = schunk->typesize;
-  cparams.blocksize = schunk->blocksize;
+  cparams.typesize = src_ctx->typesize;
+  cparams.blocksize = src_ctx->blocksize;
   cparams.splitmode = BLOSC_NEVER_SPLIT;
   cparams.nthreads = 4;
   cparams.filters[BLOSC2_MAX_FILTERS - 1] = BLOSC_NOFILTER;
@@ -405,7 +405,7 @@ int btune_model_inference(
 
   const void *src = (const void*)ctx->src;
   int32_t size = ctx->srcsize;
-  int best = get_best_codec_for_chunk(ctx->schunk, src, size, interpreter, metadata);
+  int best = get_best_codec_for_chunk(ctx, src, size, interpreter, metadata);
   if (best < 0) {
     return best;
   }

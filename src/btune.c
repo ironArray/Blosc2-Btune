@@ -366,14 +366,15 @@ void btune_init(void *tuner_params, blosc2_context * cctx, blosc2_context * dctx
     btune->config.tradeoff = BTUNE_CONFIG_DEFAULTS.tradeoff;
   }
 
-
   btune->zeros_speed = -1; // This is initialized the first time inference is performed
 
-  // If the user does not fill the config, the next fields will be empty
-  // No need to do the same for dctx because btune is only used during compression
-  cctx->schunk->tuner_params = (void *) &btune->config;
-  cctx->schunk->storage->cparams->tuner_params = (void *) &btune->config;
-  
+  if (cctx->schunk != NULL) {
+    // If the user does not fill the config, the next fields will be empty
+    // No need to do the same for dctx because btune is only used during compression
+    cctx->schunk->tuner_params = (void *) &btune->config;
+    cctx->schunk->storage->cparams->tuner_params = (void *) &btune->config;
+  }
+
   if (getenv("BTUNE_TRACE") != NULL) {
     printf("-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=\n");
     char bandwidth_str[12];
@@ -507,7 +508,7 @@ static void set_btune_cparams(blosc2_context * context, cparams_btune * cparams)
   // Bytedelta requires a shuffle before it
   if (cparams->filter == BLOSC_FILTER_BYTEDELTA) {
     context->filters[BLOSC2_MAX_FILTERS - 2] = BLOSC_SHUFFLE;
-    context->filters_meta[BLOSC2_MAX_FILTERS - 1] = context->schunk->typesize;
+    context->filters_meta[BLOSC2_MAX_FILTERS - 1] = context->typesize;
   }
 
   context->splitmode = cparams->splitmode;
