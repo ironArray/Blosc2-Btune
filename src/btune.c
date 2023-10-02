@@ -314,7 +314,7 @@ static const char* repeat_mode_to_str(btune_repeat_mode repeat_mode) {
 
 // Init btune_struct inside blosc2_context
 // TODO CHECK CONFIG ENUMS (bandwidth range...)
-void btune_init(void *tuner_params, blosc2_context * cctx, blosc2_context * dctx) {
+int btune_init(void *tuner_params, blosc2_context * cctx, blosc2_context * dctx) {
   btune_config *config = (btune_config *)tuner_params;
 
   blosc2_init();
@@ -479,10 +479,12 @@ void btune_init(void *tuner_params, blosc2_context * cctx, blosc2_context * dctx
 
   // Initialize inference data
   btune_model_init(cctx);
+
+  return BLOSC2_ERROR_SUCCESS;
 }
 
 // Free btune_struct
-void btune_free(blosc2_context *context) {
+int btune_free(blosc2_context *context) {
   btune_model_free(context);
   btune_struct *btune_params = (btune_struct *) context->tuner_params;
   free(btune_params->best);
@@ -491,11 +493,14 @@ void btune_free(blosc2_context *context) {
   free(btune_params->current_cratios);
   free(btune_params);
   context->tuner_params = NULL;
+
+  return BLOSC2_ERROR_SUCCESS;
 }
 
 // This must exist because unconditionally called by c-blosc2, otherwise there
 // will be a crash
-void btune_next_blocksize(blosc2_context *context) {
+int btune_next_blocksize(blosc2_context *context) {
+  return BLOSC2_ERROR_SUCCESS;
 }
 
 // Set the cparams_btune inside blosc2_context
@@ -528,7 +533,7 @@ static void set_btune_cparams(blosc2_context * context, cparams_btune * cparams)
 }
 
 // Tune some compression parameters based on the context
-void btune_next_cparams(blosc2_context *context) {
+int btune_next_cparams(blosc2_context *context) {
   btune_struct *btune_params = (btune_struct*) context->tuner_params;
   btune_config config = btune_params->config;
   int compcode;
@@ -677,13 +682,15 @@ void btune_next_cparams(blosc2_context *context) {
 
       // Stopped
     case STOP:
-      return;
+      return BLOSC2_ERROR_SUCCESS;
   }
   set_btune_cparams(context, cparams);
   if (context->blocksize > context->sourcesize) {
     // blocksize cannot be greater than sourcesize
     context->blocksize = context->sourcesize;
   }
+
+  return BLOSC2_ERROR_SUCCESS;
 }
 
 // Computes the score depending on the perf_mode
@@ -986,10 +993,10 @@ static void update_aux(blosc2_context * ctx, bool improved) {
 }
 
 // Update btune structs with the compression results
-void btune_update(blosc2_context * context, double ctime) {
+int btune_update(blosc2_context * context, double ctime) {
   btune_struct *btune_params = (btune_struct*)(context->tuner_params);
   if (btune_params->state == STOP) {
-    return;
+    return BLOSC2_ERROR_SUCCESS;
   }
 
   btune_params->steps_count++;
@@ -1085,6 +1092,8 @@ void btune_update(blosc2_context * context, double ctime) {
     btune_params->rep_index = 0;
     update_aux(context, improved);
   }
+
+  return BLOSC2_ERROR_SUCCESS;
 }
 
 // Blosc2 needs this in order to dynamically load the functions
