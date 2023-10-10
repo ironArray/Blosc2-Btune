@@ -314,7 +314,7 @@ static const char* repeat_mode_to_str(btune_repeat_mode repeat_mode) {
 
 // Init btune_struct inside blosc2_context
 // TODO CHECK CONFIG ENUMS (bandwidth range...)
-void btune_init(void *tuner_params, blosc2_context * cctx, blosc2_context * dctx) {
+int btune_init(void *tuner_params, blosc2_context * cctx, blosc2_context * dctx) {
   btune_config *config = (btune_config *)tuner_params;
 
   blosc2_init();
@@ -366,14 +366,15 @@ void btune_init(void *tuner_params, blosc2_context * cctx, blosc2_context * dctx
     btune->config.tradeoff = BTUNE_CONFIG_DEFAULTS.tradeoff;
   }
 
-
   btune->zeros_speed = -1; // This is initialized the first time inference is performed
 
-  // If the user does not fill the config, the next fields will be empty
-  // No need to do the same for dctx because btune is only used during compression
-  cctx->schunk->tuner_params = (void *) &btune->config;
-  cctx->schunk->storage->cparams->tuner_params = (void *) &btune->config;
-  
+  if (cctx->schunk != NULL) {
+    // If the user does not fill the config, the next fields will be empty
+    // No need to do the same for dctx because btune is only used during compression
+    cctx->schunk->tuner_params = (void *) &btune->config;
+    cctx->schunk->storage->cparams->tuner_params = (void *) &btune->config;
+  }
+
   if (getenv("BTUNE_TRACE") != NULL) {
     printf("-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=\n");
     char bandwidth_str[12];
@@ -478,10 +479,12 @@ void btune_init(void *tuner_params, blosc2_context * cctx, blosc2_context * dctx
 
   // Initialize inference data
   btune_model_init(cctx);
+
+  return BLOSC2_ERROR_SUCCESS;
 }
 
 // Free btune_struct
-void btune_free(blosc2_context *context) {
+int btune_free(blosc2_context *context) {
   btune_model_free(context);
   btune_struct *btune_params = (btune_struct *) context->tuner_params;
   free(btune_params->best);
@@ -490,11 +493,14 @@ void btune_free(blosc2_context *context) {
   free(btune_params->current_cratios);
   free(btune_params);
   context->tuner_params = NULL;
+
+  return BLOSC2_ERROR_SUCCESS;
 }
 
 // This must exist because unconditionally called by c-blosc2, otherwise there
 // will be a crash
-void btune_next_blocksize(blosc2_context *context) {
+int btune_next_blocksize(blosc2_context *context) {
+  return BLOSC2_ERROR_SUCCESS;
 }
 
 // Set the cparams_btune inside blosc2_context
@@ -507,7 +513,7 @@ static void set_btune_cparams(blosc2_context * context, cparams_btune * cparams)
   // Bytedelta requires a shuffle before it
   if (cparams->filter == BLOSC_FILTER_BYTEDELTA) {
     context->filters[BLOSC2_MAX_FILTERS - 2] = BLOSC_SHUFFLE;
-    context->filters_meta[BLOSC2_MAX_FILTERS - 1] = context->schunk->typesize;
+    context->filters_meta[BLOSC2_MAX_FILTERS - 1] = context->typesize;
   }
 
   context->splitmode = cparams->splitmode;
@@ -527,7 +533,7 @@ static void set_btune_cparams(blosc2_context * context, cparams_btune * cparams)
 }
 
 // Tune some compression parameters based on the context
-void btune_next_cparams(blosc2_context *context) {
+int btune_next_cparams(blosc2_context *context) {
   btune_struct *btune_params = (btune_struct*) context->tuner_params;
   btune_config config = btune_params->config;
   int compcode;
@@ -676,13 +682,15 @@ void btune_next_cparams(blosc2_context *context) {
 
       // Stopped
     case STOP:
-      return;
+      return BLOSC2_ERROR_SUCCESS;
   }
   set_btune_cparams(context, cparams);
   if (context->blocksize > context->sourcesize) {
     // blocksize cannot be greater than sourcesize
     context->blocksize = context->sourcesize;
   }
+
+  return BLOSC2_ERROR_SUCCESS;
 }
 
 // Computes the score depending on the perf_mode
@@ -985,10 +993,10 @@ static void update_aux(blosc2_context * ctx, bool improved) {
 }
 
 // Update btune structs with the compression results
-void btune_update(blosc2_context * context, double ctime) {
+int btune_update(blosc2_context * context, double ctime) {
   btune_struct *btune_params = (btune_struct*)(context->tuner_params);
   if (btune_params->state == STOP) {
-    return;
+    return BLOSC2_ERROR_SUCCESS;
   }
 
   btune_params->steps_count++;
@@ -1084,6 +1092,35 @@ void btune_update(blosc2_context * context, double ctime) {
     btune_params->rep_index = 0;
     update_aux(context, improved);
   }
+
+  return BLOSC2_ERROR_SUCCESS;
+}
+
+
+int set_params_defaults(
+  uint32_t bandwidth,
+  uint32_t perf_mode,
+  float tradeoff,
+  bool cparams_hint,
+  int use_inference,
+  const char* models_dir,
+  uint32_t nwaits,
+  uint32_t nsofts,
+  uint32_t nhards,
+  uint32_t repeat_mode
+) {
+  BTUNE_CONFIG_DEFAULTS.bandwidth = bandwidth;
+  BTUNE_CONFIG_DEFAULTS.perf_mode = perf_mode;
+  BTUNE_CONFIG_DEFAULTS.tradeoff = tradeoff;
+  BTUNE_CONFIG_DEFAULTS.cparams_hint = cparams_hint;
+  BTUNE_CONFIG_DEFAULTS.use_inference = use_inference;
+  strcpy(BTUNE_CONFIG_DEFAULTS.models_dir, models_dir);
+  BTUNE_CONFIG_DEFAULTS.behaviour.nwaits_before_readapt = nwaits;
+  BTUNE_CONFIG_DEFAULTS.behaviour.nsofts_before_hard = nsofts;
+  BTUNE_CONFIG_DEFAULTS.behaviour.nhards_before_stop = nhards;
+  BTUNE_CONFIG_DEFAULTS.behaviour.repeat_mode = repeat_mode;
+
+  return 0;
 }
 
 // Blosc2 needs this in order to dynamically load the functions

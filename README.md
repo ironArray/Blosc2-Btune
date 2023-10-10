@@ -27,7 +27,8 @@ cd examples
 
 ## Using Btune from Python
 
-To use Btune with Blosc2 in Python, set the `BTUNE_TRADEOFF` environment variable to a floating-point number between 0 (to optimize speed) and 1 (to optimize compression ratio). Additionally, you can use `BTUNE_PERF_MODE` to optimize compression, decompression, or to achieve a balance between the two by setting it to `COMP`, `DECOMP`, or `BALANCED`, respectively.
+To use Btune with Blosc2 in Python, you have two options.
+The first one is to set the `BTUNE_TRADEOFF` environment variable to a floating-point number between 0 (to optimize speed) and 1 (to optimize compression ratio). Additionally, you can use `BTUNE_PERF_MODE` to optimize compression, decompression, or to achieve a balance between the two by setting it to `COMP`, `DECOMP`, or `BALANCED`, respectively.
 
 ```shell
 BTUNE_TRADEOFF=0.5 BTUNE_PERF_MODE=COMP python create_ndarray.py
@@ -38,6 +39,9 @@ NDArray succesfully created!
 This creates a NDArray on disk with some data. The warning message
 `Empty metadata, no inference performed`
 should be ignored as long as we are not using the trained models.
+
+The second option is to set `cparams={"tuner": blosc2.Tuner.BTUNE}` when creating the array like in the
+`btune_config.py`. We will see this example later in this section.
 
 You can set `BTUNE_TRACE=1` to see what Btune is doing.
 
@@ -101,6 +105,58 @@ NDArray succesfully created!
 
 Using Btune Models usually leads to significantly better performance scores, as demonstrated by the table above. Moreover, the process of finding the best combination is much faster with trained models.  See https://btune.blosc.org for more info.
 
+### Configuring Btune from Python
+
+If you want to use different configurations for different Blosc2 data containers in the same script, you can do it
+configuring Btune from Python instead of using the environment variables.
+To do so, you will have to set the desired configuration by passing it as 
+keyword arguments to the `set_params_defaults` function.
+```
+kwargs = {"tradeoff": 0.3, "perf_mode": blosc2_btune.PerformanceMode.DECOMP}
+blosc2_btune.set_params_defaults(**kwargs)
+```
+And then, tell Blosc2 you want to use Btune with `cparams={"tuner": blosc2.Tuner.BTUNE}`.
+```
+ba = blosc2.asarray(a, urlpath=urlpath, mode="w", chunks=(5e3,), cparams={"tuner": blosc2.Tuner.BTUNE})
+```
+You can see that the parameters have been applied activating the `BTUNE_TRACE`.
+
+```shell
+BTUNE_TRACE=1 python btune_config.py 
+-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+Btune version: 1.0.3.dev
+Performance Mode: DECOMP, Compression tradeoff: 0.300000, Bandwidth: 20 GB/s
+Behaviour: Waits - 0, Softs - 5, Hards - 10, Repeat Mode - STOP
+TRACE: Environment variable BTUNE_MODELS_DIR is not defined
+WARNING: Empty metadata, no inference performed
+|    Codec   | Filter | Split | C.Level | Blocksize | Shufflesize | C.Threads | D.Threads |   Score   |  C.Ratio   |   Btune State   | Readapt | Winner
+|        lz4 |      0 |     1 |       8 |         0 |           8 |         4 |         4 |  0.000237 |      1.95x |    CODEC_FILTER |    HARD | W
+|        lz4 |      0 |     0 |       8 |         0 |           8 |         4 |         4 |  3.56e-05 |      2.07x |    CODEC_FILTER |    HARD | W
+|        lz4 |      1 |     1 |       8 |         0 |           8 |         4 |         4 |  2.96e-05 |      3.97x |    CODEC_FILTER |    HARD | W
+|        lz4 |      1 |     0 |       8 |         0 |           8 |         4 |         4 |  3.73e-05 |      3.91x |    CODEC_FILTER |    HARD | -
+|        lz4 |      2 |     1 |       8 |         0 |           8 |         4 |         4 |  4.72e-05 |      4.52x |    CODEC_FILTER |    HARD | W
+|        lz4 |      2 |     0 |       8 |         0 |           8 |         4 |         4 |  4.73e-05 |      4.46x |    CODEC_FILTER |    HARD | -
+|      lz4hc |      0 |     1 |       8 |         0 |           8 |         4 |         4 |  4.22e-05 |      2.02x |    CODEC_FILTER |    HARD | -
+|      lz4hc |      0 |     0 |       8 |         0 |           8 |         4 |         4 |  3.66e-05 |      2.39x |    CODEC_FILTER |    HARD | -
+|      lz4hc |      1 |     1 |       8 |         0 |           8 |         4 |         4 |  3.16e-05 |      3.97x |    CODEC_FILTER |    HARD | -
+|      lz4hc |      1 |     0 |       8 |         0 |           8 |         4 |         4 |  3.83e-05 |      3.92x |    CODEC_FILTER |    HARD | -
+|      lz4hc |      2 |     1 |       8 |         0 |           8 |         4 |         4 |  4.51e-05 |      4.52x |    CODEC_FILTER |    HARD | W
+|      lz4hc |      2 |     0 |       8 |         0 |           8 |         4 |         4 |  5.19e-05 |      4.47x |    CODEC_FILTER |    HARD | -
+|      lz4hc |      2 |     1 |       8 |         0 |           8 |         4 |         4 |   5.6e-05 |      4.52x |  THREADS_DECOMP |    HARD | -
+|      lz4hc |      2 |     1 |       8 |         0 |           8 |         4 |         3 |  4.97e-05 |      4.52x |  THREADS_DECOMP |    HARD | -
+|      lz4hc |      2 |     1 |       7 |         0 |           8 |         4 |         4 |  4.78e-05 |      4.52x |          CLEVEL |    HARD | W
+|      lz4hc |      2 |     1 |       5 |         0 |           8 |         4 |         4 |  4.87e-05 |      4.52x |          CLEVEL |    HARD | -
+|      lz4hc |      2 |     1 |       4 |         0 |           8 |         4 |         4 |  4.07e-05 |      4.52x |          CLEVEL |    SOFT | -
+|      lz4hc |      2 |     1 |       5 |         0 |           8 |         4 |         4 |   4.3e-05 |      4.52x |          CLEVEL |    SOFT | -
+|      lz4hc |      2 |     1 |       6 |         0 |           8 |         4 |         4 |  4.07e-05 |      4.52x |          CLEVEL |    SOFT | -
+|      lz4hc |      2 |     1 |       5 |         0 |           8 |         4 |         4 |  4.38e-05 |      4.52x |          CLEVEL |    SOFT | -
+NDArray succesfully created!
+
+```
+
+
+Here we set the tradeoff to 0.3 and the performance mode to `DECOMP`.
+
 ## Using Btune from C
 
 You can also use Btune from C. Similar to the Python examples above, you can activate it by setting the `BTUNE_TRADEOFF` environment variable. Alternatively, you can set the `tuner_id` in the compression parameters, also known as `cparams`, to the value of `BLOSC_BTUNE`. This will use the default Btune configuration. However, running Btune from C offers the advantage of being able to tune way more parameters, depending on your preferences:
@@ -109,21 +165,18 @@ You can also use Btune from C. Similar to the Python examples above, you can act
     // compression params
     blosc2_cparams cparams = BLOSC2_CPARAMS_DEFAULTS;
     cparams.nthreads = 16; // Btune may lower this
-    cparams.tuner_id = BLOSC_BTUNE;
-    
-    // Btune config parameters
+    cparams.typesize = schunk_in->typesize;
+
+    // btune
     btune_config btune_config = BTUNE_CONFIG_DEFAULTS;
-    btune_config.perf_mode = BTUNE_PERF_COMP; // You can choose BTUNE_PERF_COMP, BTUNE_PERF_DECOMP or BTUNE_PERF_BALANCED
-    btune_config.tradeoff = .5; // Equivalent to BTUNE_TRADEOFF
-    btune_config.use_inference = 2; // Equivalent to BTUNE_USE_INFERENCE
-    btune_config.models_dir = "../models/"; // Equivalent to BTUNE_MODELS_DIR
-    btune_config.behaviour.nwaits_before_readapt = 1;       // Number of waits before a readapt
-    btune_config.behaviour.nsofts_before_hard = 3;          // Number of soft readapts before a hard readapt
-    btune_config.behaviour.nhards_before_stop = 10;         // Number of hard readapts before stoping
-    btune_config.behaviour.repeat_mode = BTUNE_REPEAT_ALL;  // Repeat all the initial readaptions (BTUNE_REPEAT_ALL), 
-                                                            // only soft readaptions (BTUNE_REPEAT_SOFT)
-                                                            // or stop improving (BTUNE_STOP)
-    // Set the personalized Btune configuration
+    //btune_config.perf_mode = BTUNE_PERF_DECOMP;
+    btune_config.tradeoff = .5;
+    btune_config.behaviour.nhards_before_stop = 10;
+    btune_config.behaviour.repeat_mode = BTUNE_REPEAT_ALL;
+    btune_config.use_inference = 2;
+    char *models_dir = "./models/";
+    strcpy(btune_config.models_dir, models_dir);
+    cparams.tuner_id = BLOSC_BTUNE;
     cparams.tuner_params = &btune_config;
 
     // Create super chunk

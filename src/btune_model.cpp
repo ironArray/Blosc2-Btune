@@ -13,6 +13,7 @@
 #include <tensorflow/lite/optional_debug_tools.h>
 
 #include <blosc2.h>
+#include <stdio.h>
 #include "context.h"
 #include "entropy_probe.h"
 #include "btune.h"
@@ -97,7 +98,7 @@ static float normalize(float value, float mean, float std) {
 
 
 static int get_best_codec_for_chunk(
-  blosc2_schunk *schunk,
+  blosc2_context *src_ctx,
   const void *src,
   size_t size,
   tflite::Interpreter *interpreter,
@@ -113,14 +114,14 @@ static int get_best_codec_for_chunk(
     return -1;
   }
 
-  btune_struct *btune = (btune_struct *)schunk->storage->cparams->tuner_params;
+  btune_struct *btune = (btune_struct *)src_ctx->tuner_params;
   // <<< ENTROPY PROBER START
   // cparams
   blosc2_cparams cparams = BLOSC2_CPARAMS_DEFAULTS;
   cparams.compcode = ENTROPY_PROBE_ID;
   cparams.instr_codec = true;  // instrumented (cratio/cspeed)
-  cparams.typesize = schunk->typesize;
-  cparams.blocksize = schunk->blocksize;
+  cparams.typesize = src_ctx->typesize;
+  cparams.blocksize = src_ctx->blocksize;
   cparams.splitmode = BLOSC_NEVER_SPLIT;
   cparams.nthreads = 4;
   cparams.filters[BLOSC2_MAX_FILTERS - 1] = BLOSC_NOFILTER;
@@ -365,7 +366,7 @@ void btune_model_init(blosc2_context * ctx) {
   // Load model and metadata
   const char * dirname = getenv("BTUNE_MODELS_DIR");
   if (dirname == NULL) {
-    if (config->models_dir == NULL) {
+    if (config->models_dir[0] == '\0') {
       BTUNE_TRACE("Environment variable BTUNE_MODELS_DIR is not defined");
       btune_params->inference_count = 0;
       return;
@@ -373,7 +374,7 @@ void btune_model_init(blosc2_context * ctx) {
       dirname = config->models_dir;
     }
   }
-  config->models_dir = dirname;
+  strcpy(config->models_dir, dirname);
   btune_params->interpreter = load_model(config, dirname);
   btune_params->metadata = load_metadata(config, dirname);
 
@@ -405,7 +406,7 @@ int btune_model_inference(
 
   const void *src = (const void*)ctx->src;
   int32_t size = ctx->srcsize;
-  int best = get_best_codec_for_chunk(ctx->schunk, src, size, interpreter, metadata);
+  int best = get_best_codec_for_chunk(ctx, src, size, interpreter, metadata);
   if (best < 0) {
     return best;
   }
