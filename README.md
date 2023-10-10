@@ -41,7 +41,7 @@ This creates a NDArray on disk with some data. The warning message
 should be ignored as long as we are not using the trained models.
 
 The second option is to set `cparams={"tuner": blosc2.Tuner.BTUNE}` when creating the array like in the
-`create_ndarray_params.py`. We will see this example later in this section.
+`btune_config.py`. We will see this example later in this section.
 
 You can set `BTUNE_TRACE=1` to see what Btune is doing.
 
@@ -122,7 +122,7 @@ ba = blosc2.asarray(a, urlpath=urlpath, mode="w", chunks=(5e3,), cparams={"tuner
 You can see that the parameters have been applied activating the `BTUNE_TRACE`.
 
 ```shell
-BTUNE_TRACE=1 python create_ndarray_params.py 
+BTUNE_TRACE=1 python btune_config.py 
 -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 Btune version: 1.0.3.dev
 Performance Mode: DECOMP, Compression tradeoff: 0.300000, Bandwidth: 20 GB/s
