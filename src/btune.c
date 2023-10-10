@@ -1096,6 +1096,33 @@ int btune_update(blosc2_context * context, double ctime) {
   return BLOSC2_ERROR_SUCCESS;
 }
 
+
+int set_params_defaults(
+  uint32_t bandwidth,
+  uint32_t perf_mode,
+  float tradeoff,
+  bool cparams_hint,
+  int use_inference,
+  const char* models_dir,
+  uint32_t nwaits,
+  uint32_t nsofts,
+  uint32_t nhards,
+  uint32_t repeat_mode
+) {
+  BTUNE_CONFIG_DEFAULTS.bandwidth = bandwidth;
+  BTUNE_CONFIG_DEFAULTS.perf_mode = perf_mode;
+  BTUNE_CONFIG_DEFAULTS.tradeoff = tradeoff;
+  BTUNE_CONFIG_DEFAULTS.cparams_hint = cparams_hint;
+  BTUNE_CONFIG_DEFAULTS.use_inference = use_inference;
+  strcpy(BTUNE_CONFIG_DEFAULTS.models_dir, models_dir);
+  BTUNE_CONFIG_DEFAULTS.behaviour.nwaits_before_readapt = nwaits;
+  BTUNE_CONFIG_DEFAULTS.behaviour.nsofts_before_hard = nsofts;
+  BTUNE_CONFIG_DEFAULTS.behaviour.nhards_before_stop = nhards;
+  BTUNE_CONFIG_DEFAULTS.behaviour.repeat_mode = repeat_mode;
+
+  return 0;
+}
+
 // Blosc2 needs this in order to dynamically load the functions
 tuner_info info = {
     .init="btune_init",

@@ -21,6 +21,15 @@
 #include <stddef.h>
 
 
+#if defined(_WIN32)
+#include <windows.h>
+#ifndef PATH_MAX
+#define PATH_MAX MAX_PATH
+#endif
+#else
+#include <limits.h>
+#endif
+
 // The size of L1 cache.  32 KB is quite common nowadays.
 #define L1 (32 * 1024)
 // Version numbers
@@ -152,7 +161,7 @@ typedef struct {
   */
   int use_inference;
   //!< Number of times inference is applied. If -1, always apply inference.
-  const char *models_dir;
+  char models_dir[PATH_MAX];
   //!< The directory where the desired models and meta to use are stored.
 
 } btune_config;
@@ -164,15 +173,17 @@ typedef struct {
  * decompression speed and the compression ratio (BALANCED options). It behaves as follows:
  * it starts with a hard readapt (cparams_hint false) and then repeats 5 soft readapts and
  * a hard readapt 1 times before stopping completely.
+ *
+ * When changing these, the ones in blosc2_btune/__init__.py should also be changed.
 */
-static const btune_config BTUNE_CONFIG_DEFAULTS = {
+static btune_config BTUNE_CONFIG_DEFAULTS = {
     2 * BTUNE_GBPS10,
     BTUNE_PERF_AUTO,
     BTUNE_COMP_BALANCED,
     {0, 5, 10, BTUNE_STOP},
     false,
     -1,
-    NULL,
+    {0},
 };
 
 /// @cond DEV
@@ -193,6 +204,20 @@ typedef enum {
     SOFT,
     HARD,
 } readapt_type;
+
+
+int set_params_defaults(
+  uint32_t bandwidth,
+  uint32_t perf_mode,
+  float tradeoff,
+  bool cparams_hint,
+  int use_inference,
+  const char* models_dir,
+  uint32_t nwaits,
+  uint32_t nsofts,
+  uint32_t nhards,
+  uint32_t repeat_mode
+);
 
 
 #endif  /* BTUNE_H */

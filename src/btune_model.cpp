@@ -13,6 +13,7 @@
 #include <tensorflow/lite/optional_debug_tools.h>
 
 #include <blosc2.h>
+#include <stdio.h>
 #include "context.h"
 #include "entropy_probe.h"
 #include "btune.h"
@@ -365,7 +366,7 @@ void btune_model_init(blosc2_context * ctx) {
   // Load model and metadata
   const char * dirname = getenv("BTUNE_MODELS_DIR");
   if (dirname == NULL) {
-    if (config->models_dir == NULL) {
+    if (config->models_dir[0] == '\0') {
       BTUNE_TRACE("Environment variable BTUNE_MODELS_DIR is not defined");
       btune_params->inference_count = 0;
       return;
@@ -373,7 +374,7 @@ void btune_model_init(blosc2_context * ctx) {
       dirname = config->models_dir;
     }
   }
-  config->models_dir = dirname;
+  strcpy(config->models_dir, dirname);
   btune_params->interpreter = load_model(config, dirname);
   btune_params->metadata = load_metadata(config, dirname);
 
