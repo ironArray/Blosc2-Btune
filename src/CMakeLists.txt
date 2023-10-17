@@ -28,7 +28,7 @@ if (BUILD_STATIC_TFLITE)
         "${CMAKE_CURRENT_BINARY_DIR}/tensorflow-lite"
         EXCLUDE_FROM_ALL
     )
-    target_link_libraries(blosc2_btune blosc2 tensorflow-lite)
+    target_link_libraries(blosc2_btune libblosc2 tensorflow-lite)
 else()
     # This is meant for using bazel from outside
     if(APPLE)
@@ -41,7 +41,7 @@ else()
                 )
     endif()
 
-    target_link_libraries(blosc2_btune blosc2 tensorflowlite)
+    target_link_libraries(blosc2_btune libblosc2 tensorflowlite)
 endif()
 
 # Add btune.h to wheel
