@@ -59,7 +59,7 @@ jobs:
       # Build all wheels
       - name: Sets env vars for tagging
         run: |
-          echo "CIBW_BUILD=cp38-* cp39-* cp310-* cp311-*" >> $GITHUB_ENV
+          echo "CIBW_BUILD=cp39-* cp310-* cp311-*" >> $GITHUB_ENV
         if: startsWith(github.ref, 'refs/tags') == true
 
       # This step is run when not tagging (typically a PR)
@@ -76,9 +76,10 @@ jobs:
           python -m pip install cibuildwheel
           python -m cibuildwheel --output-dir wheelhouse
         env:
-          #CIBW_BUILD: 'cp310-win_amd64'
+          CIBW_BUILD: 'cp310-win_amd64'
           CIBW_BEFORE_BUILD: bash prebuild.sh
-          CIBW_SKIP: ${{ env.CIBW_SKIP}}'
+          # Skip 32-bit builds
+          CIBW_SKIP: "*-win32" ${{ env.CIBW_SKIP}}'
           CIBW_TEST_REQUIRES: pytest blosc2
           # Test against the test suite in python-blosc2
           #CIBW_TEST_COMMAND: BTUNE_MODELS_DIR={project}/examples/models BTUNE_BALANCE=.1 BLOSC_TRACE=1 BTUNE_TRACE=1 python -m pytest -s {project}/python-blosc2/tests

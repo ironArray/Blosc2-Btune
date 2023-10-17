@@ -31,7 +31,7 @@ git checkout $latestTag
 # Compile static version of C-Blosc2
 mkdir build
 cd build
-cmake .. -DCMAKE_GENERATOR_PLATFORM=Win32
+cmake ..
 cmake --build . --config Release --target blosc2_static -j
 cd ../..
 
