@@ -32,7 +32,7 @@ git checkout $latestTag
 mkdir build
 cd build
 cmake ..
-cmake --build . --target blosc2_static -j
+cmake --build . --config Release --target blosc2_static -j
 cd ../..
 
 

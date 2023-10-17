@@ -17,7 +17,7 @@ add_library(blosc2_btune MODULE btune.c btune_model.cpp json.c entropy_probe.c)
 if(UNIX)
     target_link_directories(blosc2_btune PUBLIC ${BLOSC2_SRC_DIR}/build/blosc)
 else()
-    target_link_directories(blosc2_btune PUBLIC ${BLOSC2_SRC_DIR}/build/blosc/Debug)
+    target_link_directories(blosc2_btune PUBLIC ${BLOSC2_SRC_DIR}/build/blosc/Release)
 endif()
 
 
