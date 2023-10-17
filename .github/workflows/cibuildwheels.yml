@@ -22,8 +22,11 @@ jobs:
         #os: [ubuntu-latest, macos-latest]
         os: [windows-latest]
         # arch: [x86_64, aarch64]
-        arch: [x86_64, arm64]
+        #arch: [x86_64, arm64]
+        arch: [x86_64]
         exclude:
+          - os: windows-latest
+            arch: aarch64
           - os: macos-latest
             arch: aarch64
           - os: ubuntu-latest
@@ -65,6 +68,21 @@ jobs:
         run: |
           echo "CIBW_BUILD=cp38-*" >> $GITHUB_ENV
         if: startsWith(github.ref, 'refs/tags') != true
+
+      - name: Build wheels (Windows)
+        if: runner.os == 'Windows'
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install cibuildwheel
+          python -m cibuildwheel --output-dir wheelhouse
+        env:
+          CIBW_BUILD: 'cp38-win_amd64'
+          CIBW_BEFORE_BUILD: bash prebuild.sh
+          CIBW_SKIP: ${{ env.CIBW_SKIP}}'
+          CIBW_TEST_REQUIRES: pytest blosc2
+          # Test against the test suite in python-blosc2
+          CIBW_TEST_COMMAND: BTUNE_MODELS_DIR={project}/examples/models BTUNE_BALANCE=.1 BLOSC_TRACE=1 BTUNE_TRACE=1 python -m pytest -s {project}/python-blosc2/tests
+          CIBW_BUILD_VERBOSITY: 1
 
       - name: Build wheels (Linux / Mac OSX)
         if: runner.os != 'Windows'
