@@ -14,32 +14,10 @@ else
   echo "TensorFlow ($TENSORFLOW_VERSION) already cloned"
 fi
 
-
-# We need to remove binaries from previous architectures
-rm -rf c-blosc2
-# Checkout C-Blosc2 sources
-git clone --depth=1 https://github.com/Blosc/c-blosc2.git c-blosc2
-
-# Get new tags from remote
-cd c-blosc2
-git fetch --tags
-# Get latest tag name
-latestTag=$(git describe --tags `git rev-list --tags --max-count=1`)
-# Checkout latest tag
-git checkout $latestTag
-
-# Compile static version of C-Blosc2
-mkdir build
-cd build
-cmake ..
-cmake --build . --target blosc2_static -j
-cd ../..
-
-
 # Checkout Python-Blosc2 sources, just for testing the Btune wheel
 # We will use the regular python-blosc2 wheel in combination with BTUNE_BALANCE
 rm -rf python-blosc2
-git clone --recursive --depth=1 https://github.com/Blosc/python-blosc2.git python-blosc2
+git clone --depth=1 https://github.com/Blosc/python-blosc2.git python-blosc2
 # Get new tags from remote
 cd python-blosc2
 git fetch --tags

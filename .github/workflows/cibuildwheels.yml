@@ -19,7 +19,11 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        os: [ubuntu-latest, macos-latest]
+        os: [ubuntu-latest, macos-latest, windows-latest]
+        #cibw_build: [ "cp3{9,10,11,12}-*" ]
+        #p_ver: [ "3.9-3.12" ]
+        cibw_build: [ "cp3{9}-*" ]
+        p_ver: [ "3.9" ]
         # arch: [x86_64, aarch64]
         arch: [x86_64, arm64]
         exclude:
@@ -46,27 +50,30 @@ jobs:
       - name: Install Ninja
         uses: seanmiddleditch/gha-setup-ninja@master
 
+      - name: Install MSVC amd64
+        uses: ilammy/msvc-dev-cmd@v1
+        with:
+          arch: amd64
+
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
-          python -m pip install -r requirements-build.txt
 
       # This step is run when tagging (typically a release)
       # Build all wheels
-      - name: Sets env vars for tagging
-        run: |
-          echo "CIBW_BUILD=cp38-* cp39-* cp310-* cp311-*" >> $GITHUB_ENV
-        if: startsWith(github.ref, 'refs/tags') == true
+      #- name: Sets env vars for tagging
+      #  run: |
+#          echo "CIBW_BUILD=cp38-* cp39-* cp310-* cp311-*" >> $GITHUB_ENV
+#        if: startsWith(github.ref, 'refs/tags') == true
+#
+#      # This step is run when not tagging (typically a PR)
+#      # Build just one wheel
+#      - name: Sets env vars when not tagging
+#        run: |
+#          echo "CIBW_BUILD=cp38-*" >> $GITHUB_ENV
+#        if: startsWith(github.ref, 'refs/tags') != true
 
-      # This step is run when not tagging (typically a PR)
-      # Build just one wheel
-      - name: Sets env vars when not tagging
-        run: |
-          echo "CIBW_BUILD=cp38-*" >> $GITHUB_ENV
-        if: startsWith(github.ref, 'refs/tags') != true
-
-      - name: Build wheels (Linux / Mac OSX)
-        if: runner.os != 'Windows'
+      - name: Build wheels
         run: |
           python -m pip install --upgrade pip
           python -m pip install cibuildwheel

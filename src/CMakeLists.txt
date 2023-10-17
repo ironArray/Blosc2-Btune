@@ -8,16 +8,13 @@
 ##############################################################################
 
 include_directories(
-    ${BLOSC2_INCLUDE_DIR}
+    ${Python_INCLUDE}
     ${TENSORFLOW_SRC_DIR}
 )
 
 add_library(blosc2_btune MODULE btune.c btune_model.cpp json.c entropy_probe.c)
 
-target_link_directories(blosc2_btune
-    PUBLIC ${BLOSC2_SRC_DIR}/build/blosc
-)
-target_link_directories(blosc2_btune PUBLIC ${BLOSC2_SRC_DIR}/build/blosc)
+target_link_directories(blosc2_btune PUBLIC ${Python_LIB} ${Python_LIB64})
 
 if (BUILD_STATIC_TFLITE)
     # This only works in Linux and Mac (at least for v2.11.0)

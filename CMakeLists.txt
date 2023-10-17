@@ -9,7 +9,7 @@
 
 cmake_minimum_required(VERSION 3.20)
 project(blosc2_btune LANGUAGES C CXX)
-set (CMAKE_CXX_STANDARD 20)
+set (CMAKE_CXX_STANDARD 17)
 
 # Only linking tensorflow statically is officially supported at this time
 option(BUILD_STATIC_TFLITE "Link tflite statically" ON)
@@ -21,23 +21,25 @@ if(NOT EXISTS ${TENSORFLOW_SRC_DIR})
 endif()
 message("TENSORFLOW dir: " ${TENSORFLOW_SRC_DIR})
 
-cmake_path(SET BLOSC2_SRC_DIR NORMALIZE "${CMAKE_SOURCE_DIR}/c-blosc2")
-cmake_path(ABSOLUTE_PATH BLOSC2_SRC_DIR NORMALIZE)
-if(NOT EXISTS ${BLOSC2_SRC_DIR})
-    message( SEND_ERROR "Call prebuild.sh first" )
-endif()
-message("BLOSC2 dir: " ${BLOSC2_SRC_DIR})
-
 message("Building Blosc2 plugin btune ...")
 
-cmake_path(SET BLOSC2_INCLUDE_DIR NORMALIZE "${BLOSC2_SRC_DIR}/include")
-# Find blosc2.h (sanity check)
-cmake_path(SET BLOSC2_INCLUDE NORMALIZE "${BLOSC2_INCLUDE_DIR}/blosc2.h")
-cmake_path(HAS_FILENAME BLOSC2_INCLUDE HAS_BLOSC2)
-if(HAS_BLOSC2)
-    message(STATUS "Found Blosc2 include: ${BLOSC2_INCLUDE}")
+# Find blosc2.h
+find_package(Python COMPONENTS Interpreter Development.Module REQUIRED)
+message(STATUS "Executable: ${Python_EXECUTABLE}")
+
+if (UNIX)
+    cmake_path(SET Python_LIB NORMALIZE "${Python_STDLIB}/..")
 else()
-    message(FATAL_ERROR "No Blosc2 includes found.  Aborting.")
+    cmake_path(SET Python_LIB NORMALIZE "${Python_STDLIB}")
 endif()
+
+cmake_path(SET Python_ROOT NORMALIZE "${Python_LIB}/..")
+message(STATUS "Inferred Python root: ${Python_ROOT}")
+cmake_path(SET Python_LIB64 NORMALIZE "${Python_ROOT}/lib64")
+
+cmake_path(SET Python_INCLUDE NORMALIZE "${Python_ROOT}/include")
+message(STATUS "Inferred Python include: ${Python_INCLUDE}")
+message(STATUS "Inferred Python lib: ${Python_LIB}")
+message(STATUS "Inferred Python lib64: ${Python_LIB64}")
 
 add_subdirectory(src)
