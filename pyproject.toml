@@ -8,12 +8,13 @@
 ##############################################################################
 
 [build-system]
-requires = ["setuptools", "scikit-build", "cmake", "ninja"]
-build-backend = "setuptools.build_meta"
+requires = ["scikit-build-core", "cmake", "ninja"]
+build-backend = "scikit_build_core.build"
 
 [project]
 name = "blosc2_btune"
-dynamic = ["version", "readme"]
+version = "1.0.3.dev"
+dynamic = ["readme"]
 authors = [
     {name = "Blosc Development Team", email = "contact@blosc.org"},
 ]
