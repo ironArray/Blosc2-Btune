@@ -51,7 +51,9 @@ install(FILES btune.h DESTINATION ${CMAKE_INSTALL_INCLUDEDIR} COMPONENT DEV)
 
 
 if(UNIX)
-    install(TARGETS blosc2_btune LIBRARY DESTINATION blosc2_btune)
+    set_target_properties(blosc2_btune PROPERTIES PREFIX "")
 else()
-    install(TARGETS blosc2_btune LIBRARY DESTINATION libblosc2_btune)
+    set_target_properties(blosc2_btune PROPERTIES PREFIX "lib")
 endif()
+
+install(TARGETS blosc2_btune LIBRARY DESTINATION blosc2_btune)
