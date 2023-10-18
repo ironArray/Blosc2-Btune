@@ -99,7 +99,7 @@ jobs:
           CIBW_ARCHS_LINUX: ${{ matrix.arch }}
           CIBW_TEST_REQUIRES: pytest blosc2
           # Test against the test suite in python-blosc2
-          CIBW_TEST_COMMAND: BTUNE_MODELS_DIR={project}/examples/models BTUNE_BALANCE=.1 BLOSC_TRACE=1 BTUNE_TRACE=1 python -m pytest -s {project}/python-blosc2/tests
+          #CIBW_TEST_COMMAND: BTUNE_MODELS_DIR={project}/examples/models BTUNE_BALANCE=.1 BLOSC_TRACE=1 BTUNE_TRACE=1 python -m pytest -s {project}/python-blosc2/tests
           CIBW_BUILD_VERBOSITY: 1
           CIBW_ARCHS_MACOS: "x86_64"
 

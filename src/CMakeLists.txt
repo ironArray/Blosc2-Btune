@@ -50,4 +50,8 @@ endif()
 install(FILES btune.h DESTINATION ${CMAKE_INSTALL_INCLUDEDIR} COMPONENT DEV)
 
 
-install(TARGETS blosc2_btune LIBRARY DESTINATION blosc2_btune)
+if(UNIX)
+    install(TARGETS blosc2_btune LIBRARY DESTINATION blosc2_btune)
+else()
+    install(TARGETS blosc2_btune LIBRARY DESTINATION libblosc2_btune)
+endif()
