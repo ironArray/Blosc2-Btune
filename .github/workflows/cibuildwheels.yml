@@ -79,7 +79,8 @@ jobs:
           CIBW_BUILD: 'cp310-win_amd64'
           CIBW_BEFORE_BUILD: bash prebuild.sh
           # Skip 32-bit builds
-          CIBW_SKIP: "*-win32" ${{ env.CIBW_SKIP}}'
+          CIBW_SKIP: ${{ env.CIBW_SKIP}}'
+          #CIBW_SKIP: "*-win32" ${{ env.CIBW_SKIP}}'
           CIBW_TEST_REQUIRES: pytest blosc2
           # Test against the test suite in python-blosc2
           #CIBW_TEST_COMMAND: BTUNE_MODELS_DIR={project}/examples/models BTUNE_BALANCE=.1 BLOSC_TRACE=1 BTUNE_TRACE=1 python -m pytest -s {project}/python-blosc2/tests
