@@ -50,9 +50,7 @@ endif()
 install(FILES btune.h DESTINATION ${CMAKE_INSTALL_INCLUDEDIR} COMPONENT DEV)
 
 
-if(UNIX)
-    set_target_properties(blosc2_btune PROPERTIES PREFIX "")
-else()
+if(NOT UNIX)
     set_target_properties(blosc2_btune PROPERTIES PREFIX "lib")
 endif()
 
