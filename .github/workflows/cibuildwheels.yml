@@ -23,7 +23,7 @@ jobs:
         arch: [x86_64, aarch64, arm64]
         exclude:
           - os: windows-latest
-            arch: aarch64
+            arch: [arm64, aarch64]
           - os: macos-latest
             arch: aarch64
           - os: ubuntu-latest
@@ -74,6 +74,7 @@ jobs:
           python -m cibuildwheel --output-dir wheelhouse
         env:
           CIBW_BEFORE_BUILD: bash prebuild.sh
+          CIBW_BUILD: ${{ env.CIBW_BUILD}}'
           # Skip 32-bit builds
           CIBW_SKIP: "*-win32" ${{ env.CIBW_SKIP}}'
           CIBW_TEST_REQUIRES: blosc2
@@ -89,6 +90,7 @@ jobs:
           python -m pip install cibuildwheel
           python -m cibuildwheel --output-dir wheelhouse
         env:
+          CIBW_BUILD: ${{ env.CIBW_BUILD}}'
           CIBW_BEFORE_BUILD: CMAKE_OSX_ARCHITECTURES=x86_64 bash prebuild.sh
           CIBW_SKIP: '*-manylinux*_i686 *-musllinux_* ${{ env.CIBW_SKIP}}'
           CIBW_ARCHS_LINUX: ${{ matrix.arch }}
@@ -106,6 +108,7 @@ jobs:
           python -m pip install cibuildwheel
           python -m cibuildwheel --output-dir wheelhouse
         env:
+          CIBW_BUILD: ${{ env.CIBW_BUILD}}'
           CIBW_BEFORE_BUILD: CMAKE_OSX_ARCHITECTURES=arm64 bash prebuild.sh
           CIBW_ARCHS_LINUX: ${{ matrix.arch }}
           CIBW_TEST_REQUIRES: blosc2
