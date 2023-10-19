@@ -1121,4 +1121,3 @@ int set_params_defaults(
 
   return 0;
 }
-

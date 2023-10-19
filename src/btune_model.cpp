@@ -16,7 +16,7 @@
 #include <stdio.h>
 #include "context.h"
 #include "entropy_probe.h"
-#include "btune.h"
+#include "btune_info_public.h"
 #include "btune_model.h"
 #include "json.h"
 
