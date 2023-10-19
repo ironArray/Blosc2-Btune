@@ -19,11 +19,8 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        #os: [ubuntu-latest, macos-latest]
-        os: [windows-latest]
-        # arch: [x86_64, aarch64]
-        #arch: [x86_64, arm64]
-        arch: [x86_64]
+        os: [ubuntu-latest, macos-latest, windows-latest]
+        arch: [x86_64, aarch64, arm64]
         exclude:
           - os: windows-latest
             arch: aarch64
@@ -76,13 +73,10 @@ jobs:
           python -m pip install cibuildwheel
           python -m cibuildwheel --output-dir wheelhouse
         env:
-          CIBW_BUILD: 'cp312-win_amd64'
-          #CIBW_BUILD: 'cp310-win32'
           CIBW_BEFORE_BUILD: bash prebuild.sh
-          CIBW_SKIP: ${{ env.CIBW_SKIP}}'
           # Skip 32-bit builds
-          #CIBW_SKIP: "*-win32" ${{ env.CIBW_SKIP}}'
-          CIBW_TEST_REQUIRES: pytest blosc2
+          CIBW_SKIP: "*-win32" ${{ env.CIBW_SKIP}}'
+          CIBW_TEST_REQUIRES: blosc2
           CIBW_TEST_COMMAND: >
             set BTUNE_TRACE=1 &&
             python {project}/examples/btune_config.py
@@ -98,9 +92,10 @@ jobs:
           CIBW_BEFORE_BUILD: CMAKE_OSX_ARCHITECTURES=x86_64 bash prebuild.sh
           CIBW_SKIP: '*-manylinux*_i686 *-musllinux_* ${{ env.CIBW_SKIP}}'
           CIBW_ARCHS_LINUX: ${{ matrix.arch }}
-          CIBW_TEST_REQUIRES: pytest blosc2
-          # Test against the test suite in python-blosc2
-          CIBW_TEST_COMMAND: BTUNE_MODELS_DIR={project}/examples/models BTUNE_BALANCE=.1 BLOSC_TRACE=1 BTUNE_TRACE=1 python -m pytest -s {project}/python-blosc2/tests
+          CIBW_TEST_REQUIRES: blosc2
+          CIBW_TEST_COMMAND: >
+            set BTUNE_TRACE=1 &&
+            python {project}/examples/btune_config.py
           CIBW_BUILD_VERBOSITY: 1
           CIBW_ARCHS_MACOS: "x86_64"
 
@@ -112,11 +107,11 @@ jobs:
           python -m cibuildwheel --output-dir wheelhouse
         env:
           CIBW_BEFORE_BUILD: CMAKE_OSX_ARCHITECTURES=arm64 bash prebuild.sh
-          CIBW_SKIP: '*-manylinux*_i686 *-musllinux_* ${{ env.CIBW_SKIP}}'
           CIBW_ARCHS_LINUX: ${{ matrix.arch }}
-          CIBW_TEST_REQUIRES: pytest blosc2
-          # Test against the test suite in python-blosc2
-          CIBW_TEST_COMMAND: BTUNE_MODELS_DIR={project}/examples/models BTUNE_BALANCE=.1 BLOSC_TRACE=1 BTUNE_TRACE=1 python -m pytest -s {project}/python-blosc2/tests
+          CIBW_TEST_REQUIRES: blosc2
+          CIBW_TEST_COMMAND: >
+            set BTUNE_TRACE=1 &&
+            python {project}/examples/btune_config.py
           CIBW_BUILD_VERBOSITY: 1
           CIBW_ARCHS_MACOS: "arm64"
 
