@@ -33,6 +33,7 @@
 #include <stdint.h>
 #include <stddef.h>
 #include "context.h"
+#include <blosc2/tuners-registry.h>
 
 
 #if defined(_WIN32)
@@ -263,5 +264,12 @@ BLOSC2_BTUNE_EXPORT int btune_update(blosc2_context* context, double ctime);
 
 BLOSC2_BTUNE_EXPORT int btune_next_blocksize(blosc2_context *context);
 
-
+// Blosc2 needs this in order to dynamically load the functions
+BLOSC2_BTUNE_EXPORT static tuner_info info = {
+  .init=(char *)"btune_init",
+  .next_blocksize=(char *)"btune_next_blocksize",
+  .next_cparams=(char *)"btune_next_cparams",
+  .update=(char *)"btune_update",
+  .free=(char *)"btune_free"
+};
 #endif  /* BTUNE_H */
