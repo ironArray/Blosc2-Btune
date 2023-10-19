@@ -85,9 +85,7 @@ jobs:
           CIBW_TEST_REQUIRES: pytest blosc2
           CIBW_TEST_COMMAND: >
             set BTUNE_TRACE=1 &&
-            set BTUNE_MODELS_DIR={project}/examples/models &&
-            cd {project}/examples &&
-            python btune_config.py
+            python {project}/examples/btune_config.py
           CIBW_BUILD_VERBOSITY: 1
 
       - name: Build wheels (Linux / Mac OSX)
