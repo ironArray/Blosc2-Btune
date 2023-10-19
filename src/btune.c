@@ -14,7 +14,7 @@
 #include <assert.h>
 
 #include <blosc2/filters-registry.h>
-#include "btune.h"
+#include "btune_info_public.h"
 #include "btune_model.h"
 #include "entropy_probe.h"
 #include "btune-private.h"
