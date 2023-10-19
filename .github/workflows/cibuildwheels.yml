@@ -11,25 +11,39 @@ on:
     branches:
       - main
 
+env:
+  CIBW_SKIP: '*-win32 *-manylinux*_i686 *-musllinux_*'
+  CIBW_ARCHS_LINUX: ${{ matrix.arch }}
+  CIBW_TEST_REQUIRES: blosc2
+  CIBW_TEST_SKIP: "*macosx*arm64*"
+  CIBW_TEST_COMMAND: >
+    set BTUNE_TRACE=1 &&
+    python {project}/examples/btune_config.py
+  CIBW_BUILD_VERBOSITY: 1
 
 jobs:
 
   build_wheels:
-    name: Build wheels on ${{ matrix.os }} (${{ matrix.arch }})
+    name: Build wheels on ${{ matrix.os }} for ${{ matrix.arch }} - ${{ matrix.p_ver }}
     runs-on: ${{ matrix.os }}
+    env:
+      CIBW_BUILD: ${{ matrix.cibw_build }}
+      CIBW_ARCHS_LINUX: ${{ matrix.arch }}
+      CIBW_ARCHS_MACOS: "x86_64 arm64"
     strategy:
       matrix:
-        os: [ubuntu-latest, macos-latest, windows-latest]
-        arch: [x86_64, aarch64, arm64]
+        os: [ubuntu-latest, windows-latest, macos-latest]
+        arch: [x86_64 aarch64]
+        #cibw_build: ["cp3{9,10,11,12}-*"]
+        #p_ver: ["3.9-3.12"]
+        cibw_build: ["cp310-*"]
+        p_ver: ["3.10"]
         exclude:
           - os: windows-latest
-            arch: arm64
-          - os: windows-latest
             arch: aarch64
+          # cibuild is already in charge to build aarch64 (see CIBW_ARCHS_MACOS)
           - os: macos-latest
             arch: aarch64
-          - os: ubuntu-latest
-            arch: arm64
 
     steps:
       - name: Checkout repo
@@ -40,7 +54,7 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v4
         with:
-          python-version: '3.12'
+          python-version: '3.10'
 
       - name: Set up QEMU
         if: ${{ matrix.arch == 'aarch64' }}
@@ -54,20 +68,6 @@ jobs:
           python -m pip install --upgrade pip
           python -m pip install -r requirements-build.txt
 
-      # This step is run when tagging (typically a release)
-      # Build all wheels
-      - name: Sets env vars for tagging
-        run: |
-          echo "CIBW_BUILD=cp39-* cp310-* cp311-* cp312-*" >> $GITHUB_ENV
-        if: startsWith(github.ref, 'refs/tags') == true
-
-      # This step is run when not tagging (typically a PR)
-      # Build just one wheel
-      - name: Sets env vars when not tagging
-        run: |
-          echo "CIBW_BUILD=cp312-*" >> $GITHUB_ENV
-        if: startsWith(github.ref, 'refs/tags') != true
-
       - name: Build wheels (Windows)
         if: runner.os == 'Windows'
         run: |
@@ -76,13 +76,6 @@ jobs:
           python -m cibuildwheel --output-dir wheelhouse
         env:
           CIBW_BEFORE_BUILD: bash prebuild.sh
-          # Skip 32-bit builds
-          CIBW_SKIP: "*-win32 ${{ env.CIBW_SKIP}}"
-          CIBW_TEST_REQUIRES: blosc2
-          CIBW_TEST_COMMAND: >
-            set BTUNE_TRACE=1 &&
-            python {project}/examples/btune_config.py
-          CIBW_BUILD_VERBOSITY: 1
 
       - name: Build wheels (Linux / Mac OSX)
         if: runner.os != 'Windows'
@@ -92,13 +85,6 @@ jobs:
           python -m cibuildwheel --output-dir wheelhouse
         env:
           CIBW_BEFORE_BUILD: CMAKE_OSX_ARCHITECTURES=x86_64 bash prebuild.sh
-          CIBW_SKIP: '*-manylinux*_i686 *-musllinux_* ${{ env.CIBW_SKIP}}'
-          CIBW_ARCHS_LINUX: ${{ matrix.arch }}
-          CIBW_TEST_REQUIRES: blosc2
-          CIBW_TEST_COMMAND: >
-            set BTUNE_TRACE=1 &&
-            python {project}/examples/btune_config.py
-          CIBW_BUILD_VERBOSITY: 1
           CIBW_ARCHS_MACOS: "x86_64"
 
       - name: Build wheels (Mac OSX arm64)
@@ -108,14 +94,7 @@ jobs:
           python -m pip install cibuildwheel
           python -m cibuildwheel --output-dir wheelhouse
         env:
-          CIBW_BUILD: ${{ env.CIBW_BUILD}}'
           CIBW_BEFORE_BUILD: CMAKE_OSX_ARCHITECTURES=arm64 bash prebuild.sh
-          CIBW_ARCHS_LINUX: ${{ matrix.arch }}
-          CIBW_TEST_REQUIRES: blosc2
-          CIBW_TEST_COMMAND: >
-            set BTUNE_TRACE=1 &&
-            python {project}/examples/btune_config.py
-          CIBW_BUILD_VERBOSITY: 1
           CIBW_ARCHS_MACOS: "arm64"
 
       - name: Upload wheels
