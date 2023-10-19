@@ -13,7 +13,6 @@ on:
 
 env:
   CIBW_SKIP: '*-win32 *-manylinux*_i686 *-musllinux_*'
-  CIBW_ARCHS_LINUX: ${{ matrix.arch }}
   CIBW_TEST_REQUIRES: blosc2
   CIBW_TEST_SKIP: "*macosx*arm64*"
   CIBW_TEST_COMMAND: >
