@@ -14,10 +14,14 @@ include_directories(
 
 add_library(blosc2_btune MODULE btune.c btune_model.cpp json.c entropy_probe.c)
 
-target_link_directories(blosc2_btune
-    PUBLIC ${BLOSC2_SRC_DIR}/build/blosc
-)
-target_link_directories(blosc2_btune PUBLIC ${BLOSC2_SRC_DIR}/build/blosc)
+if(UNIX)
+    target_link_directories(blosc2_btune PUBLIC ${BLOSC2_SRC_DIR}/build/blosc)
+    set(BLOSC2_LIB "blosc2")
+else()
+    target_link_directories(blosc2_btune PUBLIC ${BLOSC2_SRC_DIR}/build/blosc/Release)
+    set(BLOSC2_LIB "libblosc2")
+endif()
+
 
 if (BUILD_STATIC_TFLITE)
     # This only works in Linux and Mac (at least for v2.11.0)
@@ -26,7 +30,7 @@ if (BUILD_STATIC_TFLITE)
         "${CMAKE_CURRENT_BINARY_DIR}/tensorflow-lite"
         EXCLUDE_FROM_ALL
     )
-    target_link_libraries(blosc2_btune blosc2 tensorflow-lite)
+    target_link_libraries(blosc2_btune ${BLOSC2_LIB} tensorflow-lite)
 else()
     # This is meant for using bazel from outside
     if(APPLE)
@@ -39,11 +43,15 @@ else()
                 )
     endif()
 
-    target_link_libraries(blosc2_btune blosc2 tensorflowlite)
+    target_link_libraries(blosc2_btune ${BLOSC2_LIB} tensorflowlite)
 endif()
 
 # Add btune.h to wheel
 install(FILES btune.h DESTINATION ${CMAKE_INSTALL_INCLUDEDIR} COMPONENT DEV)
 
+
+if(NOT UNIX)
+    set_target_properties(blosc2_btune PROPERTIES PREFIX "lib")
+endif()
 
 install(TARGETS blosc2_btune LIBRARY DESTINATION blosc2_btune)

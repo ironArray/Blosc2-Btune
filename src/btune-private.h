@@ -125,33 +125,5 @@ typedef struct {
 } btune_struct;
 /// @endcond
 
-/**
- * @brief Btune initializer.
- *
- * This method initializes Btune in the compression context and then it will be used automatically.
- * On each compression, Btune overwrites the compression parameters in the context and, depending
- * on the results obtained and its configuration, will adjust them.
- * Example of use:
- * @code{.c}
- * blosc2_cparams cparams = BLOSC2_CPARAMS_DEFAULTS;
- * blosc2_dparams params = BLOSC2_DPARAMS_DEFAULTS;
- * btune_config config = BTUNE_CONFIG_DEFAULTS;
- * blosc2_storage storage = {.cparams=&cparams, .dparams=&dparams};
- * blosc2_schunk * schunk = blosc2_schunk_new(&storage);
- * btune_init(&config, schunk->cctx, schunk->dctx);
- * @endcode
- * @param config The Btune configuration determines its behaviour and how will optimize.
- * @param cctx The compression context where Btune tunes the compression parameters. It <b>can not</b> be NULL.
- * @param dctx If not NULL, Btune will modify the number of threads for decompression inside this context.
-*/
-int btune_init(void * config, blosc2_context* cctx, blosc2_context* dctx);
-
-int btune_free(blosc2_context* context);
-
-int btune_next_cparams(blosc2_context *context);
-
-int btune_update(blosc2_context* context, double ctime);
-
-int btune_next_blocksize(blosc2_context *context);
 
 #endif  /* BTUNE_PRIVATE_H */

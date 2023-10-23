@@ -14,8 +14,7 @@
 #include <assert.h>
 
 #include <blosc2/filters-registry.h>
-#include <blosc2/tuners-registry.h>
-#include "btune.h"
+#include "btune_info_public.h"
 #include "btune_model.h"
 #include "entropy_probe.h"
 #include "btune-private.h"
@@ -1122,12 +1121,3 @@ int set_params_defaults(
 
   return 0;
 }
-
-// Blosc2 needs this in order to dynamically load the functions
-tuner_info info = {
-    .init="btune_init",
-    .next_blocksize="btune_next_blocksize",
-    .next_cparams="btune_next_cparams",
-    .update="btune_update",
-    .free="btune_free"
-};

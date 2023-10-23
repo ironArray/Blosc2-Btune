@@ -19,6 +19,8 @@
 #include <stdbool.h>
 #include <stdint.h>
 #include <stddef.h>
+#include "context.h"
+#include <blosc2/tuners-registry.h>
 
 
 #if defined(_WIN32)
@@ -204,20 +206,6 @@ typedef enum {
     SOFT,
     HARD,
 } readapt_type;
-
-
-int set_params_defaults(
-  uint32_t bandwidth,
-  uint32_t perf_mode,
-  float tradeoff,
-  bool cparams_hint,
-  int use_inference,
-  const char* models_dir,
-  uint32_t nwaits,
-  uint32_t nsofts,
-  uint32_t nhards,
-  uint32_t repeat_mode
-);
 
 
 #endif  /* BTUNE_H */
