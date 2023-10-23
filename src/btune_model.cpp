@@ -317,7 +317,7 @@ static void * load_model(btune_config * config, const char * dirname) {
     return NULL;
   }
   free(model_fname);
-  printf("INFO: Model files found in the '%s' directory\n", dirname);
+  //printf("INFO: Model files found in the '%s' directory\n", dirname);
 
   // Build the interpreter with the InterpreterBuilder.
   // Note: all Interpreters should be built with the InterpreterBuilder,
