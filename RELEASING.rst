@@ -22,19 +22,11 @@ Testing
 Follow the steps in README-DEVELOPERS.md file for locally creating and
 installing the wheel, then test it::
 
-  $ cd python-blosc2
-  $ python setup.py build_ext -i -j
-  $ BTUNE_TRADEOFF=0.5 BTUNE_USE_INFERENCE=3 BTUNE_MODELS_DIR=../examples/models python -m pytest
+  $ cd examples
+  $ BTUNE_TRACE=1 python btune_config.py
+  $ BTUNE_TRACE=1 BTUNE_TRADEOFF=0.9 BTUNE_USE_INFERENCE=3 python btune_config.py
+  $ BTUNE_TRACE=1 BTUNE_MODELS_DIR="" python btune_config.py  # deactivate inference
 
-This only ensures that the use of Btune does not produce any error. To actually check that Btune is working correctly,
-run the examples in the `examples` directory and check with `BTUNE_TRACE=1` the parameters::
-
-    $cd examples
-    $BTUNE_TRACE=1 BTUNE_TRADEOFF=0.7 python create_ndarray.py
-    $BTUNE_TRACE=1 BTUNE_TRADEOFF=0.7 BTUNE_MODELS_DIR="./models/" python create_ndarray.py
-    $BTUNE_TRACE=1 python btune_config.py
-
-In the last one you should check that the parameters used by Btune are those se with the function `set_params_defaults`.
 
 Tagging
 -------
