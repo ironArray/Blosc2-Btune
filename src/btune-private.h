@@ -116,8 +116,6 @@ typedef struct {
   // TF Lite model, used for inference
   void * metadata;
   // Metadata information used for model inference
-  float zeros_speed;
-  // Entropy speed for a zeros chunk.
   int inference_count;
   // Number of times to run inference
   bool inference_ended;

@@ -46,6 +46,7 @@ void *comp_interpreter;
 void *comp_meta;
 void *decomp_interpreter;
 void *decomp_meta;
+float zeros_speed = -1.;
 
 
 static int fsize(FILE *file) {
@@ -136,12 +137,12 @@ static int get_best_codec_for_chunk(
   // dparams
   blosc2_dparams dparams = BLOSC2_DPARAMS_DEFAULTS;
   blosc2_context *dctx = blosc2_create_dctx(dparams);
-  if (btune->zeros_speed < 0.) {
+  if (zeros_speed < 0.) {
     // Compress zeros chunk to get a machine relative speed measure
-    btune->zeros_speed = get_zeros_speed(size);
-    if (btune->zeros_speed < 0.) {
-        fprintf(stderr, "Error %d computing zeros speed\n", (int)btune->zeros_speed);
-        return btune->zeros_speed;
+    zeros_speed = get_zeros_speed(size);
+    if (zeros_speed < 0.) {
+        fprintf(stderr, "Error %d computing zeros speed\n", (int)zeros_speed);
+        return zeros_speed;
     }
   }
 
@@ -192,7 +193,7 @@ static int get_best_codec_for_chunk(
       cratio += instr_data->cratio;
       float ctime = 1.f / instr_data->cspeed;
       float ftime = 1.f / instr_data->filter_speed;
-      rel_speed += 1.f / (ctime + ftime) / btune->zeros_speed;
+      rel_speed += 1.f / (ctime + ftime) / zeros_speed;
     }
     instr_data++;
     special_val = instr_data->flags[0];
@@ -384,11 +385,13 @@ void btune_model_init(blosc2_context * ctx) {
 
   if (config->perf_mode == BTUNE_PERF_DECOMP) {
     if (decomp_interpreter == NULL) {
+      printf("carrega\n");
       btune_params->interpreter = load_model(config, dirname);
       btune_params->metadata = load_metadata(config, dirname);
       decomp_interpreter = btune_params->interpreter;
       decomp_meta = btune_params->metadata;
     } else {
+      printf("usa\n");
       btune_params->interpreter = decomp_interpreter;
       btune_params->metadata = decomp_meta;
     }
