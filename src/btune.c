@@ -484,12 +484,14 @@ int btune_init(void *tuner_params, blosc2_context * cctx, blosc2_context * dctx)
 
 // Free btune_struct
 int btune_free(blosc2_context *context) {
-  btune_model_free(context);
+  //btune_model_free(context);
   btune_struct *btune_params = (btune_struct *) context->tuner_params;
   free(btune_params->best);
   free(btune_params->aux_cparams);
   free(btune_params->current_scores);
   free(btune_params->current_cratios);
+  btune_params->interpreter = NULL;
+  btune_params->metadata = NULL;
   free(btune_params);
   context->tuner_params = NULL;
 

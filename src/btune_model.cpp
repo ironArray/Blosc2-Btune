@@ -42,6 +42,12 @@ typedef struct {
 } metadata_t;
 
 
+void *comp_interpreter;
+void *comp_meta;
+void *decomp_interpreter;
+void *decomp_meta;
+
+
 static int fsize(FILE *file) {
   fseek(file, 0, SEEK_END);
   int size = ftell(file);
@@ -375,8 +381,29 @@ void btune_model_init(blosc2_context * ctx) {
     }
   }
   strcpy(config->models_dir, dirname);
-  btune_params->interpreter = load_model(config, dirname);
-  btune_params->metadata = load_metadata(config, dirname);
+
+  if (config->perf_mode == BTUNE_PERF_DECOMP) {
+    if (decomp_interpreter == NULL) {
+      btune_params->interpreter = load_model(config, dirname);
+      btune_params->metadata = load_metadata(config, dirname);
+      decomp_interpreter = btune_params->interpreter;
+      decomp_meta = btune_params->metadata;
+    } else {
+      btune_params->interpreter = decomp_interpreter;
+      btune_params->metadata = decomp_meta;
+    }
+  } else {
+    if (comp_interpreter == NULL) {
+      btune_params->interpreter = load_model(config, dirname);
+      btune_params->metadata = load_metadata(config, dirname);
+      comp_interpreter = btune_params->interpreter;
+      comp_meta = btune_params->metadata;
+    } else {
+      btune_params->interpreter = comp_interpreter;
+      btune_params->metadata = comp_meta;
+    }
+  }
+
 
   if (btune_params->interpreter == NULL || btune_params->metadata == NULL) {
     btune_params->inference_count = 0;
@@ -452,7 +479,7 @@ int most_predicted(btune_struct *btune_params, int *compcode,
 void btune_model_free(blosc2_context * ctx) {
   btune_struct *btune_params = (btune_struct *) ctx->tuner_params;
 
-  delete btune_params->interpreter;
+  //delete btune_params->interpreter;
   btune_params->interpreter = NULL;
 
   metadata_t * metadata = (metadata_t *) btune_params->metadata;
