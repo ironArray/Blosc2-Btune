@@ -55,13 +55,13 @@ Announcing
 - Send an announcement to the blosc and comp.compression mailing lists.
   Use the ``ANNOUNCE.md`` file as skeleton (likely as the definitive version).
 
-- Tweet about it from the @Blosc2 account.
+- Tweet/toot about it from the @Blosc2 account.
 
 
 Post-release actions
 --------------------
 
-- Edit *VERSION* symbols in blosc2_btune/__init__.py and src/btune.h in main to increment the
+- Edit *VERSION* symbols in blosc2_btune/__init__.py *and* src/btune.h *and* pyproject.toml in main to increment the
   version to the next minor one (i.e. X.Y.Z --> X.Y.(Z+1).dev).
 
 - Create new headers for adding new features in ``RELEASE_NOTES.md``

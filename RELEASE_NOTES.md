@@ -1,6 +1,12 @@
 Release notes for Btune
 =======================
 
+Changes from 1.0.3 to 1.0.4
+===========================
+
+#XXX version-specific blurb XXX#
+
+
 Changes from 1.0.2 to 1.0.3
 ===========================
 
