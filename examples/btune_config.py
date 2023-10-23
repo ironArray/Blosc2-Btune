@@ -18,7 +18,6 @@ urlpath = "btune_config.b2nd"
 
 # Create the SChunk
 rng = np.random.default_rng()
-# a = rng.integers(low=0, high=10000, size=int(5e7), dtype=np.int64) # For generating the models
 a = rng.integers(low=0, high=10000, size=int(1e5), dtype=np.int64)
 # Set Btune parameters
 base_dir = os.path.dirname(__file__)
