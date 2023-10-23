@@ -1,12 +1,10 @@
-# Announcing Btune 1.0.2
+# Announcing Btune 1.0.3
 
-A Blosc2 plugin to assist you on which Blosc2 compression parameters
-to use.
+A Blosc2 plugin to assist you on which Blosc2 compression parameters to use, based on data compression patterns.
 
 ## What is new?
 
-This is a maintenance release where we fixed the access to Blosc2
-user defined codecs and filters during inference.
+This is a maintenance release where added the capability to pass parameters to Btune programmatically from Python (passing them from C was already possible); see new ``examples/btune_config.py``.  Also, Windows wheels are here (finally!).
 
 For more info, please see the release notes in:
 

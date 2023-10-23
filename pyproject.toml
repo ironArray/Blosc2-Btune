@@ -13,7 +13,7 @@ build-backend = "scikit_build_core.build"
 
 [project]
 name = "blosc2_btune"
-version = "1.0.3.dev"
+version = "1.0.3"
 dynamic = ["readme"]
 authors = [
     {name = "Blosc Development Team", email = "contact@blosc.org"},

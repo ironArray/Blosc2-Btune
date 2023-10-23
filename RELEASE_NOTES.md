@@ -4,7 +4,16 @@ Release notes for Btune
 Changes from 1.0.2 to 1.0.3
 ===========================
 
-#XXX version-specific blurb XXX#
+* Support for Windows wheels is here.
+
+* Wheels are not dependent on the Python version ABI anymore.
+  This is because Btune is essentially a C++ library, with no
+  calls to Python (or extension) ABI at all.
+
+* There is support now for passing btune config through Python.
+  See new example at ``examples/btune_config.py``.
+
+* Embedded tensorflow lite bumped to 2.14.0.
 
 
 Changes from 1.0.1 to 1.0.2

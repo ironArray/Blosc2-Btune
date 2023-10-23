@@ -7,7 +7,8 @@ Preliminaries
 - Make sure that ``RELEASE_NOTES.md`` and ``ANNOUNCE.md`` are up to
   date with the latest news in the release.
 
-- Check that *VERSION* symbols in blosc2_btune/__init__.py and src/btune.h contain the correct info.
+- Check that *VERSION* symbols in blosc2_btune/__init__.py *and* src/btune.h
+  *and* pyproject.toml contain the correct info.
 
 - Commit the changes with::
 
