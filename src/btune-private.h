@@ -120,6 +120,8 @@ typedef struct {
   // Number of times to run inference
   bool inference_ended;
   // Whether all desired ninferences were already performed.
+  int models_index;
+  // The models index in g_models.
 } btune_struct;
 /// @endcond
 

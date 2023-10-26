@@ -42,10 +42,12 @@ typedef struct {
 } metadata_t;
 
 
-void *comp_interpreter;
-void *comp_meta;
-void *decomp_interpreter;
-void *decomp_meta;
+
+
+
+extern model_t g_models[256];
+extern int nmodels_dir = 0;
+
 float zeros_speed = -1.;
 
 
@@ -383,30 +385,58 @@ void btune_model_init(blosc2_context * ctx) {
   }
   strcpy(config->models_dir, dirname);
 
-  if (config->perf_mode == BTUNE_PERF_DECOMP) {
-    if (decomp_interpreter == NULL) {
-      printf("carrega\n");
-      btune_params->interpreter = load_model(config, dirname);
-      btune_params->metadata = load_metadata(config, dirname);
-      decomp_interpreter = btune_params->interpreter;
-      decomp_meta = btune_params->metadata;
-    } else {
-      printf("usa\n");
-      btune_params->interpreter = decomp_interpreter;
-      btune_params->metadata = decomp_meta;
-    }
-  } else {
-    if (comp_interpreter == NULL) {
-      btune_params->interpreter = load_model(config, dirname);
-      btune_params->metadata = load_metadata(config, dirname);
-      comp_interpreter = btune_params->interpreter;
-      comp_meta = btune_params->metadata;
-    } else {
-      btune_params->interpreter = comp_interpreter;
-      btune_params->metadata = comp_meta;
+  bool models_found = false;
+  if (nmodels_dir > 0) {
+    for (int i = 0; i < nmodels_dir; ++i) {
+      if (strcmp(g_models[i].models_dir, config->models_dir) == 0) {
+        btune_params->models_index = i;
+        if (config->perf_mode == BTUNE_PERF_DECOMP) {
+          g_models[i].nusers_decomp++;
+          if (g_models[i].decomp_interpreter == NULL) {
+            btune_params->interpreter = load_model(config, dirname);
+            btune_params->metadata = load_metadata(config, dirname);
+            g_models[i].decomp_interpreter = btune_params->interpreter;
+            g_models[i].decomp_meta = btune_params->metadata;
+          } else {
+            btune_params->interpreter = g_models[i].decomp_interpreter;
+            btune_params->metadata = g_models[i].decomp_meta;
+          }
+        } else {
+          g_models[i].nusers_comp++;
+          if (g_models[i].comp_interpreter == NULL) {
+            btune_params->interpreter = load_model(config, dirname);
+            btune_params->metadata = load_metadata(config, dirname);
+            g_models[i].comp_interpreter = btune_params->interpreter;
+            g_models[i].comp_meta = btune_params->metadata;
+          } else {
+            btune_params->interpreter = g_models[i].comp_interpreter;
+            btune_params->metadata = g_models[i].comp_meta;
+          }
+        }
+        models_found = true;
+        break;
+      }
     }
   }
-
+  if (!models_found) {
+    btune_params->models_index = nmodels_dir;
+    g_models[nmodels_dir].nusers_comp = 0;
+    g_models[nmodels_dir].nusers_decomp = 0;
+    if (config->perf_mode == BTUNE_PERF_DECOMP) {
+      btune_params->interpreter = load_model(config, dirname);
+      btune_params->metadata = load_metadata(config, dirname);
+      g_models[nmodels_dir].decomp_interpreter = btune_params->interpreter;
+      g_models[nmodels_dir].decomp_meta = btune_params->metadata;
+      g_models[nmodels_dir].nusers_decomp++;
+    } else {
+      btune_params->interpreter = load_model(config, dirname);
+      btune_params->metadata = load_metadata(config, dirname);
+      g_models[nmodels_dir].comp_interpreter = btune_params->interpreter;
+      g_models[nmodels_dir].comp_meta = btune_params->metadata;
+      g_models[nmodels_dir].nusers_comp++;
+    }
+    nmodels_dir++;
+  }
 
   if (btune_params->interpreter == NULL || btune_params->metadata == NULL) {
     btune_params->inference_count = 0;
@@ -482,7 +512,7 @@ int most_predicted(btune_struct *btune_params, int *compcode,
 void btune_model_free(blosc2_context * ctx) {
   btune_struct *btune_params = (btune_struct *) ctx->tuner_params;
 
-  //delete btune_params->interpreter;
+  delete btune_params->interpreter;
   btune_params->interpreter = NULL;
 
   metadata_t * metadata = (metadata_t *) btune_params->metadata;

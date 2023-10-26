@@ -482,8 +482,20 @@ int btune_init(void *tuner_params, blosc2_context * cctx, blosc2_context * dctx)
 
 // Free btune_struct
 int btune_free(blosc2_context *context) {
-  //btune_model_free(context);
   btune_struct *btune_params = (btune_struct *) context->tuner_params;
+  if (btune_params->config.perf_mode == BTUNE_PERF_DECOMP) {
+    g_moldels[btune_params->models_index].nusers_decomp--;
+    if (g_moldels[btune_params->models_index].nusers_decomp == 0) {
+      btune_model_free(context);
+    }
+  } else {
+    g_moldels[btune_params->models_index].nusers_comp--;
+    if (g_moldels[btune_params->models_index].nusers_comp == 0) {
+      btune_model_free(context);
+    }
+  }
+
+
   free(btune_params->best);
   free(btune_params->aux_cparams);
   free(btune_params->current_scores);
