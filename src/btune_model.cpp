@@ -42,11 +42,8 @@ typedef struct {
 } metadata_t;
 
 
-
-
-
-extern model_t g_models[256];
-extern int nmodels_dir = 0;
+model_t g_models[256];
+int nmodels_dir = 0;
 
 float zeros_speed = -1.;
 
@@ -511,7 +508,23 @@ int most_predicted(btune_struct *btune_params, int *compcode,
 
 void btune_model_free(blosc2_context * ctx) {
   btune_struct *btune_params = (btune_struct *) ctx->tuner_params;
+  if (btune_params->config.perf_mode == BTUNE_PERF_DECOMP) {
+    g_models[btune_params->models_index].nusers_decomp--;
+    if (g_models[btune_params->models_index].nusers_decomp == 0) {
+      g_models[btune_params->models_index].decomp_interpreter = NULL;
+      g_models[btune_params->models_index].decomp_meta = NULL;
+      goto proceed;
+    }
+  } else {
+    g_models[btune_params->models_index].nusers_comp--;
+    if (g_models[btune_params->models_index].nusers_comp == 0) {
+      goto proceed;
+    }
+  }
+  return;
 
+  proceed:
+  printf("proceed0\n");
   delete btune_params->interpreter;
   btune_params->interpreter = NULL;
 
@@ -521,4 +534,6 @@ void btune_model_free(blosc2_context * ctx) {
     free(metadata);
     btune_params->metadata = NULL;
   }
+  printf("proceed1\n");
+
 }
