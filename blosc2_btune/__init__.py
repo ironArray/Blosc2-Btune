@@ -91,5 +91,18 @@ def set_params_defaults(**kwargs):
     lib.set_params_defaults(*args)
 
 
+class ReuseModels:
+    def __enter__(self):
+        libpath = get_libpath()
+        lib = ctypes.cdll.LoadLibrary(libpath)
+        lib.set_reuse_models(True)
+
+
+    def __exit__(self, exc_type, exc_value, exc_tb):
+        libpath = get_libpath()
+        lib = ctypes.cdll.LoadLibrary(libpath)
+        lib.btune_g_models_free()
+
+
 if __name__ == "__main__":
     print_libpath()

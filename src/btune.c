@@ -482,9 +482,10 @@ int btune_init(void *tuner_params, blosc2_context * cctx, blosc2_context * dctx)
 
 // Free btune_struct
 int btune_free(blosc2_context *context) {
-  btune_model_free(context);
-
   btune_struct *btune_params = (btune_struct *) context->tuner_params;
+  if (btune_params->models_index < 0) {
+    btune_model_free(context);
+  }
   free(btune_params->best);
   free(btune_params->aux_cparams);
   free(btune_params->current_scores);
@@ -1121,4 +1122,14 @@ int set_params_defaults(
   BTUNE_CONFIG_DEFAULTS.behaviour.repeat_mode = repeat_mode;
 
   return 0;
+}
+
+void free_all_models(void) {
+  btune_g_models_free();
+}
+
+void set_reuse_models(bool new_value) {
+  printf("ab reuse models %d\n", BTUNE_REUSE_MODELS);
+  BTUNE_REUSE_MODELS = new_value;
+  printf("dp reuse models %d\n", BTUNE_REUSE_MODELS);
 }

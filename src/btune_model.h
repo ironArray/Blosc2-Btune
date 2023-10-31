@@ -28,6 +28,8 @@ void btune_model_free(blosc2_context * ctx);
 int most_predicted(btune_struct *btune_params, int *compcode,
                    uint8_t *filter, int *clevel, int32_t *splitmode);
 
+void btune_g_models_free(void);
+
 #ifdef __cplusplus
 }
 #endif

@@ -350,6 +350,7 @@ static void * load_model(btune_config * config, const char * dirname) {
 }
 
 void btune_model_init(blosc2_context * ctx) {
+printf("dins init models, nmodels_dir = %d\n", nmodels_dir);
   // Trace time
   bool trace = getenv("BTUNE_TRACE");
   blosc_timestamp_t t0, t1;
@@ -382,57 +383,63 @@ void btune_model_init(blosc2_context * ctx) {
   }
   strcpy(config->models_dir, dirname);
 
-  bool models_found = false;
-  if (nmodels_dir > 0) {
-    for (int i = 0; i < nmodels_dir; ++i) {
-      if (strcmp(g_models[i].models_dir, config->models_dir) == 0) {
-        btune_params->models_index = i;
-        if (config->perf_mode == BTUNE_PERF_DECOMP) {
-          g_models[i].nusers_decomp++;
-          if (g_models[i].decomp_interpreter == NULL) {
-            btune_params->interpreter = load_model(config, dirname);
-            btune_params->metadata = load_metadata(config, dirname);
-            g_models[i].decomp_interpreter = btune_params->interpreter;
-            g_models[i].decomp_meta = btune_params->metadata;
+  if (BTUNE_REUSE_MODELS) {
+    // Use already loaded models if available
+    bool models_found = false;
+    if (nmodels_dir > 0) {
+      for (int i = 0; i < nmodels_dir; ++i) {
+        if (strcmp(g_models[i].models_dir, config->models_dir) == 0) {
+          btune_params->models_index = i;
+          if (config->perf_mode == BTUNE_PERF_DECOMP) {
+            if (g_models[i].decomp_interpreter == NULL) {
+              btune_params->interpreter = load_model(config, dirname);
+              btune_params->metadata = load_metadata(config, dirname);
+              g_models[i].decomp_interpreter = btune_params->interpreter;
+              g_models[i].decomp_meta = btune_params->metadata;
+            } else {
+              btune_params->interpreter = g_models[i].decomp_interpreter;
+              btune_params->metadata = g_models[i].decomp_meta;
+            }
           } else {
-            btune_params->interpreter = g_models[i].decomp_interpreter;
-            btune_params->metadata = g_models[i].decomp_meta;
+            if (g_models[i].comp_interpreter == NULL) {
+              btune_params->interpreter = load_model(config, dirname);
+              btune_params->metadata = load_metadata(config, dirname);
+              g_models[i].comp_interpreter = btune_params->interpreter;
+              g_models[i].comp_meta = btune_params->metadata;
+            } else {
+              btune_params->interpreter = g_models[i].comp_interpreter;
+              btune_params->metadata = g_models[i].comp_meta;
+            }
           }
-        } else {
-          g_models[i].nusers_comp++;
-          if (g_models[i].comp_interpreter == NULL) {
-            btune_params->interpreter = load_model(config, dirname);
-            btune_params->metadata = load_metadata(config, dirname);
-            g_models[i].comp_interpreter = btune_params->interpreter;
-            g_models[i].comp_meta = btune_params->metadata;
-          } else {
-            btune_params->interpreter = g_models[i].comp_interpreter;
-            btune_params->metadata = g_models[i].comp_meta;
-          }
+          models_found = true;
+          break;
         }
-        models_found = true;
-        break;
       }
     }
-  }
-  if (!models_found) {
-    btune_params->models_index = nmodels_dir;
-    g_models[nmodels_dir].nusers_comp = 0;
-    g_models[nmodels_dir].nusers_decomp = 0;
-    if (config->perf_mode == BTUNE_PERF_DECOMP) {
+    if (!models_found) {
       btune_params->interpreter = load_model(config, dirname);
       btune_params->metadata = load_metadata(config, dirname);
-      g_models[nmodels_dir].decomp_interpreter = btune_params->interpreter;
-      g_models[nmodels_dir].decomp_meta = btune_params->metadata;
-      g_models[nmodels_dir].nusers_decomp++;
-    } else {
-      btune_params->interpreter = load_model(config, dirname);
-      btune_params->metadata = load_metadata(config, dirname);
-      g_models[nmodels_dir].comp_interpreter = btune_params->interpreter;
-      g_models[nmodels_dir].comp_meta = btune_params->metadata;
-      g_models[nmodels_dir].nusers_comp++;
+      if (nmodels_dir >= 255) {
+        BTUNE_TRACE("Reached maximum number of loaded models dir");
+        btune_params->models_index = -1;
+      } else {
+        btune_params->models_index = nmodels_dir;
+        g_models[nmodels_dir].models_dir = (char *)malloc(strlen(config->models_dir) + 1);
+        strcpy(g_models[nmodels_dir].models_dir, config->models_dir);
+        if (config->perf_mode == BTUNE_PERF_DECOMP) {
+          g_models[nmodels_dir].decomp_interpreter = btune_params->interpreter;
+          g_models[nmodels_dir].decomp_meta = btune_params->metadata;
+        } else {
+          g_models[nmodels_dir].comp_interpreter = btune_params->interpreter;
+          g_models[nmodels_dir].comp_meta = btune_params->metadata;
+        }
+        nmodels_dir++;
+      }
     }
-    nmodels_dir++;
+  } else {
+    // Do not use already loaded models
+    btune_params->interpreter = load_model(config, dirname);
+    btune_params->metadata = load_metadata(config, dirname);
   }
 
   if (btune_params->interpreter == NULL || btune_params->metadata == NULL) {
@@ -508,23 +515,7 @@ int most_predicted(btune_struct *btune_params, int *compcode,
 
 void btune_model_free(blosc2_context * ctx) {
   btune_struct *btune_params = (btune_struct *) ctx->tuner_params;
-  if (btune_params->config.perf_mode == BTUNE_PERF_DECOMP) {
-    g_models[btune_params->models_index].nusers_decomp--;
-    if (g_models[btune_params->models_index].nusers_decomp == 0) {
-      g_models[btune_params->models_index].decomp_interpreter = NULL;
-      g_models[btune_params->models_index].decomp_meta = NULL;
-      goto proceed;
-    }
-  } else {
-    g_models[btune_params->models_index].nusers_comp--;
-    if (g_models[btune_params->models_index].nusers_comp == 0) {
-      goto proceed;
-    }
-  }
-  return;
 
-  proceed:
-  printf("proceed0\n");
   delete btune_params->interpreter;
   btune_params->interpreter = NULL;
 
@@ -534,6 +525,33 @@ void btune_model_free(blosc2_context * ctx) {
     free(metadata);
     btune_params->metadata = NULL;
   }
-  printf("proceed1\n");
 
 }
+
+// Free all the models and its metadata used until now
+void btune_g_models_free(void) {
+  for (int i = 0; i < nmodels_dir; ++i) {
+    delete g_models[i].decomp_interpreter;
+    g_models[i].decomp_interpreter = NULL;
+    metadata_t * metadata = (metadata_t *) g_models[i].decomp_meta;
+    if (metadata != NULL) {
+      free(metadata->categories);
+      free(metadata);
+      g_models[i].decomp_meta = NULL;
+    }
+
+    delete g_models[i].comp_interpreter;
+    g_models[i].comp_interpreter = NULL;
+    metadata = (metadata_t *) g_models[i].comp_meta;
+    if (metadata != NULL) {
+      free(metadata->categories);
+      free(metadata);
+      g_models[i].comp_meta = NULL;
+    }
+
+    free(g_models[i].models_dir);
+  }
+  nmodels_dir = 0;
+}
+
+
