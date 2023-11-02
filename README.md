@@ -227,6 +227,29 @@ gcc -o btune_example btune_example.c -lblosc2 -lm -I $CONDA_PREFIX/include/ -L $
 BTUNE_TRACE=1 DYLD_LIBRARY_PATH=$CONDA_PREFIX/lib ./btune_example rand_int.b2nd out.b2nd
 ```
 
+## Optimization tips
+
+If you would like to use the same models for different arrays, you can save the loading time and reuse the first loaded
+model with the Python context manager `ReuseModels`:
+
+```
+with blosc2_btune.ReuseModels():
+    for nchunk in range(0, nchunks):
+        b = blosc2.asarray(a[nchunk * chunk_nitems:(nchunk + 1) * chunk_nitems], chunks=(chunk_nitems,), blocks=(chunk_nitems//10,), cparams=cparams)
+        tr += time() - tref
+```
+This enables reusing the models when they are the same inside the context and manages all the references and memory
+needed to be deallocated at the end of it. Depending on your needs, this may fasten your program around a 5%. You can see
+a comparison of reusing the models and reloading them each time in the `reuse_models.py` example::
+
+```
+INFO: Created TensorFlow Lite XNNPACK delegate for CPU.
+Creating arrays reusing loaded models
+Creating arrays reloading models each time
+Reusing time: 0.277s (2.886 GB/s)
+Reloading time: 0.282s (2.839 GB/s)
+```
+
 ## Platform support
 
 Right now, we support Btune on Intel/ARM64 Linux and Intel/ARM64 Mac and Intel on Windows, and we are providing binary wheels for these.

@@ -208,13 +208,4 @@ typedef enum {
 } readapt_type;
 
 
-typedef struct {
-    void *comp_interpreter;
-    void *comp_meta;
-    void *decomp_interpreter;
-    void *decomp_meta;
-    char *models_dir;
-} model_t;
-
-
 #endif  /* BTUNE_H */
