@@ -45,6 +45,8 @@ typedef struct {
 model_t g_models[256];
 int nmodels_dir = 0;
 
+extern bool BTUNE_REUSE_MODELS;
+
 float zeros_speed = -1.;
 
 
@@ -350,7 +352,6 @@ static void * load_model(btune_config * config, const char * dirname) {
 }
 
 void btune_model_init(blosc2_context * ctx) {
-printf("dins init models, nmodels_dir = %d\n", nmodels_dir);
   // Trace time
   bool trace = getenv("BTUNE_TRACE");
   blosc_timestamp_t t0, t1;

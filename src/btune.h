@@ -217,6 +217,4 @@ typedef struct {
 } model_t;
 
 
-static bool BTUNE_REUSE_MODELS = false;
-
 #endif  /* BTUNE_H */
