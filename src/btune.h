@@ -208,7 +208,4 @@ typedef enum {
 } readapt_type;
 
 
-extern bool BTUNE_REUSE_MODELS;
-
-
 #endif  /* BTUNE_H */

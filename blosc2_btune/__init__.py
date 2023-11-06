@@ -95,11 +95,12 @@ def set_params_defaults(**kwargs):
 
 class ReuseModels:
     def __enter__(self):
-        lib.set_reuse_models(True)
+        lib.btune_set_reuse_models(True)
 
 
     def __exit__(self, exc_type, exc_value, exc_tb):
-        lib.btune_g_models_free()
+        lib.btune_free_all_models()
+        lib.btune_set_reuse_models(False)
 
 
 if __name__ == "__main__":

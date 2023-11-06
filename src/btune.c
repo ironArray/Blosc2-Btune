@@ -20,9 +20,6 @@
 #include "btune-private.h"
 
 
-bool BTUNE_REUSE_MODELS = false;
-
-
 // Disable different states
 #define BTUNE_ENABLE_SHUFFLESIZE  false
 #define BTUNE_ENABLE_MEMCPY       false
@@ -1127,10 +1124,10 @@ int set_params_defaults(
   return 0;
 }
 
-void free_all_models(void) {
-  btune_g_models_free();
+void btune_free_all_models(void) {
+  g_models_free();
 }
 
-void set_reuse_models(bool new_value) {
-  BTUNE_REUSE_MODELS = new_value;
+void btune_set_reuse_models(bool new_value) {
+  set_reuse_models(new_value);
 }

@@ -45,7 +45,7 @@ typedef struct {
 model_t g_models[256];
 int nmodels_dir = 0;
 
-extern bool BTUNE_REUSE_MODELS;
+bool BTUNE_REUSE_MODELS = false;
 
 float zeros_speed = -1.;
 
@@ -530,7 +530,7 @@ void btune_model_free(blosc2_context * ctx) {
 }
 
 // Free all the models and its metadata used until now
-void btune_g_models_free(void) {
+void g_models_free(void) {
   for (int i = 0; i < nmodels_dir; ++i) {
     delete g_models[i].decomp_interpreter;
     g_models[i].decomp_interpreter = NULL;
@@ -553,6 +553,10 @@ void btune_g_models_free(void) {
     free(g_models[i].models_dir);
   }
   nmodels_dir = 0;
+}
+
+void set_reuse_models(bool new_value) {
+  BTUNE_REUSE_MODELS = new_value;
 }
 
 
