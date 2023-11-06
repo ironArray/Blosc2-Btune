@@ -239,7 +239,7 @@ with blosc2_btune.ReuseModels():
         tr += time() - tref
 ```
 This enables reusing the models when they are the same inside the context and manages all the references and memory
-needed to be deallocated at the end of it. Depending on your needs, this may fasten your program around a 5%. You can see
+needed to be deallocated at the end of it. Depending on your needs, this may accelerate your program around a 5%. You can see
 a comparison of reusing the models and reloading them each time in the `reuse_models.py` example::
 
 ```
