@@ -384,6 +384,8 @@ void btune_model_init(blosc2_context * ctx) {
   }
   strcpy(config->models_dir, dirname);
 
+  // The models_index will be overwritten in case the models are being reused
+  btune_params->models_index = -1;
   if (BTUNE_REUSE_MODELS) {
     // Use already loaded models if available
     bool models_found = false;
@@ -422,7 +424,6 @@ void btune_model_init(blosc2_context * ctx) {
       btune_params->metadata = load_metadata(config, dirname);
       if (nmodels_dir >= 255) {
         BTUNE_TRACE("Reached maximum number of loaded models dir");
-        btune_params->models_index = -1;
       } else {
         btune_params->models_index = nmodels_dir;
         g_models[nmodels_dir].models_dir = (char *)malloc(strlen(config->models_dir) + 1);
