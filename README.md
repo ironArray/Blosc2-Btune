@@ -52,7 +52,7 @@ You can set `BTUNE_TRACE=1` to see what Btune is doing:
 ```shell
 BTUNE_TRACE=1 BTUNE_TRADEOFF=0.5 BTUNE_PERF_MODE=COMP python create_ndarray.py
 -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
-Btune version: 1.0.4.dev
+Btune version: 1.1.0
 Performance Mode: COMP, Compression tradeoff: 0.500000, Bandwidth: 20 GB/s
 Behaviour: Waits - 0, Softs - 5, Hards - 10, Repeat Mode - STOP
 TRACE: Environment variable BTUNE_MODELS_DIR is not defined
@@ -92,7 +92,7 @@ To determine the number of chunks for performing inference, use `BTUNE_USE_INFER
 ```shell
 BTUNE_TRADEOFF=0.5 BTUNE_PERF_MODE=COMP BTUNE_TRACE=1  BTUNE_MODELS_DIR=./models/ BTUNE_USE_INFERENCE=3 python create_ndarray.py
 -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
-Btune version: 1.0.4.dev
+Btune version: 1.1.0
 Performance Mode: COMP, Compression tradeoff: 0.500000, Bandwidth: 20 GB/s
 Behaviour: Waits - 0, Softs - 5, Hards - 10, Repeat Mode - STOP
 INFO: Created TensorFlow Lite XNNPACK delegate for CPU.
@@ -146,7 +146,7 @@ See an output example when activating the `BTUNE_TRACE` environment variable:
 ```shell
 BTUNE_TRACE=1 python btune_config.py
 -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
-Btune version: 1.0.4.dev
+Btune version: 1.1.0
 Performance Mode: DECOMP, Compression tradeoff: 0.300000, Bandwidth: 20 GB/s
 Behaviour: Waits - 0, Softs - 5, Hards - 10, Repeat Mode - STOP
 INFO: Created TensorFlow Lite XNNPACK delegate for CPU.

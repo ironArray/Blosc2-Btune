@@ -1,8 +1,8 @@
-# Announcing Btune 1.0.3
+# Announcing Btune 1.1.0
 
 ## What is new?
 
-This is a maintenance release where added the capability to pass parameters to Btune programmatically from Python (passing them from C was already possible); see new ``examples/btune_config.py``.  Also, Windows wheels are here (finally!).
+This is a minor release where added some performance optimizations when creating many arrays instead of one array with many chunks (see README.md and `examples/reuse_models.py`). Furthermore, the `splitmode` is now part of the inference so no tweaking should be needed.
 
 For more info, please see the release notes in:
 

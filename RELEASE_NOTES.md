@@ -1,10 +1,19 @@
 Release notes for Btune
 =======================
 
-Changes from 1.0.3 to 1.0.4
+Changes from 1.0.3 to 1.1.0
 ===========================
 
-#XXX version-specific blurb XXX#
+* Added both splitmode to inference, so no tweking is
+  needed when using the models.
+
+* Fixed a bug in blosc2_btune.set_params_defaults when not 
+  passing `models_dir` arg.
+
+* Performace optimizations such as computing only once 
+  the zeros speed needed to perform the inference 
+  and reusing the already loaded models so that time and memory
+  are saved.
 
 
 Changes from 1.0.2 to 1.0.3
