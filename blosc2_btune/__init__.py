@@ -70,6 +70,10 @@ params_defaults = {
 }
 
 
+libpath = get_libpath()
+lib = ctypes.cdll.LoadLibrary(libpath)
+
+
 def set_params_defaults(**kwargs):
     # Check arguments
     not_supported = [k for k in kwargs.keys() if k not in params_defaults]
@@ -86,9 +90,17 @@ def set_params_defaults(**kwargs):
     args[1] = args[1].value
     args[-1] = args[-1].value
 
-    libpath = get_libpath()
-    lib = ctypes.cdll.LoadLibrary(libpath)
     lib.set_params_defaults(*args)
+
+
+class ReuseModels:
+    def __enter__(self):
+        lib.btune_set_reuse_models(True)
+
+
+    def __exit__(self, exc_type, exc_value, exc_tb):
+        lib.btune_free_all_models()
+        lib.btune_set_reuse_models(False)
 
 
 if __name__ == "__main__":

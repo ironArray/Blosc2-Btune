@@ -42,6 +42,14 @@ typedef struct {
 } metadata_t;
 
 
+model_t g_models[256];
+int nmodels_dir = 0;
+
+bool BTUNE_REUSE_MODELS = false;
+
+float zeros_speed = -1.;
+
+
 static int fsize(FILE *file) {
   fseek(file, 0, SEEK_END);
   int size = ftell(file);
@@ -130,12 +138,12 @@ static int get_best_codec_for_chunk(
   // dparams
   blosc2_dparams dparams = BLOSC2_DPARAMS_DEFAULTS;
   blosc2_context *dctx = blosc2_create_dctx(dparams);
-  if (btune->zeros_speed < 0.) {
+  if (zeros_speed < 0.) {
     // Compress zeros chunk to get a machine relative speed measure
-    btune->zeros_speed = get_zeros_speed(size);
-    if (btune->zeros_speed < 0.) {
-        fprintf(stderr, "Error %d computing zeros speed\n", (int)btune->zeros_speed);
-        return btune->zeros_speed;
+    zeros_speed = get_zeros_speed(size);
+    if (zeros_speed < 0.) {
+        fprintf(stderr, "Error %d computing zeros speed\n", (int)zeros_speed);
+        return zeros_speed;
     }
   }
 
@@ -186,7 +194,7 @@ static int get_best_codec_for_chunk(
       cratio += instr_data->cratio;
       float ctime = 1.f / instr_data->cspeed;
       float ftime = 1.f / instr_data->filter_speed;
-      rel_speed += 1.f / (ctime + ftime) / btune->zeros_speed;
+      rel_speed += 1.f / (ctime + ftime) / zeros_speed;
     }
     instr_data++;
     special_val = instr_data->flags[0];
@@ -375,8 +383,66 @@ void btune_model_init(blosc2_context * ctx) {
     }
   }
   strcpy(config->models_dir, dirname);
-  btune_params->interpreter = load_model(config, dirname);
-  btune_params->metadata = load_metadata(config, dirname);
+
+  // The models_index will be overwritten in case the models are being reused
+  btune_params->models_index = -1;
+  if (BTUNE_REUSE_MODELS) {
+    // Use already loaded models if available
+    bool models_found = false;
+    if (nmodels_dir > 0) {
+      for (int i = 0; i < nmodels_dir; ++i) {
+        if (strcmp(g_models[i].models_dir, config->models_dir) == 0) {
+          btune_params->models_index = i;
+          if (config->perf_mode == BTUNE_PERF_DECOMP) {
+            if (g_models[i].decomp_interpreter == NULL) {
+              btune_params->interpreter = load_model(config, dirname);
+              btune_params->metadata = load_metadata(config, dirname);
+              g_models[i].decomp_interpreter = btune_params->interpreter;
+              g_models[i].decomp_meta = btune_params->metadata;
+            } else {
+              btune_params->interpreter = g_models[i].decomp_interpreter;
+              btune_params->metadata = g_models[i].decomp_meta;
+            }
+          } else {
+            if (g_models[i].comp_interpreter == NULL) {
+              btune_params->interpreter = load_model(config, dirname);
+              btune_params->metadata = load_metadata(config, dirname);
+              g_models[i].comp_interpreter = btune_params->interpreter;
+              g_models[i].comp_meta = btune_params->metadata;
+            } else {
+              btune_params->interpreter = g_models[i].comp_interpreter;
+              btune_params->metadata = g_models[i].comp_meta;
+            }
+          }
+          models_found = true;
+          break;
+        }
+      }
+    }
+    if (!models_found) {
+      btune_params->interpreter = load_model(config, dirname);
+      btune_params->metadata = load_metadata(config, dirname);
+      if (nmodels_dir >= 255) {
+        BTUNE_TRACE("Reached maximum number of loaded models dir");
+      } else {
+        btune_params->models_index = nmodels_dir;
+        g_models[nmodels_dir].models_dir = (char *)malloc(strlen(config->models_dir) + 1);
+        strcpy(g_models[nmodels_dir].models_dir, config->models_dir);
+        if (config->perf_mode == BTUNE_PERF_DECOMP) {
+          g_models[nmodels_dir].decomp_interpreter = btune_params->interpreter;
+          g_models[nmodels_dir].decomp_meta = btune_params->metadata;
+        } else {
+          g_models[nmodels_dir].comp_interpreter = btune_params->interpreter;
+          g_models[nmodels_dir].comp_meta = btune_params->metadata;
+        }
+        nmodels_dir++;
+      }
+    }
+  } else {
+    // Do not use already loaded models
+    btune_params->interpreter = load_model(config, dirname);
+    btune_params->metadata = load_metadata(config, dirname);
+  }
 
   if (btune_params->interpreter == NULL || btune_params->metadata == NULL) {
     btune_params->inference_count = 0;
@@ -461,4 +527,37 @@ void btune_model_free(blosc2_context * ctx) {
     free(metadata);
     btune_params->metadata = NULL;
   }
+
 }
+
+// Free all the models and its metadata used until now
+void g_models_free(void) {
+  for (int i = 0; i < nmodels_dir; ++i) {
+    delete g_models[i].decomp_interpreter;
+    g_models[i].decomp_interpreter = NULL;
+    metadata_t * metadata = (metadata_t *) g_models[i].decomp_meta;
+    if (metadata != NULL) {
+      free(metadata->categories);
+      free(metadata);
+      g_models[i].decomp_meta = NULL;
+    }
+
+    delete g_models[i].comp_interpreter;
+    g_models[i].comp_interpreter = NULL;
+    metadata = (metadata_t *) g_models[i].comp_meta;
+    if (metadata != NULL) {
+      free(metadata->categories);
+      free(metadata);
+      g_models[i].comp_meta = NULL;
+    }
+
+    free(g_models[i].models_dir);
+  }
+  nmodels_dir = 0;
+}
+
+void set_reuse_models(bool new_value) {
+  BTUNE_REUSE_MODELS = new_value;
+}
+
+

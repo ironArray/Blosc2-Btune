@@ -365,8 +365,6 @@ int btune_init(void *tuner_params, blosc2_context * cctx, blosc2_context * dctx)
     btune->config.tradeoff = BTUNE_CONFIG_DEFAULTS.tradeoff;
   }
 
-  btune->zeros_speed = -1; // This is initialized the first time inference is performed
-
   if (cctx->schunk != NULL) {
     // If the user does not fill the config, the next fields will be empty
     // No need to do the same for dctx because btune is only used during compression
@@ -484,12 +482,16 @@ int btune_init(void *tuner_params, blosc2_context * cctx, blosc2_context * dctx)
 
 // Free btune_struct
 int btune_free(blosc2_context *context) {
-  btune_model_free(context);
   btune_struct *btune_params = (btune_struct *) context->tuner_params;
+  if (btune_params->models_index < 0) {
+    btune_model_free(context);
+  }
   free(btune_params->best);
   free(btune_params->aux_cparams);
   free(btune_params->current_scores);
   free(btune_params->current_cratios);
+  btune_params->interpreter = NULL;
+  btune_params->metadata = NULL;
   free(btune_params);
   context->tuner_params = NULL;
 
@@ -1120,4 +1122,12 @@ int set_params_defaults(
   BTUNE_CONFIG_DEFAULTS.behaviour.repeat_mode = repeat_mode;
 
   return 0;
+}
+
+void btune_free_all_models(void) {
+  g_models_free();
+}
+
+void btune_set_reuse_models(bool new_value) {
+  set_reuse_models(new_value);
 }

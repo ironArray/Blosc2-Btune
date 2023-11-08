@@ -33,6 +33,10 @@ BLOSC2_BTUNE_EXPORT int set_params_defaults(
     uint32_t repeat_mode
 );
 
+BLOSC2_BTUNE_EXPORT void btune_free_all_models(void);
+
+BLOSC2_BTUNE_EXPORT void btune_set_reuse_models(bool new_value);
+
 /**
  * @brief Btune initializer.
  *
