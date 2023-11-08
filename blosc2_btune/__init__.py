@@ -60,7 +60,7 @@ params_defaults = {
     'tradeoff': 0.5,
     'cparams_hint': False,
     'use_inference': -1,
-    'models_dir': None,
+    'models_dir': "",
     # behaviour
     'nwaits': 0,
     'nsofts': 5,

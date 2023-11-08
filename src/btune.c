@@ -569,6 +569,7 @@ int btune_next_cparams(blosc2_context *context) {
       int max = (clevel < 9) ? (clevel + 1) : clevel;
       btune_init_clevels(btune_params, min, max, clevel);
     }
+    btune_params->splitmode = splitmode;
   }
 
   if (getenv("BTUNE_TRACE") && btune_params->steps_count == 0 && btune_params->state != STOP) {
