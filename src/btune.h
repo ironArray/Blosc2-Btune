@@ -35,8 +35,8 @@
 // Version numbers
 #define BTUNE_VERSION_MAJOR    1    /* for major interface/format changes  */
 #define BTUNE_VERSION_MINOR    1    /* for minor interface/format changes  */
-#define BTUNE_VERSION_RELEASE  0    /* for tweaks, bug-fixes, or development */
-#define BTUNE_VERSION_STRING "1.1.0"
+#define BTUNE_VERSION_RELEASE  1    /* for tweaks, bug-fixes, or development */
+#define BTUNE_VERSION_STRING "1.1.1.dev"
 // Maximum number of codecs
 #define BTUNE_MAX_CODECS 8
 #define BTUNE_MAX_FILTERS 3

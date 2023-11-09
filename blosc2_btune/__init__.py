@@ -13,7 +13,7 @@ from pathlib import Path
 from enum import Enum
 import ctypes
 
-VERSION = "1.1.0"
+VERSION = "1.1.1.dev"
 
 
 class RepeatMode(Enum):
