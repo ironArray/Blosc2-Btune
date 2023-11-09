@@ -17,7 +17,8 @@
 #error Cannot determine how to define BLOSC2_BTUNE_EXPORT for this compiler.
 #endif
 
-#include "btune.h"
+#include "context.h"
+#include <blosc2/tuners-registry.h>
 
 
 BLOSC2_BTUNE_EXPORT int set_params_defaults(

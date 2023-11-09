@@ -19,8 +19,6 @@
 #include <stdbool.h>
 #include <stdint.h>
 #include <stddef.h>
-#include "context.h"
-#include <blosc2/tuners-registry.h>
 
 
 #if defined(_WIN32)

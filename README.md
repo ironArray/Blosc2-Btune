@@ -241,7 +241,7 @@ BTUNE_TRACE=1 LD_LIBRARY_PATH=$CONDA_PREFIX/lib64 ./btune_example rand_int.b2nd 
 
 ### MacOS
 ```shell
-gcc -o btune_example btune_example.c -lblosc2 -lm -I $CONDA_PREFIX/include/ -L $CONDA_PREFIX/lib/
+gcc -o btune_example btune_example.c -lblosc2 -lm -I $CONDA_PREFIX/include/ -I $CONDA_PREFIX/lib/python3.xx/site-packages/include/ -L $CONDA_PREFIX/lib/
 BTUNE_TRACE=1 DYLD_LIBRARY_PATH=$CONDA_PREFIX/lib ./btune_example rand_int.b2nd out.b2nd
 ```
 

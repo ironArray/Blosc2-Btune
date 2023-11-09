@@ -18,6 +18,7 @@
 
 #include <stdbool.h>
 #include "context.h"
+#include "btune.h"
 
 
 // Internal Btune compression parameters
