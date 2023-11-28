@@ -574,7 +574,7 @@ int btune_next_cparams(blosc2_context *context) {
 
   if (getenv("BTUNE_TRACE") && btune_params->steps_count == 0 && btune_params->state != STOP) {
     printf("|    Codec   | Filter | Split | C.Level | Blocksize | Shufflesize | C.Threads | D.Threads |"
-           "   Score   |  C.Ratio   |   Btune State   | Readapt | Winner\n");
+           " CDT_Score |  C.Ratio   |   Btune State   | Readapt | Winner\n");
   }
 
   *btune_params->aux_cparams = *btune_params->best;
