@@ -32,8 +32,6 @@ git checkout $latestTag
 # Compile static version of C-Blosc2
 mkdir build
 cd build
-# For some reason, without  -DDEACTIVATE_AVX512=ON btune_config.py throws
-# an Illegal instruction (core dumped) error in some Ubuntu machines
-cmake .. -DDEACTIVATE_AVX512=ON
+cmake ..
 cmake --build . --config Release --target blosc2_static -j
 cd ../..
