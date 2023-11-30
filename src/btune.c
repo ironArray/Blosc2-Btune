@@ -417,7 +417,7 @@ int btune_init(void *tuner_params, blosc2_context * cctx, blosc2_context * dctx)
   btune->aux_cparams = aux;
   best->compcode = btune->codecs[0];
   aux->compcode = btune->codecs[0];
-  if (2/3 <= btune->config.tradeoff <= 1.) {
+  if ((float)2/3 <= btune->config.tradeoff <= 1.) {
     best->clevel = 8;
     aux->clevel = 8;
   }
@@ -573,7 +573,8 @@ int btune_next_cparams(blosc2_context *context) {
   }
 
   if (getenv("BTUNE_TRACE") && btune_params->steps_count == 0 && btune_params->state != STOP) {
-    printf("|    Codec   | Filter | Split | C.Level | Blocksize | Shufflesize | C.Threads | D.Threads |"
+    // printf("|    Codec   | Filter | Split | C.Level | Blocksize | Shufflesize | C.Threads | D.Threads |"
+    printf("|    Codec   | Filter | Split | C.Level | C.Threads | D.Threads |"
            " CDT_Score |  C.Ratio   |   Btune State   | Readapt | Winner\n");
   }
 
@@ -1078,9 +1079,11 @@ int btune_update(blosc2_context * context, double ctime) {
         int split = (cparams->splitmode == BLOSC_ALWAYS_SPLIT) ? 1 : 0;
         const char *compname;
         blosc2_compcode_to_compname(cparams->compcode, &compname);
-        printf("| %10s | %6d | %5d | %7d | %9d | %11d | %9d | %9d | %9.3g | %9.3gx | %15s | %7s | %c\n",
+        // Disable printing the Blocksize and Shufflesize because they are not currently used
+        //printf("| %10s | %6d | %5d | %7d | %9d | %11d | %9d | %9d | %9.3g | %9.3gx | %15s | %7s | %c\n",
+        printf("| %10s | %6d | %5d | %7d | %9d | %9d | %9.3g | %9.3gx | %15s | %7s | %c\n",
                compname, cparams->filter, split, cparams->clevel,
-               (int) cparams->blocksize / BTUNE_KB, (int) cparams->shufflesize,
+               //(int) cparams->blocksize / BTUNE_KB, (int) cparams->shufflesize,
                cparams->nthreads_comp, cparams->nthreads_decomp,
                score, cratio, stcode_to_stname(btune_params), readapt_to_str(btune_params->readapt_from), winner);
       }
