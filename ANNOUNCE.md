@@ -1,8 +1,8 @@
-# Announcing Btune 1.1.0
+# Announcing Btune 1.1.1
 
 ## What is new?
 
-This is a minor release where added some performance optimizations when creating many arrays instead of one array with many chunks (see README.md and `examples/reuse_models.py`). Furthermore, the `splitmode` is now part of the inference so no tweaking should be needed.
+This is a maintenance release where the field names for the `BTUNE_TRACE` header have been streamlined and should read better now.  Also, the `THREADS_COMP` state can test a wider range of the number of threads.
 
 For more info, please see the release notes in:
 

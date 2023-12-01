@@ -4,18 +4,26 @@ Release notes for Btune
 Changes from 1.1.0 to 1.1.1
 ===========================
 
-#XXX version-specific blurb XXX#
+* Disable printing of Blocksize and Shufflesize in `BTUNE_TRACE` header.
+  This is because these values are not used in the tweaking process anymore.
+
+* "Score" is now called "S.Score" (Speed Score) in the `BTUNE_TRACE` header.
+  This is the inverse of the previous score. It provides a better
+  interpretation (larger figures are better scores), and should read better.
+
+* Provide some room for exploring a number of threads beyond usual limits.
+
 
 Changes from 1.0.3 to 1.1.0
 ===========================
 
-* Added both splitmode to inference, so no tweking is
+* Added both splitmode to inference, so no tweaking is
   needed when using the models.
 
 * Fixed a bug in blosc2_btune.set_params_defaults when not 
   passing `models_dir` arg.
 
-* Performace optimizations such as computing only once 
+* Performance optimizations such as computing only once
   the zeros speed needed to perform the inference 
   and reusing the already loaded models so that time and memory
   are saved.
