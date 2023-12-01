@@ -436,6 +436,8 @@ int btune_init(void *tuner_params, blosc2_context * cctx, blosc2_context * dctx)
     aux->nthreads_decomp = cctx->nthreads;
     btune->nthreads_decomp = cctx->nthreads;
   }
+  // Provide some room for exploration beyond the theoretical maximum
+  btune->max_threads += 4;
 
   // Aux arrays to calculate the mean
   btune->current_cratios = malloc(sizeof(double)) ;
