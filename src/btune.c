@@ -1088,7 +1088,8 @@ int btune_update(blosc2_context * context, double ctime) {
                compname, cparams->filter, split, cparams->clevel,
                //(int) cparams->blocksize / BTUNE_KB, (int) cparams->shufflesize,
                cparams->nthreads_comp, cparams->nthreads_decomp,
-               .001/score, cratio, stcode_to_stname(btune_params),
+               (double) context->sourcesize / (score * (int)(1<<30)), cratio,
+               stcode_to_stname(btune_params),
                readapt_to_str(btune_params->readapt_from), winner);
       }
     }
