@@ -437,7 +437,7 @@ int btune_init(void *tuner_params, blosc2_context * cctx, blosc2_context * dctx)
     btune->nthreads_decomp = cctx->nthreads;
   }
   // Provide some room for exploration beyond the theoretical maximum
-  btune->max_threads += 4;
+  btune->max_threads += 8;
 
   // Aux arrays to calculate the mean
   btune->current_cratios = malloc(sizeof(double)) ;
@@ -646,11 +646,11 @@ int btune_next_cparams(blosc2_context *context) {
       }
       if (cparams->increasing_nthreads) {
         if (*nthreads < btune_params->max_threads) {
-          (*nthreads)++;
+          *nthreads += 2;
         }
       } else {
         if (*nthreads > MIN_THREADS) {
-          (*nthreads)--;
+          *nthreads -= 2;
         }
       }
       break;
