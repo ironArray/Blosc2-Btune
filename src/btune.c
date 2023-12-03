@@ -727,18 +727,18 @@ static double mean(double const * array, int size) {
 static bool has_improved(btune_struct *btune_params, double score_coef, double cratio_coef) {
   float tradeoff = btune_params->config.tradeoff;
   if (tradeoff <= 1/3) {
-    return (((cratio_coef > 1) && (score_coef > 1)) ||
+    return (((cratio_coef >= 1) && (score_coef > 1)) ||
             ((cratio_coef > 0.5) && (score_coef > 2)) ||
             ((cratio_coef > 0.67) && (score_coef > 1.3)) ||
             ((cratio_coef > 2) && (score_coef > 0.7)));
   }
   if (tradeoff <= 2/3) {
-    return (((cratio_coef > 1) && (score_coef > 1)) ||
+    return (((cratio_coef >= 1) && (score_coef > 1)) ||
             ((cratio_coef > 1.1) && (score_coef > 0.8)) ||
             ((cratio_coef > 1.3) && (score_coef > 0.5)));
   }
   if (tradeoff <= 1.) {
-    return cratio_coef > 1;
+    return ((cratio_coef >= 1) && (score_coef > 1));
   }
   fprintf(stderr, "WARNING: unknown tradeoff, it must be between 0. and 1.0\n");
   return false;
