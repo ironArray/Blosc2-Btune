@@ -1,8 +1,12 @@
-# Announcing Btune 1.1.1
+# Announcing Btune 1.1.2
 
 ## What is new?
 
-This is a maintenance release where the field names for the `BTUNE_TRACE` header have been streamlined and should read better now.  Also, the `THREADS_COMP` state can test a wider range of the number of threads.
+This is a maintenance release where slight variations in the way to
+decide the winner in the genetic algorithm have been introduced.
+This is to avoid that the same winner is always selected
+when there is no improvement in the cratio (it can be speed too).
+Also, express S.Speed in GB/s.  This is more intuitive than previous figure.
 
 For more info, please see the release notes in:
 

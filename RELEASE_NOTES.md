@@ -4,7 +4,14 @@ Release notes for Btune
 Changes from 1.1.1 to 1.1.2
 ===========================
 
-#XXX version-specific blurb XXX#
+* Slight variations in the way to decide the winner in the genetic
+  algorithm.  This is to avoid that the same winner is always selected
+  when there is no improvement in the cratio (it can be speed too).
+
+*  Make exploration of threads a bit bolder.  Although due to the overhead
+   in changing the threads, this is not very useful in practice.
+
+* Express S.Speed in GB/s.  This is more intuitive than previous figure.
 
 
 Changes from 1.1.0 to 1.1.1
