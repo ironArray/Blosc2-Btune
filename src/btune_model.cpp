@@ -205,7 +205,8 @@ static int get_best_codec_for_chunk(
   float cratio_norm = normalize(cratio, cratio_mean, cratio_std);
   float cspeed_norm = normalize(rel_speed, cspeed_mean, cspeed_std);
   // Run inference
-  int best = get_best_codec(interpreter, cratio_norm, cspeed_norm, btune->config.tradeoff, metadata->ncategories);
+  int best = get_best_codec(interpreter, cratio_norm, cspeed_norm, btune->config.tradeoff[0],
+                            metadata->ncategories);
   free(ddata);
   // >>> INFERENCE END
   if (trace) {

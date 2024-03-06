@@ -146,7 +146,7 @@ typedef struct {
   */
   btune_performance_mode perf_mode;
   //!< The Btune performance mode.
-  float tradeoff;
+  float tradeoff[3];
   //!< The Btune compression mode (between 0 (speed) and 1 (cratio)).
   btune_behaviour behaviour;
   //!< The Btune behaviour config.
@@ -179,7 +179,7 @@ typedef struct {
 static btune_config BTUNE_CONFIG_DEFAULTS = {
     2 * BTUNE_GBPS10,
     BTUNE_PERF_AUTO,
-    BTUNE_COMP_BALANCED,
+    {BTUNE_COMP_BALANCED, 0, 0},
     {0, 5, 10, BTUNE_STOP},
     false,
     -1,
