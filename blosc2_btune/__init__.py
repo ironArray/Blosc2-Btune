@@ -12,6 +12,7 @@ import platform
 from pathlib import Path
 from enum import Enum
 import ctypes
+import numpy as np
 
 VERSION = "1.1.2"
 
@@ -84,11 +85,22 @@ def set_params_defaults(**kwargs):
     params.update(kwargs)
     args = params.values()
     args = list(args)
-    args[2] = ctypes.c_float(args[2])
-    args[5] = args[5].encode('utf-8')
+    # Insert the number of tradeoff values
+    if isinstance(args[2], (float, int)):
+        args.insert(3, 1)
+        args[2] = np.array(args[2], dtype=np.float32)
+    else:
+        args.insert(3, 3)
+        args[2] = np.array(args[2], dtype=np.float32)
+    # args[2] = ctypes.c_float(args[2])
+    args[6] = args[6].encode('utf-8')
     # Get value of enums
     args[1] = args[1].value
     args[-1] = args[-1].value
+
+    lib.set_params_defaults.argtypes = [ctypes.c_uint] * 2 + [np.ctypeslib.ndpointer(dtype=np.float32)] + \
+                                        [ctypes.c_int, ctypes.c_bool, ctypes.c_int, ctypes.c_char_p] +  \
+                                        [ctypes.c_uint] * 4
 
     lib.set_params_defaults(*args)
 

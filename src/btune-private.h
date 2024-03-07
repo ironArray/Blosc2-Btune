@@ -125,8 +125,6 @@ typedef struct {
   // Whether all desired ninferences were already performed.
   int models_index;
   // The models index in g_models.
-  int tradeoff_nelems;
-  // Number of values for tradeoff (3 or 1).
 } btune_struct;
 /// @endcond
 

@@ -148,6 +148,8 @@ typedef struct {
   //!< The Btune performance mode.
   float tradeoff[3];
   //!< The Btune compression mode (between 0 (speed) and 1 (cratio)).
+  int tradeoff_nelems;
+  // Number of values for tradeoff (3 or 1). This is automatically when using BTUNE_TRADEOFF or setting it through python.
   btune_behaviour behaviour;
   //!< The Btune behaviour config.
   bool cparams_hint;
@@ -180,6 +182,7 @@ static btune_config BTUNE_CONFIG_DEFAULTS = {
     2 * BTUNE_GBPS10,
     BTUNE_PERF_AUTO,
     {BTUNE_COMP_BALANCED, 0, 0},
+    1,
     {0, 5, 10, BTUNE_STOP},
     false,
     -1,

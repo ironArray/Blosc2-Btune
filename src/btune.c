@@ -357,18 +357,19 @@ int btune_init(void *tuner_params, blosc2_context * cctx, blosc2_context * dctx)
   }
 
   char* envvar = getenv("BTUNE_TRADEOFF");
-  btune->tradeoff_nelems = 1;
   if (envvar != NULL) {
     if (strlen(envvar) <= 3) {
-      btune->config.tradeoff[0] = (float)strtod(envvar, &envvar);;
-      // printf("nelems = %d, tradeoff[%d] = %f\n", btune->tradeoff_nelems, 0, btune->config.tradeoff[0]);
+      btune->config.tradeoff_nelems = 1;
+      btune->config.tradeoff[0] = (float)strtod(envvar, &envvar);
+      btune->config.tradeoff[1] = btune->config.tradeoff[2] = 0.0;
+      // printf("nelems = %d, tradeoff[%d] = %f\n", btune->config.tradeoff_nelems, 0, btune->config.tradeoff[0]);
     } else {
       // Invalid value or 3d case
-      btune->tradeoff_nelems = 3;
+      btune->config.tradeoff_nelems = 3;
       for (int i = 0; i < 3; ++i) {
         envvar++;
         btune->config.tradeoff[i] = (float)strtod(envvar, &envvar);
-        // printf("nelems = %d, tradeoff[%d] = %f\n", btune->tradeoff_nelems, i, btune->config.tradeoff[i]);
+        // printf("nelems = %d, tradeoff[%d] = %f\n", btune->config.tradeoff_nelems, i, btune->config.tradeoff[i]);
       }
       if (btune->config.tradeoff[2] == 1.0) {
         BTUNE_TRACE("Invalid value for quality tradeoff (found 1.0). Use tradeoff only between"
@@ -378,14 +379,15 @@ int btune_init(void *tuner_params, blosc2_context * cctx, blosc2_context * dctx)
     }
   }
   float sum = 0.0;
-  for (int i = 0; i < btune->tradeoff_nelems; ++i) {
+  for (int i = 0; i < btune->config.tradeoff_nelems; ++i) {
+    printf("tradeoff[%d] = %f\n", i, btune->config.tradeoff[i]);
     if (btune->config.tradeoff[i] < 0. || btune->config.tradeoff[i] > 1.) {
       BTUNE_TRACE("Unsupported %f tradeoff, it must be between 0. and 1., ");
       return -1;
     }
     sum += btune->config.tradeoff[i];
   }
-  if (btune->tradeoff_nelems != 1 && sum != 1.0) {
+  if (btune->config.tradeoff_nelems != 1 && sum != 1.0) {
     BTUNE_TRACE("In quality mode, tradeoff values must sum up 1.0");
     return -1;
   }
@@ -402,7 +404,7 @@ int btune_init(void *tuner_params, blosc2_context * cctx, blosc2_context * dctx)
     char bandwidth_str[12];
     bandwidth_to_str(bandwidth_str, btune->config.bandwidth);
     printf("Btune version: %s\n", BTUNE_VERSION_STRING);
-    if (btune->tradeoff_nelems == 1) {
+    if (btune->config.tradeoff_nelems == 1) {
       printf("Performance Mode: %s, Compression tradeoff: %f, Bandwidth: %s\n"
              "Behaviour: Waits - %d, Softs - %d, Hards - %d, Repeat Mode - %s\n",
              perf_mode_to_str(btune->config.perf_mode),
@@ -587,7 +589,7 @@ int btune_next_cparams(blosc2_context *context) {
   int error = -1;
 
   bool use_model = true;
-  if (btune_params->tradeoff_nelems == 3) {
+  if (btune_params->config.tradeoff_nelems == 3) {
     use_model = false;
     if (0.6 <= btune_params->config.tradeoff[0] <= 1.0) {
       compcode = BLOSC_CODEC_GROK;
@@ -1199,7 +1201,8 @@ int btune_update(blosc2_context * context, double ctime) {
 int set_params_defaults(
   uint32_t bandwidth,
   uint32_t perf_mode,
-  float tradeoff, //FIXME
+  float *tradeoff,
+  int tradeoff_nelems,
   bool cparams_hint,
   int use_inference,
   const char* models_dir,
@@ -1210,7 +1213,17 @@ int set_params_defaults(
 ) {
   BTUNE_CONFIG_DEFAULTS.bandwidth = bandwidth;
   BTUNE_CONFIG_DEFAULTS.perf_mode = perf_mode;
-  BTUNE_CONFIG_DEFAULTS.tradeoff[0] = tradeoff;
+  BTUNE_CONFIG_DEFAULTS.tradeoff_nelems = tradeoff_nelems;
+  if (tradeoff_nelems == 1) {
+    BTUNE_CONFIG_DEFAULTS.tradeoff[0] = tradeoff[0];
+    BTUNE_CONFIG_DEFAULTS.tradeoff[1] = BTUNE_CONFIG_DEFAULTS.tradeoff[2] = 0.0;
+
+  } else {
+    for (int i = 0; i < tradeoff_nelems; ++i) {
+      BTUNE_CONFIG_DEFAULTS.tradeoff[i] = tradeoff[i];
+    }
+  }
+
   BTUNE_CONFIG_DEFAULTS.cparams_hint = cparams_hint;
   BTUNE_CONFIG_DEFAULTS.use_inference = use_inference;
   strcpy(BTUNE_CONFIG_DEFAULTS.models_dir, models_dir);

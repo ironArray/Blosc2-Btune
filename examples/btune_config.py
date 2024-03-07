@@ -28,7 +28,7 @@ blosc2_btune.set_params_defaults(**kwargs)
 
 # Tell blosc2 to use btune by setting the corresponding tuner in the cparams
 urlpath = "btune_config.b2nd"
-_ = blosc2.asarray(a, urlpath=urlpath, mode="w", chunks=(5e3,),
+# _ = blosc2.asarray(a, urlpath=urlpath, mode="w", chunks=(5e3,),
                    cparams={"tuner": blosc2.Tuner.BTUNE})
 
 print(f"NDArray succesfully created in {urlpath}")
