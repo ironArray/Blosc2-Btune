@@ -380,7 +380,6 @@ int btune_init(void *tuner_params, blosc2_context * cctx, blosc2_context * dctx)
   }
   float sum = 0.0;
   for (int i = 0; i < btune->config.tradeoff_nelems; ++i) {
-    printf("tradeoff[%d] = %f\n", i, btune->config.tradeoff[i]);
     if (btune->config.tradeoff[i] < 0. || btune->config.tradeoff[i] > 1.) {
       BTUNE_TRACE("Unsupported %f tradeoff, it must be between 0. and 1., ");
       return -1;
@@ -558,7 +557,7 @@ static void set_btune_cparams(blosc2_context * context, cparams_btune * cparams)
   } else if (cparams->filter == BLOSC_FILTER_INT_TRUNC) {
     context->filters[BLOSC2_MAX_FILTERS - 2] = BLOSC_FILTER_INT_TRUNC;
     context->filters[BLOSC2_MAX_FILTERS - 1] = BLOSC_BITSHUFFLE;
-    context->filters_meta[BLOSC2_MAX_FILTERS - 2] = 8;
+    context->filters_meta[BLOSC2_MAX_FILTERS - 2] = cparams->filter_meta;
   }
 
   context->splitmode = cparams->splitmode;
@@ -577,102 +576,131 @@ static void set_btune_cparams(blosc2_context * context, cparams_btune * cparams)
   }
 }
 
-// Tune some compression parameters based on the context
-int btune_next_cparams(blosc2_context *context) {
-  btune_struct *btune_params = (btune_struct*) context->tuner_params;
-  btune_config config = btune_params->config;
-  int compcode;
-  uint8_t compmeta = 0;
-  uint8_t filter = BLOSC_NOFILTER;
-  int clevel = 5;
-  int32_t splitmode = BLOSC_NEVER_SPLIT;
-  int error = -1;
+// Meant for lossy mode, returns whether to use the neural network or not and in that case, fill the compression params
+bool pred_comp_category(btune_struct *btune_params, int *compcode, uint8_t *compmeta, uint8_t *filter,
+                        uint8_t *filter_meta, int *clevel, int32_t *splitmode) {
+  if (btune_params->config.tradeoff_nelems == 1) {
+    // Use neural network
+    return true;
+  }
 
-  bool use_model = true;
-  if (btune_params->config.tradeoff_nelems == 3) {
-    use_model = false;
-    if (0.6 <= btune_params->config.tradeoff[0] <= 1.0) {
-      compcode = BLOSC_CODEC_GROK;
-      if (0.0 <= btune_params->config.tradeoff[2] <= 0.3) {
-        // codec= grok, rates = 8
-        compmeta = 8 * 10;
-      } else {
-        // codec= grok, rates = 5
-        compmeta = 5 * 10;
-      }
+  bool use_model = false;
+  if (0.6 <= btune_params->config.tradeoff[0] <= 1.0) {
+    *compcode = BLOSC_CODEC_GROK;
+    if (0.0 <= btune_params->config.tradeoff[2] <= 0.3) {
+      // codec= grok, rates = 8
+      *compmeta = 8 * 10;
     } else {
-      if (0.3 <= btune_params->config.tradeoff[0] <= 0.6) {
-        if (0.3 <= btune_params->config.tradeoff[2] <= 0.6) {
-          //grok, rates 4
-          compcode = BLOSC_CODEC_GROK;
-          compmeta = 4 * 10;
-        } else {
-          if (0 <= btune_params->config.tradeoff[2] < 0.3) {
-            // grok, 8
-            compcode = BLOSC_CODEC_GROK;
-            compmeta = 8 * 10;
-          }
-          else {
-            // neural network
-            use_model = true;
-          }
-        }
-
-      } else if (0.7 <= btune_params->config.tradeoff[2] < 1.0) {
-        // itrunc16-bitshuffle-8
-        compcode = BLOSC_ZSTD;
-        filter = BLOSC_FILTER_INT_TRUNC;  // + bitshuffle
-        // filter meta will be set in set_cparams func
-        splitmode = BLOSC_ALWAYS_SPLIT;
-        clevel = 3;
+      // codec= grok, rates = 5
+      *compmeta = 5 * 10;
+    }
+  } else {
+    if (0.3 <= btune_params->config.tradeoff[0] <= 0.6) {
+      if (0.3 <= btune_params->config.tradeoff[2] <= 0.6) {
+        //grok, rates 4
+        *compcode = BLOSC_CODEC_GROK;
+        *compmeta = 4 * 10;
       } else {
-        // neural network
+        if (0 <= btune_params->config.tradeoff[2] < 0.3) {
+          // grok, 8
+          *compcode = BLOSC_CODEC_GROK;
+          *compmeta = 8 * 10;
+        }
+        else {
+          // neural network
+          use_model = true;
+        }
+      }
+
+    } else if (0.7 <= btune_params->config.tradeoff[2] < 1.0) {
+      // itrunc16-bitshuffle-8
+      *compcode = BLOSC_ZSTD;
+      *filter = BLOSC_FILTER_INT_TRUNC;  // + bitshuffle
+      *filter_meta = 8;
+      *splitmode = BLOSC_ALWAYS_SPLIT;
+      *clevel = 3;
+    } else {
+      // neural network
+      use_model = true;
+    }
+  }
+
+  return use_model;
+}
+
+// Meant for lossy mode, returns whether to use the neural network or not and in that case, fill the compression params
+bool pred_decomp_category(btune_struct *btune_params, int *compcode, uint8_t *compmeta, uint8_t *filter,
+                          uint8_t *filter_meta, int *clevel, int32_t *splitmode) {
+  if (btune_params->config.tradeoff_nelems == 1) {
+    // Use neural network
+    return true;
+  }
+
+  bool use_model = false;
+  if (btune_params->config.tradeoff[0] <= 0.1) {
+    use_model = true;
+  }
+  if (btune_params->config.tradeoff[0] >= 0.6) {
+    *compcode = BLOSC_CODEC_GROK;
+    if (btune_params->config.tradeoff[2] <= 0.2) {
+      *compmeta = 8 * 10;
+    } else {
+      if (0.6 < btune_params->config.tradeoff[0] <= 0.7) {
+        *compmeta = 7 * 10;
+      } else {
+        *compmeta = 5 * 10;
+      }
+    }
+  }
+  if (btune_params->config.tradeoff[0] <= 0.3) {
+    if (btune_params->config.tradeoff[1] == 0) {
+      *compcode = BLOSC_CODEC_GROK;
+      *compmeta = 3 * 10;
+    } else {
+      if (btune_params->config.tradeoff[1] <= 0.1) {
+        // lossy integers images
+        *compcode = BLOSC_ZSTD;
+        *filter = BLOSC_FILTER_INT_TRUNC; //itrunc bitshuf 7
+        *filter_meta = 7;
+        *splitmode = BLOSC_ALWAYS_SPLIT;
+        *clevel = 3;
+      } else {
         use_model = true;
       }
     }
-
   }
-
-  if (use_model) {
-    if (btune_params->inference_count != 0) {
-      if (btune_params->inference_count > 0) {
-        btune_params->inference_count--;
-      }
-
-      error = btune_model_inference(context, &compcode, &filter, &clevel, &splitmode);
+  if (btune_params->config.tradeoff[0] + btune_params->config.tradeoff[2] >= 0.9) {
+    *compcode = BLOSC_CODEC_GROK;
+    *compmeta = 4 * 10;
+  } else {
+    if (btune_params->config.tradeoff[0] + btune_params->config.tradeoff[2] >= 0.8) {
+      *compcode = BLOSC_ZSTD;
+      *filter = BLOSC_FILTER_INT_TRUNC; //itrunc bitshuff 6
+      *filter_meta = 6;
+      *splitmode = BLOSC_ALWAYS_SPLIT;
+      *clevel = 3;
     } else {
-      if (!btune_params->inference_ended){
-        error = most_predicted(btune_params, &compcode, &filter, &clevel, &splitmode);
-        btune_params->inference_ended = true;
+      if (btune_params->config.tradeoff[0] <= 0.4 && btune_params->config.tradeoff[2] >= 0.1) {
+        use_model = true;
+      } else {
+        *compcode = BLOSC_CODEC_GROK;
+        *compmeta = 8 * 10;
       }
     }
   }
 
-  if (error == 0 || !use_model) { // REVISAR AÇÒ
-    btune_params->codecs[0] = compcode;
-    btune_params->ncodecs = 1;
-    btune_params->filters[0] = filter;
-    btune_params->nfilters = 1;
-    if (config.perf_mode == BTUNE_PERF_DECOMP) {
-      btune_init_clevels(btune_params, clevel, clevel, clevel);
-    }
-    else {
-      int min = (clevel > 1) ? (clevel - 1) : clevel;
-      int max = (clevel < 9) ? (clevel + 1) : clevel;
-      btune_init_clevels(btune_params, min, max, clevel);
-    }
-    btune_params->splitmode = splitmode;
-  }
+  return use_model;
+}
 
-  if (getenv("BTUNE_TRACE") && btune_params->steps_count == 0 && btune_params->state != STOP) {
-    // printf("|    Codec   | Filter | Split | C.Level | Blocksize | Shufflesize | C.Threads | D.Threads |"
-    printf("|    Codec   | Filter | Split | C.Level | C.Threads | D.Threads |"
-           "  S.Score  |  C.Ratio   |   Btune State   | Readapt | Winner\n");
+int tweaking_next_cparams(cparams_btune *cparams, btune_struct *btune_params) {
+  if (!use_model) {
+    if (btune_params->state == CODEC_FILTER) {
+      return BLOSC2_ERROR_SUCCESS;
+    }
+    if (cparams->compcode == BLOSC_CODEC_GROK && btune_params->state == CLEVEL) {
+      return BLOSC2_ERROR_SUCCESS;
+    }
   }
-
-  *btune_params->aux_cparams = *btune_params->best;
-  cparams_btune *cparams = btune_params->aux_cparams;
-  cparams->compcode_meta = compmeta;
 
   switch(btune_params->state){
     // Tune codec and filter
@@ -780,6 +808,84 @@ int btune_next_cparams(blosc2_context *context) {
     case STOP:
       return BLOSC2_ERROR_SUCCESS;
   }
+
+  return BLOSC2_ERROR_SUCCESS;
+}
+
+// Tune some compression parameters based on the context
+int btune_next_cparams(blosc2_context *context) {
+  btune_struct *btune_params = (btune_struct*) context->tuner_params;
+  btune_config config = btune_params->config;
+  int compcode;
+  uint8_t compmeta = 0;
+  uint8_t filter = BLOSC_NOFILTER;
+  uint8_t filter_meta = 0;
+  int clevel = 5;
+  int32_t splitmode = BLOSC_NEVER_SPLIT;
+  int error = -1;
+
+  bool use_model;
+  if (config.perf_mode == BTUNE_PERF_DECOMP) {
+    use_model = pred_decomp_category(btune_params, &compcode, &compmeta, &filter, &filter_meta, &clevel, &splitmode);
+  } else {
+    use_model = pred_comp_category(btune_params, &compcode, &compmeta, &filter, &filter_meta, &clevel, &splitmode);
+  }
+
+  if (use_model) {
+    if (btune_params->inference_count != 0) {
+      if (btune_params->inference_count > 0) {
+        btune_params->inference_count--;
+      }
+
+      error = btune_model_inference(context, &compcode, &filter, &clevel, &splitmode);
+    } else {
+      if (!btune_params->inference_ended){
+        error = most_predicted(btune_params, &compcode, &filter, &clevel, &splitmode);
+        btune_params->inference_ended = true;
+      }
+    }
+  }
+
+  if (error == 0) {
+    btune_params->codecs[0] = compcode;
+    btune_params->ncodecs = 1;
+    btune_params->filters[0] = filter;
+    btune_params->nfilters = 1;
+    if (config.perf_mode == BTUNE_PERF_DECOMP) {
+      btune_init_clevels(btune_params, clevel, clevel, clevel);
+    }
+    else {
+      int min = (clevel > 1) ? (clevel - 1) : clevel;
+      int max = (clevel < 9) ? (clevel + 1) : clevel;
+      btune_init_clevels(btune_params, min, max, clevel);
+    }
+    btune_params->splitmode = splitmode;
+  }
+
+
+  if (getenv("BTUNE_TRACE") && btune_params->steps_count == 0 && btune_params->state != STOP) {
+    // printf("|    Codec   | Filter | Split | C.Level | Blocksize | Shufflesize | C.Threads | D.Threads |"
+    printf("|    Codec   | Filter | Split | C.Level | C.Threads | D.Threads |"
+           "  S.Score  |  C.Ratio   |   Btune State   | Readapt | Winner\n");
+  }
+
+  *btune_params->aux_cparams = *btune_params->best;
+  cparams_btune *cparams = btune_params->aux_cparams;
+  cparams->compcode_meta = compmeta;
+  cparams->filter_meta = filter_meta;
+
+  if (!use_model) {
+    cparams->clevel = clevel;
+    cparams->compcode = compcode;
+    cparams->filter = filter;
+    cparams->splitmode = splitmode;
+  }
+
+  if (tweaking_next_cparams(cparams, btune_params) < 0) {
+    BTUNE_TRACE("Error while tweaking next cparams");
+    return -1;
+  }
+
   set_btune_cparams(context, cparams);
   if (context->blocksize > context->sourcesize) {
     // blocksize cannot be greater than sourcesize

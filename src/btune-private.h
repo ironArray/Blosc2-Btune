@@ -29,6 +29,8 @@ typedef struct {
     // The compressor meta
     uint8_t filter;
     // The precompression filter
+    uint8_t filter_meta;
+    // The filter meta
     int32_t splitmode;
     // Whether the blocks should be split or not
     int clevel;
