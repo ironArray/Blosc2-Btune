@@ -670,16 +670,28 @@ bool pred_decomp_category(btune_struct *btune_params, int *compcode, uint8_t *co
   return use_model;
 }
 
-int tweaking_next_cparams(cparams_btune *cparams, btune_struct *btune_params) {
+int tweaking_next_cparams(cparams_btune *cparams, btune_struct *btune_params, bool use_model,
+                          int error, int compcode, uint8_t compmeta, uint8_t filter, uint8_t filter_meta, int clevel,
+                          int32_t splitmode) {
+  cparams->compcode_meta = compmeta;
+  cparams->filter_meta = filter_meta;
   if (!use_model) {
+    if (btune_params->state == STOP){
+      return BLOSC2_ERROR_SUCCESS; // Tuning ended
+    }
+    cparams->clevel = clevel;
+    cparams->compcode = compcode;
+    cparams->filter = filter;
+    cparams->splitmode = splitmode;
     if (btune_params->state == CODEC_FILTER) {
-      return BLOSC2_ERROR_SUCCESS;
+      return 1; // Continue tuning parameters
     }
     if (cparams->compcode == BLOSC_CODEC_GROK && btune_params->state == CLEVEL) {
-      return BLOSC2_ERROR_SUCCESS;
+      return 1; // Continue tuning parameters
     }
   }
 
+  btune_config config = btune_params->config;
   switch(btune_params->state){
     // Tune codec and filter
     case CODEC_FILTER: {
@@ -771,7 +783,7 @@ int tweaking_next_cparams(cparams_btune *cparams, btune_struct *btune_params) {
       return BLOSC2_ERROR_SUCCESS;
   }
 
-  return BLOSC2_ERROR_SUCCESS;
+  return 1; // Continue tuning parameters
 }
 
 // Tune some compression parameters based on the context
@@ -833,19 +845,12 @@ int btune_next_cparams(blosc2_context *context) {
 
   *btune_params->aux_cparams = *btune_params->best;
   cparams_btune *cparams = btune_params->aux_cparams;
-  cparams->compcode_meta = compmeta;
-  cparams->filter_meta = filter_meta;
 
-  if (!use_model) {
-    cparams->clevel = clevel;
-    cparams->compcode = compcode;
-    cparams->filter = filter;
-    cparams->splitmode = splitmode;
-  }
-
-  if (tweaking_next_cparams(cparams, btune_params) < 0) {
-    BTUNE_TRACE("Error while tweaking next cparams");
-    return -1;
+  int rc = tweaking_next_cparams(cparams, btune_params, use_model, error, compcode, compmeta, filter, filter_meta,
+                                 clevel, splitmode);
+  if (rc == 0) {
+    // Stop tuning
+    return rc;
   }
 
   set_btune_cparams(context, cparams);
@@ -1052,27 +1057,6 @@ static void update_aux(blosc2_context * ctx, bool improved) {
       }
       break;
     }
-
-    /* Don't really know if I should delete everything from here
-    case SHUFFLE_SIZE:
-      // Can not change parameter or is not improving
-      if (has_ended_shuffle(best) || (!improved && !first_time)) {
-        btune_params->aux_index = 0;
-        btune_params->state = BTUNE_ENABLE_THREADS ? THREADS : CLEVEL;
-        // max_threads must be greater than 1
-        if ((btune_params->state == THREADS) && (btune_params->max_threads == 1)) {
-          btune_params->state = CLEVEL;
-          if (has_ended_clevel(btune_params)) {
-            best->increasing_clevel = !best->increasing_clevel;
-          }
-        } else {
-          if (has_ended_threads(btune_params)) {
-            best->increasing_nthreads = !best->increasing_nthreads;
-          }
-        }
-      }
-      break;
-      */
 
     case THREADS:
       first_time = (btune_params->aux_index % MAX_STATE_THREADS) == 1;
