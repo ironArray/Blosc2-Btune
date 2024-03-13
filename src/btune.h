@@ -112,7 +112,7 @@ typedef enum {
  * before initiating a readapt.
  * Note: a readapt is the process by which btune adjusts the compression parameters.
  * It can be of two types: \b soft, which only changes the compression level and
- * blocksize or \b hard, which also changes the codec, filters, shuffle size and number of threads.
+ * blocksize or \b hard, which also changes the codec, filters and number of threads.
 */
 typedef struct {
   uint32_t nwaits_before_readapt;
@@ -193,7 +193,6 @@ static btune_config BTUNE_CONFIG_DEFAULTS = {
 // Internal Btune state enumeration.
 typedef enum {
     CODEC_FILTER,
-    SHUFFLE_SIZE,
     THREADS,
     CLEVEL,
     MEMCPY,

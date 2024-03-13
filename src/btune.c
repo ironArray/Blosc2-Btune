@@ -22,7 +22,6 @@
 
 
 // Disable different states
-#define BTUNE_ENABLE_SHUFFLESIZE  false
 #define BTUNE_ENABLE_MEMCPY       false
 #define BTUNE_ENABLE_THREADS      true
 
@@ -32,9 +31,6 @@ enum {
   BTUNE_KB = 1024,
   MIN_BLOCK = 16 * BTUNE_KB,  // TODO remove when included in blosc.h
   MAX_BLOCK = 2 * BTUNE_KB * BTUNE_KB,
-  MIN_BITSHUFFLE = 1,
-  MIN_SHUFFLE = 2,
-  MAX_SHUFFLE = 16,
   MIN_THREADS = 1,
   SOFT_STEP_SIZE = 1,
   HARD_STEP_SIZE = 2,
@@ -47,12 +43,10 @@ static const cparams_btune cparams_btune_default = {
   .splitmode = BLOSC_ALWAYS_SPLIT,
   .clevel = 9,
   .blocksize = 0,
-  .shufflesize = 0,
   .nthreads_comp = 0,
   .nthreads_decomp = 0,
   .increasing_clevel = false,
   .increasing_block = true,
-  .increasing_shuffle = true,
   .increasing_nthreads = true,
   .score = 100,
   .cratio = 1.0,
@@ -136,7 +130,6 @@ static void extract_btune_cparams(blosc2_context *context, cparams_btune *cparam
   cparams->clevel = context->clevel;
   cparams->splitmode = context->splitmode;
   cparams->blocksize = context->blocksize;
-  cparams->shufflesize = context->typesize;
   cparams->nthreads_comp = context->nthreads;
   btune_struct *btune_params = (btune_struct *) context->tuner_params;
   if (btune_params->dctx == NULL) {
@@ -154,13 +147,6 @@ static bool has_ended_clevel(btune_struct *btune_params) {
   return (btune_params->best->increasing_clevel)
     ? (clevel_index + step_size) >= max_clevel
     : (clevel_index - step_size) < 0;
-}
-
-// Check if btune can still modify the shufflesize or has to change the direction
-static bool has_ended_shuffle(cparams_btune *best) {
-  int min_shuffle = (best->filter == BLOSC_SHUFFLE) ? MIN_SHUFFLE: MIN_BITSHUFFLE;
-  return ((best->increasing_shuffle && (best->shufflesize == MAX_SHUFFLE)) ||
-          (!best->increasing_shuffle && (best->shufflesize == min_shuffle)));
 }
 
 // Check if btune can still modify the nthreads or has to change the direction
@@ -195,9 +181,6 @@ static void init_hard(btune_struct *btune_params) {
     btune_params->threads_for_comp = false;
   } else {
     btune_params->threads_for_comp = true;
-  }
-  if (has_ended_shuffle(btune_params->best)) {
-    btune_params->best->increasing_shuffle = !btune_params->best->increasing_shuffle;
   }
 }
 
@@ -244,8 +227,6 @@ static const char* stcode_to_stname(btune_struct *btune_params) {
       } else {
         return "THREADS_DECOMP";
       }
-    case SHUFFLE_SIZE:
-      return "SHUFFLE_SIZE";
     case CLEVEL:
       return "CLEVEL";
     case MEMCPY:
@@ -456,8 +437,6 @@ int btune_init(void *tuner_params, blosc2_context * cctx, blosc2_context * dctx)
     best->clevel = 8;
     aux->clevel = 8;
   }
-  best->shufflesize = cctx->typesize;  // TODO typesize -> shufflesize
-  aux->shufflesize = cctx->typesize;  // TODO typesize -> shufflesize
   best->nthreads_comp = cctx->nthreads;
   aux->nthreads_comp = cctx->nthreads;
   if (dctx != NULL){
@@ -567,7 +546,6 @@ static void set_btune_cparams(blosc2_context * context, cparams_btune * cparams)
   if (cparams->blocksize) {
     context->blocksize = cparams->blocksize;
   }
-  context->typesize = cparams->shufflesize;  // TODO typesize -> shufflesize
   context->new_nthreads = (int16_t) cparams->nthreads_comp;
   if (btune_params->dctx != NULL) {
     btune_params->dctx->new_nthreads = (int16_t) cparams->nthreads_decomp;
@@ -738,22 +716,6 @@ int tweaking_next_cparams(cparams_btune *cparams, btune_struct *btune_params) {
       break;
     }
 
-      // Tune shuffle size
-    case SHUFFLE_SIZE:
-      btune_params->aux_index++;
-      if (cparams->increasing_shuffle) {
-        // TODO These kind of condition checks should be removed (maybe asserts)
-        if (cparams->shufflesize < MAX_SHUFFLE) {
-          cparams->shufflesize <<= 1;
-        }
-      } else {
-        int min_shuffle = (cparams->filter == 1) ? MIN_SHUFFLE: MIN_BITSHUFFLE;
-        if (cparams->shufflesize > min_shuffle) {
-          cparams->shufflesize >>= 1;
-        }
-      }
-      break;
-
       // Tune the number of threads
     case THREADS:
       btune_params->aux_index++;
@@ -864,7 +826,7 @@ int btune_next_cparams(blosc2_context *context) {
 
 
   if (getenv("BTUNE_TRACE") && btune_params->steps_count == 0 && btune_params->state != STOP) {
-    // printf("|    Codec   | Filter | Split | C.Level | Blocksize | Shufflesize | C.Threads | D.Threads |"
+    // printf("|    Codec   | Filter | Split | C.Level | Blocksize | C.Threads | D.Threads |"
     printf("|    Codec   | Filter | Split | C.Level | C.Threads | D.Threads |"
            "  S.Score  |  C.Ratio   |   Btune State   | Readapt | Winner\n");
   }
@@ -942,18 +904,6 @@ static bool has_improved(btune_struct *btune_params, double score_coef, double c
 }
 
 
-static bool cparams_equals(cparams_btune * cp1, cparams_btune * cp2) {
-  return ((cp1->compcode == cp2->compcode) &&
-          (cp1->filter == cp2->filter) &&
-          (cp1->splitmode == cp2->splitmode) &&
-          (cp1->clevel == cp2->clevel) &&
-          (cp1->blocksize == cp2->blocksize) &&
-          (cp1->shufflesize == cp2->shufflesize) &&
-          (cp1->nthreads_comp == cp2->nthreads_comp) &&
-          (cp1->nthreads_decomp == cp2->nthreads_decomp));
-}
-
-
 // Processes which btune_state will come next after a readapt or wait
 static void process_waiting_state(blosc2_context *ctx) {
   btune_struct *btune_params = (btune_struct*) ctx->tuner_params;
@@ -970,9 +920,9 @@ static void process_waiting_state(blosc2_context *ctx) {
 //  if (btune_params->readapt_from != WAIT && !btune_params->is_repeating) {
 //    char* compname;
 //    blosc_compcode_to_compname(cparams->compcode, &compname);
-//    printf("| %10s | %d | %d | %d | %d | %d | %d | %.3g | %.3gx | %s\n",
+//    printf("| %10s | %d | %d | %d | %d | %d | %.3g | %.3gx | %s\n",
 //           compname, cparams->filter, cparams->clevel,
-//           (int) cparams->blocksize / BTUNE_KB, (int) cparams->shufflesize,
+//           (int) cparams->blocksize / BTUNE_KB,
 //           cparams->nthreads_comp, cparams->nthreads_decomp,
 //           cparams->score, cparams->cratio, "WINNER");
 //  }
@@ -1086,15 +1036,7 @@ static void update_aux(blosc2_context * ctx, bool improved) {
       if (btune_params->aux_index >= aux_index_max) {
         btune_params->aux_index = 0;
 
-        int32_t shufflesize = best->shufflesize;
-        // Is shufflesize valid or not
-        if (BTUNE_ENABLE_SHUFFLESIZE) {
-          bool is_power_2 = (shufflesize & (shufflesize - 1)) == 0;
-          btune_params->state = (best->filter && is_power_2) ? SHUFFLE_SIZE : THREADS;
-        }
-        else {
-          btune_params->state = BTUNE_ENABLE_THREADS ? THREADS : CLEVEL;
-        }
+        btune_params->state = BTUNE_ENABLE_THREADS ? THREADS : CLEVEL;
 
         // max_threads must be greater than 1
         if ((btune_params->state == THREADS) && (btune_params->max_threads == 1)) {
@@ -1104,23 +1046,15 @@ static void update_aux(blosc2_context * ctx, bool improved) {
           }
         }
         // Control direction parameters
-        if (BTUNE_ENABLE_SHUFFLESIZE && btune_params->state == SHUFFLE_SIZE) {
-          if (has_ended_shuffle(best)) {
-            best->increasing_shuffle = !best->increasing_shuffle;
-          }
-        } else if (btune_params->state == THREADS) {
-          if (has_ended_shuffle(best)) {
-            best->increasing_nthreads = !best->increasing_nthreads;
-          }
+        if (btune_params->state == THREADS) {
+          best->increasing_nthreads = !best->increasing_nthreads;
         }
       }
       break;
     }
 
+    /* Don't really know if I should delete everything from here
     case SHUFFLE_SIZE:
-      if (!improved && first_time) {
-        best->increasing_shuffle = !best->increasing_shuffle;
-      }
       // Can not change parameter or is not improving
       if (has_ended_shuffle(best) || (!improved && !first_time)) {
         btune_params->aux_index = 0;
@@ -1138,6 +1072,7 @@ static void update_aux(blosc2_context * ctx, bool improved) {
         }
       }
       break;
+      */
 
     case THREADS:
       first_time = (btune_params->aux_index % MAX_STATE_THREADS) == 1;
@@ -1278,12 +1213,12 @@ int btune_update(blosc2_context * context, double ctime) {
         int split = (cparams->splitmode == BLOSC_ALWAYS_SPLIT) ? 1 : 0;
         const char *compname;
         blosc2_compcode_to_compname(cparams->compcode, &compname);
-        // Disable printing the Blocksize and Shufflesize because they are not currently used
+        // Disable printing the Blocksize because it is not currently used
         //printf("| %10s | %6d | %5d | %7d | %9d | %11d | %9d | %9d | %9.3g | %9.3gx | %15s | %7s | %c\n",
         // We also use the inverse of the score to make it easier to read
         printf("| %10s | %6d | %5d | %7d | %9d | %9d | %9.3g | %9.3gx | %15s | %7s | %c\n",
                compname, cparams->filter, split, cparams->clevel,
-               //(int) cparams->blocksize / BTUNE_KB, (int) cparams->shufflesize,
+               //(int) cparams->blocksize / BTUNE_KB,
                cparams->nthreads_comp, cparams->nthreads_decomp,
                (double) context->sourcesize / (score * (int)(1<<30)), cratio,
                stcode_to_stname(btune_params),
@@ -1291,7 +1226,6 @@ int btune_update(blosc2_context * context, double ctime) {
       }
     }
 
-    // if (improved || cparams_equals(btune_params->best, cparams)) {
     // We don't want to get rid of the previous best->score
     if (improved) {
       *btune_params->best = *cparams;

@@ -37,8 +37,6 @@ typedef struct {
     // The compression level
     int32_t blocksize;
     // The block size
-    int32_t shufflesize;
-    // The shuffle size
     int nthreads_comp;
     // The number of threads used for compressing
     int nthreads_decomp;
@@ -47,8 +45,6 @@ typedef struct {
     // Control parameter for clevel
     bool increasing_block;
     // Control parameter for blocksize
-    bool increasing_shuffle;
-    // Control parameter for shufflesize
     bool increasing_nthreads;
     // Control parameter for nthreads
     double score;
