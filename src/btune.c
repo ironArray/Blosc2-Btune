@@ -563,9 +563,11 @@ bool pred_comp_category(btune_struct *btune_params, int *compcode, uint8_t *comp
   }
 
   bool use_model = false;
-  if (0.6 <= btune_params->config.tradeoff[0] <= 1.0) {
+  float cratio = btune_params->config.tradeoff[0];
+  float ssim = btune_params->config.tradeoff[2];
+  if (0.6 <= cratio && cratio <= 1.0) {
     *compcode = BLOSC_CODEC_GROK;
-    if (0.0 <= btune_params->config.tradeoff[2] <= 0.3) {
+    if (0.0 <= ssim && ssim <= 0.3) {
       // codec= grok, rates = 8
       *compmeta = 8 * 10;
     } else {
@@ -573,33 +575,35 @@ bool pred_comp_category(btune_struct *btune_params, int *compcode, uint8_t *comp
       *compmeta = 5 * 10;
     }
   } else {
-    if (0.3 <= btune_params->config.tradeoff[0] <= 0.6) {
-      if (0.3 <= btune_params->config.tradeoff[2] <= 0.6) {
+    if (0.3 <= cratio && cratio <= 0.6) {
+      if (0.3 <= ssim && ssim <= 0.6) {
         //grok, rates 4
         *compcode = BLOSC_CODEC_GROK;
         *compmeta = 4 * 10;
       } else {
-        if (0 <= btune_params->config.tradeoff[2] < 0.3) {
+        if (0 <= ssim && ssim < 0.3) {
           // grok, 8
           *compcode = BLOSC_CODEC_GROK;
           *compmeta = 8 * 10;
-        }
-        else {
+        } else {
           // neural network
           use_model = true;
         }
       }
 
-    } else if (0.7 <= btune_params->config.tradeoff[2] < 1.0) {
-      // itrunc16-bitshuffle-8
-      *compcode = BLOSC_ZSTD;
-      *filter = BLOSC_FILTER_INT_TRUNC;  // + bitshuffle
-      *filter_meta = 8;
-      *splitmode = BLOSC_ALWAYS_SPLIT;
-      *clevel = 3;
     } else {
-      // neural network
-      use_model = true;
+      if (0.7 <= ssim && ssim < 1.0) {
+        // itrunc16-bitshuffle-8
+        *compcode = BLOSC_ZSTD;
+        *filter = BLOSC_FILTER_INT_TRUNC;  // + bitshuffle
+        *filter_meta = 8;
+        *splitmode = BLOSC_ALWAYS_SPLIT;
+        *clevel = 3;
+      }
+      else {
+        // neural network
+        use_model = true;
+      }
     }
   }
 
@@ -615,27 +619,30 @@ bool pred_decomp_category(btune_struct *btune_params, int *compcode, uint8_t *co
   }
 
   bool use_model = false;
-  if (btune_params->config.tradeoff[0] <= 0.1) {
+  float cratio = btune_params->config.tradeoff[0];
+  float speed = btune_params->config.tradeoff[1];
+  float ssim = btune_params->config.tradeoff[2];
+  if (cratio <= 0.1) {
     use_model = true;
   }
-  if (btune_params->config.tradeoff[0] >= 0.6) {
+  if (cratio >= 0.6) {
     *compcode = BLOSC_CODEC_GROK;
-    if (btune_params->config.tradeoff[2] <= 0.2) {
+    if (ssim <= 0.2) {
       *compmeta = 8 * 10;
     } else {
-      if (0.6 < btune_params->config.tradeoff[0] <= 0.7) {
+      if (0.6 < cratio && cratio <= 0.7) {
         *compmeta = 7 * 10;
       } else {
         *compmeta = 5 * 10;
       }
     }
   }
-  if (btune_params->config.tradeoff[0] <= 0.3) {
-    if (btune_params->config.tradeoff[1] == 0) {
+  if (cratio <= 0.3) {
+    if (speed == 0) {
       *compcode = BLOSC_CODEC_GROK;
       *compmeta = 3 * 10;
     } else {
-      if (btune_params->config.tradeoff[1] <= 0.1) {
+      if (speed <= 0.1) {
         // lossy integers images
         *compcode = BLOSC_ZSTD;
         *filter = BLOSC_FILTER_INT_TRUNC; //itrunc bitshuf 7
@@ -647,18 +654,18 @@ bool pred_decomp_category(btune_struct *btune_params, int *compcode, uint8_t *co
       }
     }
   }
-  if (btune_params->config.tradeoff[0] + btune_params->config.tradeoff[2] >= 0.9) {
+  if (cratio + ssim >= 0.9) {
     *compcode = BLOSC_CODEC_GROK;
     *compmeta = 4 * 10;
   } else {
-    if (btune_params->config.tradeoff[0] + btune_params->config.tradeoff[2] >= 0.8) {
+    if (cratio + ssim >= 0.8) {
       *compcode = BLOSC_ZSTD;
       *filter = BLOSC_FILTER_INT_TRUNC; //itrunc bitshuff 6
       *filter_meta = 6;
       *splitmode = BLOSC_ALWAYS_SPLIT;
       *clevel = 3;
     } else {
-      if (btune_params->config.tradeoff[0] <= 0.4 && btune_params->config.tradeoff[2] >= 0.1) {
+      if (cratio <= 0.4 && ssim >= 0.1) {
         use_model = true;
       } else {
         *compcode = BLOSC_CODEC_GROK;
@@ -684,9 +691,11 @@ int tweaking_next_cparams(cparams_btune *cparams, btune_struct *btune_params, bo
     cparams->filter = filter;
     cparams->splitmode = splitmode;
     if (btune_params->state == CODEC_FILTER) {
+      btune_params->aux_index++;
       return 1; // Continue tuning parameters
     }
     if (cparams->compcode == BLOSC_CODEC_GROK && btune_params->state == CLEVEL) {
+      btune_params->aux_index++;
       return 1; // Continue tuning parameters
     }
   }
