@@ -8,6 +8,10 @@ The process of finding optimal compression parameters in Blosc2 can be slow beca
 
 To begin the training process, provide your datasets to the Blosc Development Team. We will then perform the training and provide neural network models tailored to your needs, along with general tuning advice for Blosc2. In exchange, we request financial contributions to the project.
 
+Furthermore, we added another mode for supporting lossy compression for datasets made out of
+images which datatypes are integers. This works as a combination of neural networks
+and heuristic results.
+
 If interested, please contact us at contact@blosc.org.
 
 ## Install the Btune wheel
@@ -197,6 +201,75 @@ NDArray succesfully created in btune_config.b2nd
 
 Here we set the tradeoff to 0.3 and the performance mode to `DECOMP`.
 
+## Btune quality mode
+
+Now Btune can work not only taking into account
+the compression ratio and speed, but also the quality. This is intended
+to work with datasets made out of images which datatypes are integers. Another 
+requirement is that the `blosc2_grok` plugin will have to be installed in the
+system.
+
+To use it, you have to set the `BTUNE_TRADEOFF` to a tuple of 3 values 
+`(cratio, speed, quality)`. These must sum up to 1. The bigger one value is,
+the more important it will be. 
+
+In the `examples` directory there is a Python example `lossy.py` which creates a NDArray
+made out of 10 chunks (one chunk per image). You can run it with:
+
+```shell
+BTUNE_TRACE=1 python lossy.py MI04_020751.tif
+
+-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+Btune version: 1.1.2
+Performance Mode: COMP, Compression tradeoff: (0.500000, 0.300000, 0.200000), Bandwidth: 20 GB/s
+Behaviour: Waits - 0, Softs - 0, Hards - 0, Repeat Mode - (null)
+Behaviour: Waits - 0, Softs - 5, Hards - 10, Repeat Mode - STOP
+INFO: Created TensorFlow Lite XNNPACK delegate for CPU.
+TRACE: time load model: 0.000281
+|    Codec   | Filter | Split | C.Level | C.Threads | D.Threads |  S.Score  |  C.Ratio   |   Btune State   | Readapt | Winner
+|       grok |      0 |     0 |       5 |         4 |         4 |    0.0137 |      8.01x |    CODEC_FILTER |    HARD | W
+|       grok |      0 |     0 |       5 |         4 |         4 |    0.0374 |      8.01x |    CODEC_FILTER |    HARD | W
+|       grok |      0 |     0 |       5 |         4 |         4 |    0.0387 |      8.01x |    CODEC_FILTER |    HARD | W
+|       grok |      0 |     0 |       5 |         4 |         4 |    0.0362 |      8.01x |    CODEC_FILTER |    HARD | -
+|       grok |      0 |     0 |       5 |         4 |         4 |    0.0372 |      8.01x |    CODEC_FILTER |    HARD | -
+|       grok |      0 |     0 |       5 |         4 |         4 |    0.0384 |      8.01x |    CODEC_FILTER |    HARD | -
+|       grok |      0 |     0 |       5 |         4 |         4 |    0.0389 |      8.01x |    CODEC_FILTER |    HARD | W
+|       grok |      0 |     0 |       5 |         4 |         4 |    0.0371 |      8.01x |    CODEC_FILTER |    HARD | -
+|       grok |      0 |     0 |       5 |         4 |         4 |    0.0361 |      8.01x |    CODEC_FILTER |    HARD | -
+|       grok |      0 |     0 |       5 |         4 |         4 |    0.0377 |      8.01x |    CODEC_FILTER |    HARD | -
+```
+The tradeoff used tells Btune that you care a lot about compression ratio but not as much
+about speed or the quality loss. According to that, Btune uses the `blosc2_grok` codec 
+and manages to achieve a compression ratio of 8x in exchange for losing some quality.
+
+Like in the traditional Btune, you can use the `BTUNE_TRADEOFF` environmnet
+variable to change the tradeoff:
+```shell
+BTUNE_TRADEOFF="(0.5, 0, 0.5)" BTUNE_TRACE=1 python lossy.py MI04_020751.tif
+
+-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+Btune version: 1.1.2
+Performance Mode: COMP, Compression tradeoff: (0.500000, 0.000000, 0.500000), Bandwidth: 20 GB/s
+Behaviour: Waits - 0, Softs - 0, Hards - 0, Repeat Mode - (null)
+Behaviour: Waits - 0, Softs - 5, Hards - 10, Repeat Mode - STOP
+INFO: Created TensorFlow Lite XNNPACK delegate for CPU.
+TRACE: time load model: 0.000283
+|    Codec   | Filter | Split | C.Level | C.Threads | D.Threads |  S.Score  |  C.Ratio   |   Btune State   | Readapt | Winner
+|       grok |      0 |     0 |       5 |         4 |         4 |    0.0134 |         4x |    CODEC_FILTER |    HARD | W
+|       grok |      0 |     0 |       5 |         4 |         4 |    0.0352 |         4x |    CODEC_FILTER |    HARD | W
+|       grok |      0 |     0 |       5 |         4 |         4 |    0.0374 |         4x |    CODEC_FILTER |    HARD | W
+|       grok |      0 |     0 |       5 |         4 |         4 |    0.0366 |         4x |    CODEC_FILTER |    HARD | -
+|       grok |      0 |     0 |       5 |         4 |         4 |    0.0393 |         4x |    CODEC_FILTER |    HARD | W
+|       grok |      0 |     0 |       5 |         4 |         4 |    0.0365 |         4x |    CODEC_FILTER |    HARD | -
+|       grok |      0 |     0 |       5 |         4 |         4 |    0.0357 |         4x |    CODEC_FILTER |    HARD | -
+|       grok |      0 |     0 |       5 |         4 |         4 |    0.0368 |         4x |    CODEC_FILTER |    HARD | -
+|       grok |      0 |     0 |       5 |         4 |         4 |    0.0365 |         4x |    CODEC_FILTER |    HARD | -
+|       grok |      0 |     0 |       5 |         4 |         4 |    0.0372 |         4x |    CODEC_FILTER |    HARD | -
+```
+In this case, because the quality is more important than before, Btune uses
+the `blosc2_grok` codec with compression ratio 4x, which losses less info than
+the 8x.
+
 ## Using Btune from C
 
 You can also use Btune from C. Similar to the Python examples above, you can activate it by setting the `BTUNE_TRADEOFF` environment variable. Alternatively, you can set the `tuner_id` in the compression parameters, also known as `cparams`, to the value of `BLOSC_BTUNE`. This will use the default Btune configuration. However, running Btune from C offers the advantage of being able to tune way more parameters, depending on your preferences:
@@ -210,7 +283,8 @@ You can also use Btune from C. Similar to the Python examples above, you can act
     // btune
     btune_config btune_config = BTUNE_CONFIG_DEFAULTS;
     //btune_config.perf_mode = BTUNE_PERF_DECOMP;
-    btune_config.tradeoff = .5;
+    btune_config.tradeoff[0] = .5;
+    btune_config.tradeoff_nelems = 1;
     btune_config.behaviour.nhards_before_stop = 10;
     btune_config.behaviour.repeat_mode = BTUNE_REPEAT_ALL;
     btune_config.use_inference = 2;

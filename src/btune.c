@@ -80,11 +80,11 @@ static void add_filter(btune_struct *btune_params, uint8_t filter) {
 static void btune_init_codecs(btune_struct *btune_params) {
   const char * all_codecs = blosc2_list_compressors();
   // Already checked that 0. <= tradeoff <= 1.
-  float 1d_tradeoff = btune_params->config.tradeoff[0];
+  float tradeoff_1d = btune_params->config.tradeoff[0];
   if (btune_params->config.tradeoff_nelems == 3) {
-    1d_tradeoff = btune_params->config.tradeoff[0] + btune_params->config.tradeoff[2] / 2;
+    tradeoff_1d = btune_params->config.tradeoff[0] + btune_params->config.tradeoff[2] / 2;
   }
-  if (0.666666 <= 1d_tradeoff) {
+  if (0.666666 <= tradeoff_1d) {
     // In HCR mode only try with ZSTD and ZLIB
     if (strstr(all_codecs, "zstd") != NULL) {
       add_codec(btune_params, BLOSC_ZSTD);
@@ -97,7 +97,7 @@ static void btune_init_codecs(btune_struct *btune_params) {
   } else {
     // In all other modes, LZ4 is mandatory
     add_codec(btune_params, BLOSC_LZ4);
-    if (0.333333 <= 1d_tradeoff) {
+    if (0.333333 <= tradeoff_1d) {
       // In BALANCED mode give BLOSCLZ a chance
       add_codec(btune_params, BLOSC_BLOSCLZ);
     }
@@ -435,11 +435,11 @@ int btune_init(void *tuner_params, blosc2_context * cctx, blosc2_context * dctx)
   btune->aux_cparams = aux;
   best->compcode = btune->codecs[0];
   aux->compcode = btune->codecs[0];
-  float 1d_tradeoff = btune->config.tradeoff[0];
+  float tradeoff_1d = btune->config.tradeoff[0];
   if (btune->config.tradeoff_nelems == 3) {
-    1d_tradeoff = btune->config.tradeoff[0] + btune->config.tradeoff[2] / 2;
+    tradeoff_1d = btune->config.tradeoff[0] + btune->config.tradeoff[2] / 2;
   }
-  if ((float)2/3 <= 1d_tradeoff <= 1.) {
+  if ((float)2/3 <= tradeoff_1d <= 1.) {
     best->clevel = 8;
     aux->clevel = 8;
   }
@@ -904,22 +904,22 @@ static double mean(double const * array, int size) {
 
 // Determines if btune has improved depending on the tradeoff
 static bool has_improved(btune_struct *btune_params, double score_coef, double cratio_coef) {
-  float 1d_tradeoff = btune_params->config.tradeoff[0];
+  float tradeoff_1d = btune_params->config.tradeoff[0];
   if (btune_params->config.tradeoff_nelems == 3) {
-    1d_tradeoff = btune_params->config.tradeoff[0] + btune_params->config.tradeoff[2] / 2;
+    tradeoff_1d = btune_params->config.tradeoff[0] + btune_params->config.tradeoff[2] / 2;
   }
-  if (tradeoff <= 1/3) {
+  if (tradeoff_1d <= 1/3) {
     return (((cratio_coef >= 1) && (score_coef > 1)) ||
             ((cratio_coef > 0.5) && (score_coef > 2)) ||
             ((cratio_coef > 0.67) && (score_coef > 1.3)) ||
             ((cratio_coef > 2) && (score_coef > 0.7)));
   }
-  if (tradeoff <= 2/3) {
+  if (tradeoff_1d <= 2/3) {
     return (((cratio_coef >= 1) && (score_coef > 1)) ||
             ((cratio_coef > 1.1) && (score_coef > 0.8)) ||
             ((cratio_coef > 1.3) && (score_coef > 0.5)));
   }
-  if (tradeoff <= 1.) {
+  if (tradeoff_1d <= 1.) {
     return ((cratio_coef >= 1) && (score_coef > 1));
   }
   fprintf(stderr, "WARNING: unknown tradeoff, it must be between 0. and 1.0\n");
