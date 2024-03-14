@@ -80,7 +80,11 @@ static void add_filter(btune_struct *btune_params, uint8_t filter) {
 static void btune_init_codecs(btune_struct *btune_params) {
   const char * all_codecs = blosc2_list_compressors();
   // Already checked that 0. <= tradeoff <= 1.
-  if (0.666666 <= btune_params->config.tradeoff[0]) { // FIXME
+  float 1d_tradeoff = btune_params->config.tradeoff[0];
+  if (btune_params->config.tradeoff_nelems == 3) {
+    1d_tradeoff = btune_params->config.tradeoff[0] + btune_params->config.tradeoff[2] / 2;
+  }
+  if (0.666666 <= 1d_tradeoff) {
     // In HCR mode only try with ZSTD and ZLIB
     if (strstr(all_codecs, "zstd") != NULL) {
       add_codec(btune_params, BLOSC_ZSTD);
@@ -93,7 +97,7 @@ static void btune_init_codecs(btune_struct *btune_params) {
   } else {
     // In all other modes, LZ4 is mandatory
     add_codec(btune_params, BLOSC_LZ4);
-    if (0.333333 <= btune_params->config.tradeoff[0]) { // FIXME
+    if (0.333333 <= 1d_tradeoff) {
       // In BALANCED mode give BLOSCLZ a chance
       add_codec(btune_params, BLOSC_BLOSCLZ);
     }
@@ -343,14 +347,12 @@ int btune_init(void *tuner_params, blosc2_context * cctx, blosc2_context * dctx)
       btune->config.tradeoff_nelems = 1;
       btune->config.tradeoff[0] = (float)strtod(envvar, &envvar);
       btune->config.tradeoff[1] = btune->config.tradeoff[2] = 0.0;
-      // printf("nelems = %d, tradeoff[%d] = %f\n", btune->config.tradeoff_nelems, 0, btune->config.tradeoff[0]);
     } else {
       // Invalid value or 3d case
       btune->config.tradeoff_nelems = 3;
       for (int i = 0; i < 3; ++i) {
         envvar++;
         btune->config.tradeoff[i] = (float)strtod(envvar, &envvar);
-        // printf("nelems = %d, tradeoff[%d] = %f\n", btune->config.tradeoff_nelems, i, btune->config.tradeoff[i]);
       }
       if (btune->config.tradeoff[2] == 1.0) {
         BTUNE_TRACE("Invalid value for quality tradeoff (found 1.0). Use tradeoff only between"
@@ -362,12 +364,12 @@ int btune_init(void *tuner_params, blosc2_context * cctx, blosc2_context * dctx)
   float sum = 0.0;
   for (int i = 0; i < btune->config.tradeoff_nelems; ++i) {
     if (btune->config.tradeoff[i] < 0. || btune->config.tradeoff[i] > 1.) {
-      BTUNE_TRACE("Unsupported %f tradeoff, it must be between 0. and 1., ");
+      BTUNE_TRACE("Unsupported tradeoff, it must be between 0. and 1., ");
       return -1;
     }
     sum += btune->config.tradeoff[i];
   }
-  if (btune->config.tradeoff_nelems != 1 && sum != 1.0) {
+  if (btune->config.tradeoff_nelems == 3 && sum != 1.0) {
     BTUNE_TRACE("In quality mode, tradeoff values must sum up 1.0");
     return -1;
   }
@@ -433,7 +435,11 @@ int btune_init(void *tuner_params, blosc2_context * cctx, blosc2_context * dctx)
   btune->aux_cparams = aux;
   best->compcode = btune->codecs[0];
   aux->compcode = btune->codecs[0];
-  if ((float)2/3 <= btune->config.tradeoff[0] <= 1.) { // Improve it when tradeoff nelems = 3
+  float 1d_tradeoff = btune->config.tradeoff[0];
+  if (btune->config.tradeoff_nelems == 3) {
+    1d_tradeoff = btune->config.tradeoff[0] + btune->config.tradeoff[2] / 2;
+  }
+  if ((float)2/3 <= 1d_tradeoff <= 1.) {
     best->clevel = 8;
     aux->clevel = 8;
   }
@@ -554,7 +560,7 @@ static void set_btune_cparams(blosc2_context * context, cparams_btune * cparams)
   }
 }
 
-// Meant for lossy mode, returns whether to use the neural network or not and in that case, fill the compression params
+// Meant for lossy mode, returns whether to use the neural network or not and in that case, fills the compression params
 bool pred_comp_category(btune_struct *btune_params, int *compcode, uint8_t *compmeta, uint8_t *filter,
                         uint8_t *filter_meta, int *clevel, int32_t *splitmode) {
   if (btune_params->config.tradeoff_nelems == 1) {
@@ -610,7 +616,7 @@ bool pred_comp_category(btune_struct *btune_params, int *compcode, uint8_t *comp
   return use_model;
 }
 
-// Meant for lossy mode, returns whether to use the neural network or not and in that case, fill the compression params
+// Meant for lossy mode, returns whether to use the neural network or not and in that case, fills the compression params
 bool pred_decomp_category(btune_struct *btune_params, int *compcode, uint8_t *compmeta, uint8_t *filter,
                           uint8_t *filter_meta, int *clevel, int32_t *splitmode) {
   if (btune_params->config.tradeoff_nelems == 1) {
@@ -898,7 +904,10 @@ static double mean(double const * array, int size) {
 
 // Determines if btune has improved depending on the tradeoff
 static bool has_improved(btune_struct *btune_params, double score_coef, double cratio_coef) {
-  float tradeoff = btune_params->config.tradeoff[0]; // FIXME
+  float 1d_tradeoff = btune_params->config.tradeoff[0];
+  if (btune_params->config.tradeoff_nelems == 3) {
+    1d_tradeoff = btune_params->config.tradeoff[0] + btune_params->config.tradeoff[2] / 2;
+  }
   if (tradeoff <= 1/3) {
     return (((cratio_coef >= 1) && (score_coef > 1)) ||
             ((cratio_coef > 0.5) && (score_coef > 2)) ||
