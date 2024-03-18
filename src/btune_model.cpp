@@ -188,8 +188,9 @@ static int get_best_codec_for_chunk(
 
   float cratio = 0;
   float rel_speed = 0;
-  bool special_val = instr_data->flags[0];
+  bool special_val = false;
   for (int i = 0; i < nblocks; i++) {
+    special_val = instr_data->flags[0];
     if (!special_val) {
       cratio += instr_data->cratio;
       float ctime = 1.f / instr_data->cspeed;
@@ -197,7 +198,6 @@ static int get_best_codec_for_chunk(
       rel_speed += 1.f / (ctime + ftime) / zeros_speed;
     }
     instr_data++;
-    special_val = instr_data->flags[0];
   }
   cratio /= nblocks;
   rel_speed /= nblocks;
