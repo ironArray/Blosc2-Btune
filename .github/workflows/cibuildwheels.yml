@@ -14,8 +14,8 @@ on:
 env:
   CIBW_SKIP: '*-win32 *-manylinux*_i686 *-musllinux_*'
   # This throws an Illegal instruction (core dumped) error in Ubuntu
-  # CIBW_TEST_REQUIRES: blosc2
-  CIBW_TEST_REQUIRES: blosc2==2.2.9
+  CIBW_TEST_REQUIRES: blosc2
+  # CIBW_TEST_REQUIRES: blosc2==2.2.9
   CIBW_TEST_SKIP: "*macosx*arm64*"
   CIBW_TEST_COMMAND: BTUNE_TRACE=1 python {project}/examples/btune_config.py
   CIBW_BUILD_VERBOSITY: 1
