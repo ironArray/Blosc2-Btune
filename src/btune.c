@@ -319,8 +319,8 @@ int btune_init(void *tuner_params, blosc2_context * cctx, blosc2_context * dctx)
   }
   btune->inference_ended = false;
 
-  if (btune->config.perf_mode == BTUNE_PERF_AUTO) {
-    const char* perf_mode = getenv("BTUNE_PERF_MODE");
+  const char* perf_mode = getenv("BTUNE_PERF_MODE");
+  if (btune->config.perf_mode == BTUNE_PERF_AUTO || perf_mode != NULL) {
     if (perf_mode != NULL) {
       if (strcmp(perf_mode, "COMP") == 0) {
         btune->config.perf_mode = BTUNE_PERF_COMP;

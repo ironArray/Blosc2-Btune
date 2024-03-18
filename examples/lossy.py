@@ -28,7 +28,7 @@ if __name__ == '__main__':
     # Set Btune parameters
     base_dir = os.path.dirname(__file__)
     kwargs = {
-        "tradeoff": (0.5, 0.3, 0.2),
+        "tradeoff": (0.5, 0.3, 0.2),  # (cratio tradeoff, speed tradeoff, quality tradeoff)
         "perf_mode": blosc2_btune.PerformanceMode.COMP,
         "models_dir": f"{base_dir}/models/"}
     blosc2_btune.set_params_defaults(**kwargs)
