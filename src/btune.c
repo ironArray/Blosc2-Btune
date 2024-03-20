@@ -569,9 +569,9 @@ bool pred_comp_category(btune_struct *btune_params, int *compcode, uint8_t *comp
   bool use_model = false;
   float cratio = btune_params->config.tradeoff[0];
   float ssim = btune_params->config.tradeoff[2];
-  if (0.6 <= cratio && cratio <= 1.0) {
+  if (0.6f <= cratio) {
     *compcode = BLOSC_CODEC_GROK;
-    if (0.0 <= ssim && ssim <= 0.3) {
+    if (ssim <= 0.3f) {
       // codec= grok, rates = 8
       *compmeta = 8 * 10;
     } else {
@@ -579,24 +579,24 @@ bool pred_comp_category(btune_struct *btune_params, int *compcode, uint8_t *comp
       *compmeta = 5 * 10;
     }
   } else {
-    if (0.3 <= cratio && cratio <= 0.6) {
-      if (0.3 <= ssim && ssim <= 0.6) {
+    if (0.3f <= cratio && cratio <= 0.6f) {
+      if (0.3f <= ssim && ssim <= 0.6f) {
         //grok, rates 4
         *compcode = BLOSC_CODEC_GROK;
         *compmeta = 4 * 10;
       } else {
-        if (0 <= ssim && ssim < 0.3) {
+        if (ssim < 0.3f) {
           // grok, 8
           *compcode = BLOSC_CODEC_GROK;
           *compmeta = 8 * 10;
         } else {
           // neural network
-          use_model = true;
+          return true;
         }
       }
 
     } else {
-      if (0.7 <= ssim && ssim < 1.0) {
+      if (0.7f <= ssim && ssim < 1.0f) {
         // itrunc16-bitshuffle-8
         *compcode = BLOSC_ZSTD;
         *filter = BLOSC_FILTER_INT_TRUNC;  // + bitshuffle
@@ -606,7 +606,7 @@ bool pred_comp_category(btune_struct *btune_params, int *compcode, uint8_t *comp
       }
       else {
         // neural network
-        use_model = true;
+        return true;
       }
     }
   }
@@ -626,27 +626,28 @@ bool pred_decomp_category(btune_struct *btune_params, int *compcode, uint8_t *co
   float cratio = btune_params->config.tradeoff[0];
   float speed = btune_params->config.tradeoff[1];
   float ssim = btune_params->config.tradeoff[2];
-  if (cratio <= 0.1) {
-    use_model = true;
+  if (cratio <= 0.1f) {
+    return true;
   }
-  if (cratio >= 0.6) {
+  if (cratio >= 0.6f) {
     *compcode = BLOSC_CODEC_GROK;
-    if (ssim <= 0.2) {
+    if (ssim <= 0.2f) {
       *compmeta = 8 * 10;
     } else {
-      if (0.6 < cratio && cratio <= 0.7) {
+      if (0.6f < cratio && cratio <= 0.7f) {
         *compmeta = 7 * 10;
       } else {
         *compmeta = 5 * 10;
       }
     }
+    return use_model;
   }
-  if (cratio <= 0.3) {
-    if (speed == 0) {
+  if (cratio <= 0.3f) {
+    if (speed == 0.f) {
       *compcode = BLOSC_CODEC_GROK;
       *compmeta = 3 * 10;
     } else {
-      if (speed <= 0.1) {
+      if (speed <= 0.1f) {
         // lossy integers images
         *compcode = BLOSC_ZSTD;
         *filter = BLOSC_FILTER_INT_TRUNC; //itrunc bitshuf 7
@@ -657,19 +658,20 @@ bool pred_decomp_category(btune_struct *btune_params, int *compcode, uint8_t *co
         use_model = true;
       }
     }
+    return use_model;
   }
-  if (cratio + ssim >= 0.9) {
+  if (cratio + ssim >= 0.9f) {
     *compcode = BLOSC_CODEC_GROK;
     *compmeta = 4 * 10;
   } else {
-    if (cratio + ssim >= 0.8) {
+    if (cratio + ssim >= 0.8f) {
       *compcode = BLOSC_ZSTD;
       *filter = BLOSC_FILTER_INT_TRUNC; //itrunc bitshuff 6
       *filter_meta = 6;
       *splitmode = BLOSC_ALWAYS_SPLIT;
       *clevel = 3;
     } else {
-      if (cratio <= 0.4 && ssim >= 0.1) {
+      if (cratio <= 0.4f && ssim >= 0.1f) {
         use_model = true;
       } else {
         *compcode = BLOSC_CODEC_GROK;
