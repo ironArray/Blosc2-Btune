@@ -383,9 +383,9 @@ void btune_model_init(blosc2_context * ctx) {
     } else {
       dirname = config->models_dir;
     }
+  } else {
+    strcpy(config->models_dir, dirname);
   }
-  strcpy(config->models_dir, dirname);
-
   // The models_index will be overwritten in case the models are being reused
   btune_params->models_index = -1;
   if (BTUNE_REUSE_MODELS) {

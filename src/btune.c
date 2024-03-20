@@ -387,14 +387,12 @@ int btune_init(void *tuner_params, blosc2_context * cctx, blosc2_context * dctx)
     bandwidth_to_str(bandwidth_str, btune->config.bandwidth);
     printf("Btune version: %s\n", BTUNE_VERSION_STRING);
     if (btune->config.tradeoff_nelems == 1) {
-      printf("Performance Mode: %s, Compression tradeoff: %f, Bandwidth: %s\n"
-             "Behaviour: Waits - %d, Softs - %d, Hards - %d, Repeat Mode - %s\n",
+      printf("Performance Mode: %s, Compression tradeoff: %f, Bandwidth: %s\n",
              perf_mode_to_str(btune->config.perf_mode),
              btune->config.tradeoff[0],
              bandwidth_str);
     } else {
-      printf("Performance Mode: %s, Compression tradeoff: (%f, %f, %f), Bandwidth: %s\n"
-             "Behaviour: Waits - %d, Softs - %d, Hards - %d, Repeat Mode - %s\n",
+      printf("Performance Mode: %s, Compression tradeoff: (%f, %f, %f), Bandwidth: %s\n",
              perf_mode_to_str(btune->config.perf_mode),
              btune->config.tradeoff[0], btune->config.tradeoff[1], btune->config.tradeoff[2],
              bandwidth_str);
