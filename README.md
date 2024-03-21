@@ -223,18 +223,18 @@ Btune version: 1.1.2
 Performance Mode: COMP, Compression tradeoff: (0.500000, 0.300000, 0.200000), Bandwidth: 20 GB/s
 Behaviour: Waits - 0, Softs - 5, Hards - 10, Repeat Mode - STOP
 INFO: Created TensorFlow Lite XNNPACK delegate for CPU.
-TRACE: time load model: 0.000498
+TRACE: time load model: 0.000487
 |    Codec   | Filter | Split | C.Level | C.Threads | D.Threads |  S.Score  |  C.Ratio   |   Btune State   | Readapt | Winner
-|       grok |      0 |     0 |       5 |        16 |        16 |  0.000464 |      1.27x |    CODEC_FILTER |    HARD | W
-|       grok |      0 |     0 |       5 |        16 |        16 |    0.0371 |      1.27x |    CODEC_FILTER |    HARD | W
-|       grok |      0 |     0 |       5 |        16 |        16 |    0.0352 |      1.27x |    CODEC_FILTER |    HARD | -
-|       grok |      0 |     0 |       5 |        16 |        16 |    0.0405 |      1.27x |    CODEC_FILTER |    HARD | W
-|       grok |      0 |     0 |       5 |        16 |        16 |    0.0398 |      1.27x |    CODEC_FILTER |    HARD | -
-|       grok |      0 |     0 |       5 |        16 |        16 |    0.0403 |      1.27x |    CODEC_FILTER |    HARD | -
-|       grok |      0 |     0 |       5 |        16 |        16 |    0.0408 |      1.27x |    CODEC_FILTER |    HARD | W
-|       grok |      0 |     0 |       5 |        16 |        16 |    0.0485 |      1.27x |    CODEC_FILTER |    HARD | W
-|       grok |      0 |     0 |       5 |        16 |        16 |    0.0411 |      1.27x |    CODEC_FILTER |    HARD | -
-|       grok |      0 |     0 |       5 |        16 |        16 |    0.0401 |      1.27x |    CODEC_FILTER |    HARD | -
+|       grok |      0 |     0 |       5 |        16 |        16 |  0.000468 |      8.15x |    CODEC_FILTER |    HARD | W
+|       grok |      0 |     0 |       5 |        16 |        16 |    0.0236 |      8.15x |    CODEC_FILTER |    HARD | W
+|       grok |      0 |     0 |       5 |        16 |        16 |    0.0297 |      8.15x |    CODEC_FILTER |    HARD | W
+|       grok |      0 |     0 |       5 |        16 |        16 |    0.0362 |      8.15x |    CODEC_FILTER |    HARD | W
+|       grok |      0 |     0 |       5 |        16 |        16 |    0.0328 |      8.15x |    CODEC_FILTER |    HARD | -
+|       grok |      0 |     0 |       5 |        16 |        16 |     0.036 |      8.15x |    CODEC_FILTER |    HARD | -
+|       grok |      0 |     0 |       5 |        16 |        16 |    0.0399 |      8.15x |    CODEC_FILTER |    HARD | W
+|       grok |      0 |     0 |       5 |        16 |        16 |    0.0371 |      8.15x |    CODEC_FILTER |    HARD | -
+|       grok |      0 |     0 |       5 |        16 |        16 |    0.0318 |      8.15x |    CODEC_FILTER |    HARD | -
+|       grok |      0 |     0 |       5 |        16 |        16 |    0.0252 |      8.15x |    CODEC_FILTER |    HARD | -
 ```
 The tradeoff used tells Btune that you care a lot about compression ratio but not as much
 about speed or the quality loss. According to that, Btune predicts the `blosc2_grok` codec 
@@ -250,21 +250,21 @@ Btune version: 1.1.2
 Performance Mode: DECOMP, Compression tradeoff: (0.300000, 0.100000, 0.600000), Bandwidth: 20 GB/s
 Behaviour: Waits - 0, Softs - 5, Hards - 10, Repeat Mode - STOP
 INFO: Created TensorFlow Lite XNNPACK delegate for CPU.
-TRACE: time load model: 0.000686
+TRACE: time load model: 0.000755
 |    Codec   | Filter | Split | C.Level | C.Threads | D.Threads |  S.Score  |  C.Ratio   |   Btune State   | Readapt | Winner
-|       zstd |     36 |     1 |       3 |        16 |        16 |     0.113 |      2.18x |    CODEC_FILTER |    HARD | W
-|       zstd |     36 |     1 |       3 |        16 |        16 |    0.0767 |      2.18x |    CODEC_FILTER |    HARD | -
-|       zstd |     36 |     1 |       3 |        16 |        16 |    0.0764 |      2.18x |    CODEC_FILTER |    HARD | -
-|       zstd |     36 |     1 |       3 |        16 |        16 |      0.08 |      2.18x |    CODEC_FILTER |    HARD | -
-|       zstd |     36 |     1 |       3 |        16 |        16 |    0.0816 |      2.18x |    CODEC_FILTER |    HARD | -
-|       zstd |     36 |     1 |       3 |        16 |        16 |    0.0821 |      2.18x |    CODEC_FILTER |    HARD | -
-|       zstd |     36 |     1 |       3 |        16 |        16 |    0.0817 |      2.18x |    CODEC_FILTER |    HARD | -
-|       zstd |     36 |     1 |       3 |        16 |        16 |    0.0844 |      2.18x |    CODEC_FILTER |    HARD | -
-|       zstd |     36 |     1 |       3 |        16 |        16 |    0.0838 |      2.18x |    CODEC_FILTER |    HARD | -
-|       zstd |     36 |     1 |       3 |        16 |        16 |    0.0849 |      2.18x |    CODEC_FILTER |    HARD | -
+|       zstd |     36 |     1 |       3 |        16 |        16 |     0.102 |      2.18x |    CODEC_FILTER |    HARD | W
+|       zstd |     36 |     1 |       3 |        16 |        16 |     0.125 |      2.18x |    CODEC_FILTER |    HARD | W
+|       zstd |     36 |     1 |       3 |        16 |        16 |    0.0815 |      2.18x |    CODEC_FILTER |    HARD | -
+|       zstd |     36 |     1 |       3 |        16 |        16 |    0.0805 |      2.18x |    CODEC_FILTER |    HARD | -
+|       zstd |     36 |     1 |       3 |        16 |        16 |    0.0801 |      2.18x |    CODEC_FILTER |    HARD | -
+|       zstd |     36 |     1 |       3 |        16 |        16 |    0.0828 |      2.18x |    CODEC_FILTER |    HARD | -
+|       zstd |     36 |     1 |       3 |        16 |        16 |    0.0834 |      2.18x |    CODEC_FILTER |    HARD | -
+|       zstd |     36 |     1 |       3 |        16 |        16 |    0.0826 |      2.18x |    CODEC_FILTER |    HARD | -
+|       zstd |     36 |     1 |       3 |        16 |        16 |     0.129 |      2.18x |    CODEC_FILTER |    HARD | W
+|       zstd |     36 |     1 |       3 |        16 |        16 |     0.144 |      2.18x |    CODEC_FILTER |    HARD | W
 ```
 In this case, because the quality is more important than before, Btune predicts
-the `zstd` codec with the integer truncation filter (id 36), which losses less info than
+the `zstd` codec with the integer truncation filter (id 36), which achieves better quality than
 the `blosc2_grok` codec with x8 compression ratio.
 
 ## Using Btune from C

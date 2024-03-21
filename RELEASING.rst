@@ -26,7 +26,7 @@ installing the wheel, then test it::
   $ BTUNE_TRACE=1 python btune_config.py
   $ BTUNE_TRACE=1 BTUNE_TRADEOFF=0.9 BTUNE_USE_INFERENCE=3 python btune_config.py
   $ BTUNE_TRACE=1 BTUNE_MODELS_DIR="" python btune_config.py  # deactivate inference
-
+  $ BTUNE_TRACE=1 python lossy.py  lossy_example.tif  # 3d tradeoff
 
 Tagging
 -------
