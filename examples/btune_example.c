@@ -27,7 +27,14 @@ static int compress(const char* in_fname, const char* out_fname) {
     // btune
     btune_config btune_config = BTUNE_CONFIG_DEFAULTS;
     //btune_config.perf_mode = BTUNE_PERF_DECOMP;
-    btune_config.tradeoff = .5;
+    btune_config.tradeoff[0] = .5;
+    btune_config.tradeoff_nelems = 1;
+    /* For lossy mode it would be
+    btune_config.tradeoff[0] = .5;
+    btune_config.tradeoff[1] = .2;
+    btune_config.tradeoff[2] = .3;
+    btune_config.tradeoff_nelems = 3;
+    */
     btune_config.behaviour.nhards_before_stop = 10;
     btune_config.behaviour.repeat_mode = BTUNE_REPEAT_ALL;
     btune_config.use_inference = 2;

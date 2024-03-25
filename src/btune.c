@@ -14,6 +14,7 @@
 #include <assert.h>
 
 #include <blosc2/filters-registry.h>
+#include <blosc2/codecs-registry.h>
 #include "btune_info_public.h"
 #include "btune_model.h"
 #include "entropy_probe.h"
@@ -21,7 +22,6 @@
 
 
 // Disable different states
-#define BTUNE_ENABLE_SHUFFLESIZE  false
 #define BTUNE_ENABLE_MEMCPY       false
 #define BTUNE_ENABLE_THREADS      true
 
@@ -31,9 +31,6 @@ enum {
   BTUNE_KB = 1024,
   MIN_BLOCK = 16 * BTUNE_KB,  // TODO remove when included in blosc.h
   MAX_BLOCK = 2 * BTUNE_KB * BTUNE_KB,
-  MIN_BITSHUFFLE = 1,
-  MIN_SHUFFLE = 2,
-  MAX_SHUFFLE = 16,
   MIN_THREADS = 1,
   SOFT_STEP_SIZE = 1,
   HARD_STEP_SIZE = 2,
@@ -46,12 +43,10 @@ static const cparams_btune cparams_btune_default = {
   .splitmode = BLOSC_ALWAYS_SPLIT,
   .clevel = 9,
   .blocksize = 0,
-  .shufflesize = 0,
   .nthreads_comp = 0,
   .nthreads_decomp = 0,
   .increasing_clevel = false,
   .increasing_block = true,
-  .increasing_shuffle = true,
   .increasing_nthreads = true,
   .score = 100,
   .cratio = 1.0,
@@ -85,7 +80,11 @@ static void add_filter(btune_struct *btune_params, uint8_t filter) {
 static void btune_init_codecs(btune_struct *btune_params) {
   const char * all_codecs = blosc2_list_compressors();
   // Already checked that 0. <= tradeoff <= 1.
-  if (0.666666 <= btune_params->config.tradeoff) {
+  float tradeoff_1d = btune_params->config.tradeoff[0];
+  if (btune_params->config.tradeoff_nelems == 3) {
+    tradeoff_1d = btune_params->config.tradeoff[0] + btune_params->config.tradeoff[2] / 2;
+  }
+  if (0.666666 <= tradeoff_1d) {
     // In HCR mode only try with ZSTD and ZLIB
     if (strstr(all_codecs, "zstd") != NULL) {
       add_codec(btune_params, BLOSC_ZSTD);
@@ -98,7 +97,7 @@ static void btune_init_codecs(btune_struct *btune_params) {
   } else {
     // In all other modes, LZ4 is mandatory
     add_codec(btune_params, BLOSC_LZ4);
-    if (0.333333 <= btune_params->config.tradeoff) {
+    if (0.333333 <= tradeoff_1d) {
       // In BALANCED mode give BLOSCLZ a chance
       add_codec(btune_params, BLOSC_BLOSCLZ);
     }
@@ -135,7 +134,6 @@ static void extract_btune_cparams(blosc2_context *context, cparams_btune *cparam
   cparams->clevel = context->clevel;
   cparams->splitmode = context->splitmode;
   cparams->blocksize = context->blocksize;
-  cparams->shufflesize = context->typesize;
   cparams->nthreads_comp = context->nthreads;
   btune_struct *btune_params = (btune_struct *) context->tuner_params;
   if (btune_params->dctx == NULL) {
@@ -153,13 +151,6 @@ static bool has_ended_clevel(btune_struct *btune_params) {
   return (btune_params->best->increasing_clevel)
     ? (clevel_index + step_size) >= max_clevel
     : (clevel_index - step_size) < 0;
-}
-
-// Check if btune can still modify the shufflesize or has to change the direction
-static bool has_ended_shuffle(cparams_btune *best) {
-  int min_shuffle = (best->filter == BLOSC_SHUFFLE) ? MIN_SHUFFLE: MIN_BITSHUFFLE;
-  return ((best->increasing_shuffle && (best->shufflesize == MAX_SHUFFLE)) ||
-          (!best->increasing_shuffle && (best->shufflesize == min_shuffle)));
 }
 
 // Check if btune can still modify the nthreads or has to change the direction
@@ -194,9 +185,6 @@ static void init_hard(btune_struct *btune_params) {
     btune_params->threads_for_comp = false;
   } else {
     btune_params->threads_for_comp = true;
-  }
-  if (has_ended_shuffle(btune_params->best)) {
-    btune_params->best->increasing_shuffle = !btune_params->best->increasing_shuffle;
   }
 }
 
@@ -243,8 +231,6 @@ static const char* stcode_to_stname(btune_struct *btune_params) {
       } else {
         return "THREADS_DECOMP";
       }
-    case SHUFFLE_SIZE:
-      return "SHUFFLE_SIZE";
     case CLEVEL:
       return "CLEVEL";
     case MEMCPY:
@@ -333,8 +319,8 @@ int btune_init(void *tuner_params, blosc2_context * cctx, blosc2_context * dctx)
   }
   btune->inference_ended = false;
 
-  if (btune->config.perf_mode == BTUNE_PERF_AUTO) {
-    const char* perf_mode = getenv("BTUNE_PERF_MODE");
+  const char* perf_mode = getenv("BTUNE_PERF_MODE");
+  if (btune->config.perf_mode == BTUNE_PERF_AUTO || perf_mode != NULL) {
     if (perf_mode != NULL) {
       if (strcmp(perf_mode, "COMP") == 0) {
         btune->config.perf_mode = BTUNE_PERF_COMP;
@@ -357,12 +343,35 @@ int btune_init(void *tuner_params, blosc2_context * cctx, blosc2_context * dctx)
 
   char* envvar = getenv("BTUNE_TRADEOFF");
   if (envvar != NULL) {
-    btune->config.tradeoff = atof(envvar);
+    if (strlen(envvar) <= 3) {
+      btune->config.tradeoff_nelems = 1;
+      btune->config.tradeoff[0] = (float)strtod(envvar, &envvar);
+      btune->config.tradeoff[1] = btune->config.tradeoff[2] = 0.0;
+    } else {
+      // Invalid value or 3d case
+      btune->config.tradeoff_nelems = 3;
+      for (int i = 0; i < 3; ++i) {
+        envvar++;
+        btune->config.tradeoff[i] = (float)strtod(envvar, &envvar);
+      }
+      if (btune->config.tradeoff[2] == 1.0) {
+        BTUNE_TRACE("Invalid value for quality tradeoff (found 1.0). Use tradeoff only between"
+                    "cratio and speed instead. Aborting.");
+        return -1;
+      }
+    }
   }
-  if (btune->config.tradeoff < 0. || btune->config.tradeoff > 1.) {
-    BTUNE_TRACE("Unsupported %f compression tradeoff, it must be between 0. and 1., "
-                "default to %f", btune->config.tradeoff, BTUNE_CONFIG_DEFAULTS.tradeoff);
-    btune->config.tradeoff = BTUNE_CONFIG_DEFAULTS.tradeoff;
+  float sum = 0.0;
+  for (int i = 0; i < btune->config.tradeoff_nelems; ++i) {
+    if (btune->config.tradeoff[i] < 0. || btune->config.tradeoff[i] > 1.) {
+      BTUNE_TRACE("Unsupported tradeoff, it must be between 0. and 1., ");
+      return -1;
+    }
+    sum += btune->config.tradeoff[i];
+  }
+  if (btune->config.tradeoff_nelems == 3 && sum != 1.0) {
+    BTUNE_TRACE("In quality mode, tradeoff values must sum up 1.0");
+    return -1;
   }
 
   if (cctx->schunk != NULL) {
@@ -376,12 +385,19 @@ int btune_init(void *tuner_params, blosc2_context * cctx, blosc2_context * dctx)
     printf("-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=\n");
     char bandwidth_str[12];
     bandwidth_to_str(bandwidth_str, btune->config.bandwidth);
-    printf("Btune version: %s\n"
-           "Performance Mode: %s, Compression tradeoff: %f, Bandwidth: %s\n"
-           "Behaviour: Waits - %d, Softs - %d, Hards - %d, Repeat Mode - %s\n",
-           BTUNE_VERSION_STRING, perf_mode_to_str(btune->config.perf_mode),
-           btune->config.tradeoff,
-           bandwidth_str,
+    printf("Btune version: %s\n", BTUNE_VERSION_STRING);
+    if (btune->config.tradeoff_nelems == 1) {
+      printf("Performance Mode: %s, Compression tradeoff: %f, Bandwidth: %s\n",
+             perf_mode_to_str(btune->config.perf_mode),
+             btune->config.tradeoff[0],
+             bandwidth_str);
+    } else {
+      printf("Performance Mode: %s, Compression tradeoff: (%f, %f, %f), Bandwidth: %s\n",
+             perf_mode_to_str(btune->config.perf_mode),
+             btune->config.tradeoff[0], btune->config.tradeoff[1], btune->config.tradeoff[2],
+             bandwidth_str);
+    }
+    printf("Behaviour: Waits - %d, Softs - %d, Hards - %d, Repeat Mode - %s\n",
            btune->config.behaviour.nwaits_before_readapt,
            btune->config.behaviour.nsofts_before_hard,
            btune->config.behaviour.nhards_before_stop,
@@ -417,12 +433,14 @@ int btune_init(void *tuner_params, blosc2_context * cctx, blosc2_context * dctx)
   btune->aux_cparams = aux;
   best->compcode = btune->codecs[0];
   aux->compcode = btune->codecs[0];
-  if ((float)2/3 <= btune->config.tradeoff <= 1.) {
+  float tradeoff_1d = btune->config.tradeoff[0];
+  if (btune->config.tradeoff_nelems == 3) {
+    tradeoff_1d = btune->config.tradeoff[0] + btune->config.tradeoff[2] / 2;
+  }
+  if ((float)2/3 <= tradeoff_1d <= 1.) {
     best->clevel = 8;
     aux->clevel = 8;
   }
-  best->shufflesize = cctx->typesize;  // TODO typesize -> shufflesize
-  aux->shufflesize = cctx->typesize;  // TODO typesize -> shufflesize
   best->nthreads_comp = cctx->nthreads;
   aux->nthreads_comp = cctx->nthreads;
   if (dctx != NULL){
@@ -509,6 +527,8 @@ int btune_next_blocksize(blosc2_context *context) {
 // Set the cparams_btune inside blosc2_context
 static void set_btune_cparams(blosc2_context * context, cparams_btune * cparams){
   context->compcode = cparams->compcode;
+  context->compcode_meta = cparams->compcode_meta;
+
   for(int i=0; i < BLOSC2_MAX_FILTERS; i++) {
       context->filters[i] = 0;
   }
@@ -517,6 +537,10 @@ static void set_btune_cparams(blosc2_context * context, cparams_btune * cparams)
   if (cparams->filter == BLOSC_FILTER_BYTEDELTA) {
     context->filters[BLOSC2_MAX_FILTERS - 2] = BLOSC_SHUFFLE;
     context->filters_meta[BLOSC2_MAX_FILTERS - 1] = context->typesize;
+  } else if (cparams->filter == BLOSC_FILTER_INT_TRUNC) {
+    context->filters[BLOSC2_MAX_FILTERS - 2] = BLOSC_FILTER_INT_TRUNC;
+    context->filters[BLOSC2_MAX_FILTERS - 1] = BLOSC_BITSHUFFLE;
+    context->filters_meta[BLOSC2_MAX_FILTERS - 2] = cparams->filter_meta;
   }
 
   context->splitmode = cparams->splitmode;
@@ -526,7 +550,6 @@ static void set_btune_cparams(blosc2_context * context, cparams_btune * cparams)
   if (cparams->blocksize) {
     context->blocksize = cparams->blocksize;
   }
-  context->typesize = cparams->shufflesize;  // TODO typesize -> shufflesize
   context->new_nthreads = (int16_t) cparams->nthreads_comp;
   if (btune_params->dctx != NULL) {
     btune_params->dctx->new_nthreads = (int16_t) cparams->nthreads_decomp;
@@ -535,54 +558,155 @@ static void set_btune_cparams(blosc2_context * context, cparams_btune * cparams)
   }
 }
 
-// Tune some compression parameters based on the context
-int btune_next_cparams(blosc2_context *context) {
-  btune_struct *btune_params = (btune_struct*) context->tuner_params;
-  btune_config config = btune_params->config;
-  int compcode;
-  uint8_t filter;
-  int clevel;
-  int32_t splitmode;
-  int error = -1;
+// Meant for lossy mode, returns whether to use the neural network or not and in that case, fills the compression params
+bool pred_comp_category(btune_struct *btune_params, int *compcode, uint8_t *compmeta, uint8_t *filter,
+                        uint8_t *filter_meta, int *clevel, int32_t *splitmode) {
+  if (btune_params->config.tradeoff_nelems == 1) {
+    // Use neural network
+    return true;
+  }
 
-  if (btune_params->inference_count != 0) {
-    if (btune_params->inference_count > 0) {
-      btune_params->inference_count--;
+  bool use_model = false;
+  float cratio = btune_params->config.tradeoff[0];
+  float ssim = btune_params->config.tradeoff[2];
+  if (0.6f <= cratio) {
+    *compcode = BLOSC_CODEC_GROK;
+    if (ssim <= 0.3f) {
+      // codec= grok, rates = 8
+      *compmeta = 8 * 10;
+    } else {
+      // codec= grok, rates = 5
+      *compmeta = 5 * 10;
     }
-
-    error = btune_model_inference(context, &compcode, &filter, &clevel, &splitmode);
   } else {
-    if (!btune_params->inference_ended){
-      error = most_predicted(btune_params, &compcode, &filter, &clevel, &splitmode);
-      btune_params->inference_ended = true;
+    if (0.3f <= cratio && cratio <= 0.6f) {
+      if (0.3f <= ssim && ssim <= 0.6f) {
+        //grok, rates 4
+        *compcode = BLOSC_CODEC_GROK;
+        *compmeta = 4 * 10;
+      } else {
+        if (ssim < 0.3f) {
+          // grok, 8
+          *compcode = BLOSC_CODEC_GROK;
+          *compmeta = 8 * 10;
+        } else {
+          // neural network
+          return true;
+        }
+      }
+
+    } else {
+      if (0.7f <= ssim && ssim < 1.0f) {
+        // itrunc16-bitshuffle-8
+        *compcode = BLOSC_ZSTD;
+        *filter = BLOSC_FILTER_INT_TRUNC;  // + bitshuffle
+        *filter_meta = 8;
+        *splitmode = BLOSC_ALWAYS_SPLIT;
+        *clevel = 3;
+      }
+      else {
+        // neural network
+        return true;
+      }
     }
   }
 
-  if (error == 0) {
-    btune_params->codecs[0] = compcode;
-    btune_params->ncodecs = 1;
-    btune_params->filters[0] = filter;
-    btune_params->nfilters = 1;
-    if (config.perf_mode == BTUNE_PERF_DECOMP) {
-      btune_init_clevels(btune_params, clevel, clevel, clevel);
-    }
-    else {
-      int min = (clevel > 1) ? (clevel - 1) : clevel;
-      int max = (clevel < 9) ? (clevel + 1) : clevel;
-      btune_init_clevels(btune_params, min, max, clevel);
-    }
-    btune_params->splitmode = splitmode;
+  return use_model;
+}
+
+// Meant for lossy mode, returns whether to use the neural network or not and in that case, fills the compression params
+bool pred_decomp_category(btune_struct *btune_params, int *compcode, uint8_t *compmeta, uint8_t *filter,
+                          uint8_t *filter_meta, int *clevel, int32_t *splitmode) {
+  if (btune_params->config.tradeoff_nelems == 1) {
+    // Use neural network
+    return true;
   }
 
-  if (getenv("BTUNE_TRACE") && btune_params->steps_count == 0 && btune_params->state != STOP) {
-    // printf("|    Codec   | Filter | Split | C.Level | Blocksize | Shufflesize | C.Threads | D.Threads |"
-    printf("|    Codec   | Filter | Split | C.Level | C.Threads | D.Threads |"
-           "  S.Score  |  C.Ratio   |   Btune State   | Readapt | Winner\n");
+  bool use_model = false;
+  float cratio = btune_params->config.tradeoff[0];
+  float speed = btune_params->config.tradeoff[1];
+  float ssim = btune_params->config.tradeoff[2];
+  if (cratio <= 0.1f) {
+    return true;
+  }
+  if (cratio >= 0.6f) {
+    *compcode = BLOSC_CODEC_GROK;
+    if (ssim <= 0.2f) {
+      *compmeta = 8 * 10;
+    } else {
+      if (0.6f < cratio && cratio <= 0.7f) {
+        *compmeta = 7 * 10;
+      } else {
+        *compmeta = 5 * 10;
+      }
+    }
+    return use_model;
+  }
+  if (cratio <= 0.3f) {
+    if (speed == 0.f) {
+      *compcode = BLOSC_CODEC_GROK;
+      *compmeta = 3 * 10;
+    } else {
+      if (speed <= 0.1f) {
+        // lossy integers images
+        *compcode = BLOSC_ZSTD;
+        *filter = BLOSC_FILTER_INT_TRUNC; //itrunc bitshuf 7
+        *filter_meta = 7;
+        *splitmode = BLOSC_ALWAYS_SPLIT;
+        *clevel = 3;
+      } else {
+        use_model = true;
+      }
+    }
+    return use_model;
+  }
+  if (cratio + ssim >= 0.9f) {
+    *compcode = BLOSC_CODEC_GROK;
+    *compmeta = 4 * 10;
+  } else {
+    if (cratio + ssim >= 0.8f) {
+      *compcode = BLOSC_ZSTD;
+      *filter = BLOSC_FILTER_INT_TRUNC; //itrunc bitshuff 6
+      *filter_meta = 6;
+      *splitmode = BLOSC_ALWAYS_SPLIT;
+      *clevel = 3;
+    } else {
+      if (cratio <= 0.4f && ssim >= 0.1f) {
+        use_model = true;
+      } else {
+        *compcode = BLOSC_CODEC_GROK;
+        *compmeta = 8 * 10;
+      }
+    }
   }
 
-  *btune_params->aux_cparams = *btune_params->best;
-  cparams_btune *cparams = btune_params->aux_cparams;
+  return use_model;
+}
 
+int tweaking_next_cparams(cparams_btune *cparams, btune_struct *btune_params, bool use_model,
+                          int error, int compcode, uint8_t compmeta, uint8_t filter, uint8_t filter_meta, int clevel,
+                          int32_t splitmode) {
+  cparams->compcode_meta = compmeta;
+  cparams->filter_meta = filter_meta;
+  if (!use_model) {
+    if (btune_params->state == STOP){
+      return BLOSC2_ERROR_SUCCESS; // Tuning ended
+    }
+    cparams->clevel = clevel;
+    cparams->compcode = compcode;
+    cparams->filter = filter;
+    cparams->splitmode = splitmode;
+    if (btune_params->state == CODEC_FILTER) {
+      btune_params->aux_index++;
+      return 1; // Continue tuning parameters
+    }
+    if (cparams->compcode == BLOSC_CODEC_GROK && btune_params->state == CLEVEL) {
+      btune_params->aux_index++;
+      return 1; // Continue tuning parameters
+    }
+  }
+
+  btune_config config = btune_params->config;
   switch(btune_params->state){
     // Tune codec and filter
     case CODEC_FILTER: {
@@ -618,22 +742,6 @@ int btune_next_cparams(blosc2_context *context) {
       }
       break;
     }
-
-      // Tune shuffle size
-    case SHUFFLE_SIZE:
-      btune_params->aux_index++;
-      if (cparams->increasing_shuffle) {
-        // TODO These kind of condition checks should be removed (maybe asserts)
-        if (cparams->shufflesize < MAX_SHUFFLE) {
-          cparams->shufflesize <<= 1;
-        }
-      } else {
-        int min_shuffle = (cparams->filter == 1) ? MIN_SHUFFLE: MIN_BITSHUFFLE;
-        if (cparams->shufflesize > min_shuffle) {
-          cparams->shufflesize >>= 1;
-        }
-      }
-      break;
 
       // Tune the number of threads
     case THREADS:
@@ -689,6 +797,77 @@ int btune_next_cparams(blosc2_context *context) {
     case STOP:
       return BLOSC2_ERROR_SUCCESS;
   }
+
+  return 1; // Continue tuning parameters
+}
+
+// Tune some compression parameters based on the context
+int btune_next_cparams(blosc2_context *context) {
+  btune_struct *btune_params = (btune_struct*) context->tuner_params;
+  btune_config config = btune_params->config;
+  int compcode;
+  uint8_t compmeta = 0;
+  uint8_t filter = BLOSC_NOFILTER;
+  uint8_t filter_meta = 0;
+  int clevel = 5;
+  int32_t splitmode = BLOSC_NEVER_SPLIT;
+  int error = -1;
+
+  bool use_model;
+  if (config.perf_mode == BTUNE_PERF_DECOMP) {
+    use_model = pred_decomp_category(btune_params, &compcode, &compmeta, &filter, &filter_meta, &clevel, &splitmode);
+  } else {
+    use_model = pred_comp_category(btune_params, &compcode, &compmeta, &filter, &filter_meta, &clevel, &splitmode);
+  }
+
+  if (use_model) {
+    if (btune_params->inference_count != 0) {
+      if (btune_params->inference_count > 0) {
+        btune_params->inference_count--;
+      }
+
+      error = btune_model_inference(context, &compcode, &filter, &clevel, &splitmode);
+    } else {
+      if (!btune_params->inference_ended){
+        error = most_predicted(btune_params, &compcode, &filter, &clevel, &splitmode);
+        btune_params->inference_ended = true;
+      }
+    }
+  }
+
+  if (error == 0) {
+    btune_params->codecs[0] = compcode;
+    btune_params->ncodecs = 1;
+    btune_params->filters[0] = filter;
+    btune_params->nfilters = 1;
+    if (config.perf_mode == BTUNE_PERF_DECOMP) {
+      btune_init_clevels(btune_params, clevel, clevel, clevel);
+    }
+    else {
+      int min = (clevel > 1) ? (clevel - 1) : clevel;
+      int max = (clevel < 9) ? (clevel + 1) : clevel;
+      btune_init_clevels(btune_params, min, max, clevel);
+    }
+    btune_params->splitmode = splitmode;
+  }
+
+
+  if (getenv("BTUNE_TRACE") && btune_params->steps_count == 0 && btune_params->state != STOP) {
+    // printf("|    Codec   | Filter | Split | C.Level | Blocksize | C.Threads | D.Threads |"
+    printf("|    Codec   | Filter | Split | C.Level | C.Threads | D.Threads |"
+           "  S.Score  |  C.Ratio   |   Btune State   | Readapt | Winner\n");
+  }
+
+  *btune_params->aux_cparams = *btune_params->best;
+  cparams_btune *cparams = btune_params->aux_cparams;
+
+  int rc = tweaking_next_cparams(cparams, btune_params, use_model, error, compcode, compmeta, filter, filter_meta,
+                                 clevel, splitmode);
+  if (rc == 0) {
+    // Stop tuning
+    return rc;
+  }
+
   set_btune_cparams(context, cparams);
   if (context->blocksize > context->sourcesize) {
     // blocksize cannot be greater than sourcesize
@@ -725,35 +904,26 @@ static double mean(double const * array, int size) {
 
 // Determines if btune has improved depending on the tradeoff
 static bool has_improved(btune_struct *btune_params, double score_coef, double cratio_coef) {
-  float tradeoff = btune_params->config.tradeoff;
-  if (tradeoff <= 1/3) {
+  float tradeoff_1d = btune_params->config.tradeoff[0];
+  if (btune_params->config.tradeoff_nelems == 3) {
+    tradeoff_1d = btune_params->config.tradeoff[0] + btune_params->config.tradeoff[2] / 2;
+  }
+  if (tradeoff_1d <= 1/3) {
     return (((cratio_coef >= 1) && (score_coef > 1)) ||
             ((cratio_coef > 0.5) && (score_coef > 2)) ||
             ((cratio_coef > 0.67) && (score_coef > 1.3)) ||
             ((cratio_coef > 2) && (score_coef > 0.7)));
   }
-  if (tradeoff <= 2/3) {
+  if (tradeoff_1d <= 2/3) {
     return (((cratio_coef >= 1) && (score_coef > 1)) ||
             ((cratio_coef > 1.1) && (score_coef > 0.8)) ||
             ((cratio_coef > 1.3) && (score_coef > 0.5)));
   }
-  if (tradeoff <= 1.) {
+  if (tradeoff_1d <= 1.) {
     return ((cratio_coef >= 1) && (score_coef > 1));
   }
   fprintf(stderr, "WARNING: unknown tradeoff, it must be between 0. and 1.0\n");
   return false;
-}
-
-
-static bool cparams_equals(cparams_btune * cp1, cparams_btune * cp2) {
-  return ((cp1->compcode == cp2->compcode) &&
-          (cp1->filter == cp2->filter) &&
-          (cp1->splitmode == cp2->splitmode) &&
-          (cp1->clevel == cp2->clevel) &&
-          (cp1->blocksize == cp2->blocksize) &&
-          (cp1->shufflesize == cp2->shufflesize) &&
-          (cp1->nthreads_comp == cp2->nthreads_comp) &&
-          (cp1->nthreads_decomp == cp2->nthreads_decomp));
 }
 
 
@@ -773,9 +943,9 @@ static void process_waiting_state(blosc2_context *ctx) {
 //  if (btune_params->readapt_from != WAIT && !btune_params->is_repeating) {
 //    char* compname;
 //    blosc_compcode_to_compname(cparams->compcode, &compname);
-//    printf("| %10s | %d | %d | %d | %d | %d | %d | %.3g | %.3gx | %s\n",
+//    printf("| %10s | %d | %d | %d | %d | %d | %.3g | %.3gx | %s\n",
 //           compname, cparams->filter, cparams->clevel,
-//           (int) cparams->blocksize / BTUNE_KB, (int) cparams->shufflesize,
+//           (int) cparams->blocksize / BTUNE_KB,
 //           cparams->nthreads_comp, cparams->nthreads_decomp,
 //           cparams->score, cparams->cratio, "WINNER");
 //  }
@@ -889,15 +1059,7 @@ static void update_aux(blosc2_context * ctx, bool improved) {
       if (btune_params->aux_index >= aux_index_max) {
         btune_params->aux_index = 0;
 
-        int32_t shufflesize = best->shufflesize;
-        // Is shufflesize valid or not
-        if (BTUNE_ENABLE_SHUFFLESIZE) {
-          bool is_power_2 = (shufflesize & (shufflesize - 1)) == 0;
-          btune_params->state = (best->filter && is_power_2) ? SHUFFLE_SIZE : THREADS;
-        }
-        else {
-          btune_params->state = BTUNE_ENABLE_THREADS ? THREADS : CLEVEL;
-        }
+        btune_params->state = BTUNE_ENABLE_THREADS ? THREADS : CLEVEL;
 
         // max_threads must be greater than 1
         if ((btune_params->state == THREADS) && (btune_params->max_threads == 1)) {
@@ -907,40 +1069,12 @@ static void update_aux(blosc2_context * ctx, bool improved) {
           }
         }
         // Control direction parameters
-        if (BTUNE_ENABLE_SHUFFLESIZE && btune_params->state == SHUFFLE_SIZE) {
-          if (has_ended_shuffle(best)) {
-            best->increasing_shuffle = !best->increasing_shuffle;
-          }
-        } else if (btune_params->state == THREADS) {
-          if (has_ended_shuffle(best)) {
-            best->increasing_nthreads = !best->increasing_nthreads;
-          }
+        if (btune_params->state == THREADS) {
+          best->increasing_nthreads = !best->increasing_nthreads;
         }
       }
       break;
     }
-
-    case SHUFFLE_SIZE:
-      if (!improved && first_time) {
-        best->increasing_shuffle = !best->increasing_shuffle;
-      }
-      // Can not change parameter or is not improving
-      if (has_ended_shuffle(best) || (!improved && !first_time)) {
-        btune_params->aux_index = 0;
-        btune_params->state = BTUNE_ENABLE_THREADS ? THREADS : CLEVEL;
-        // max_threads must be greater than 1
-        if ((btune_params->state == THREADS) && (btune_params->max_threads == 1)) {
-          btune_params->state = CLEVEL;
-          if (has_ended_clevel(btune_params)) {
-            best->increasing_clevel = !best->increasing_clevel;
-          }
-        } else {
-          if (has_ended_threads(btune_params)) {
-            best->increasing_nthreads = !best->increasing_nthreads;
-          }
-        }
-      }
-      break;
 
     case THREADS:
       first_time = (btune_params->aux_index % MAX_STATE_THREADS) == 1;
@@ -1081,12 +1215,12 @@ int btune_update(blosc2_context * context, double ctime) {
         int split = (cparams->splitmode == BLOSC_ALWAYS_SPLIT) ? 1 : 0;
         const char *compname;
         blosc2_compcode_to_compname(cparams->compcode, &compname);
-        // Disable printing the Blocksize and Shufflesize because they are not currently used
+        // Disable printing the Blocksize because it is not currently used
         //printf("| %10s | %6d | %5d | %7d | %9d | %11d | %9d | %9d | %9.3g | %9.3gx | %15s | %7s | %c\n",
         // We also use the inverse of the score to make it easier to read
         printf("| %10s | %6d | %5d | %7d | %9d | %9d | %9.3g | %9.3gx | %15s | %7s | %c\n",
                compname, cparams->filter, split, cparams->clevel,
-               //(int) cparams->blocksize / BTUNE_KB, (int) cparams->shufflesize,
+               //(int) cparams->blocksize / BTUNE_KB,
                cparams->nthreads_comp, cparams->nthreads_decomp,
                (double) context->sourcesize / (score * (int)(1<<30)), cratio,
                stcode_to_stname(btune_params),
@@ -1094,7 +1228,6 @@ int btune_update(blosc2_context * context, double ctime) {
       }
     }
 
-    // if (improved || cparams_equals(btune_params->best, cparams)) {
     // We don't want to get rid of the previous best->score
     if (improved) {
       *btune_params->best = *cparams;
@@ -1110,7 +1243,8 @@ int btune_update(blosc2_context * context, double ctime) {
 int set_params_defaults(
   uint32_t bandwidth,
   uint32_t perf_mode,
-  float tradeoff,
+  float *tradeoff,
+  int tradeoff_nelems,
   bool cparams_hint,
   int use_inference,
   const char* models_dir,
@@ -1121,7 +1255,17 @@ int set_params_defaults(
 ) {
   BTUNE_CONFIG_DEFAULTS.bandwidth = bandwidth;
   BTUNE_CONFIG_DEFAULTS.perf_mode = perf_mode;
-  BTUNE_CONFIG_DEFAULTS.tradeoff = tradeoff;
+  BTUNE_CONFIG_DEFAULTS.tradeoff_nelems = tradeoff_nelems;
+  if (tradeoff_nelems == 1) {
+    BTUNE_CONFIG_DEFAULTS.tradeoff[0] = tradeoff[0];
+    BTUNE_CONFIG_DEFAULTS.tradeoff[1] = BTUNE_CONFIG_DEFAULTS.tradeoff[2] = 0.0;
+
+  } else {
+    for (int i = 0; i < tradeoff_nelems; ++i) {
+      BTUNE_CONFIG_DEFAULTS.tradeoff[i] = tradeoff[i];
+    }
+  }
+
   BTUNE_CONFIG_DEFAULTS.cparams_hint = cparams_hint;
   BTUNE_CONFIG_DEFAULTS.use_inference = use_inference;
   strcpy(BTUNE_CONFIG_DEFAULTS.models_dir, models_dir);

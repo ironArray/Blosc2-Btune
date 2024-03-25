@@ -188,8 +188,9 @@ static int get_best_codec_for_chunk(
 
   float cratio = 0;
   float rel_speed = 0;
-  bool special_val = instr_data->flags[0];
+  bool special_val = false;
   for (int i = 0; i < nblocks; i++) {
+    special_val = instr_data->flags[0];
     if (!special_val) {
       cratio += instr_data->cratio;
       float ctime = 1.f / instr_data->cspeed;
@@ -197,7 +198,6 @@ static int get_best_codec_for_chunk(
       rel_speed += 1.f / (ctime + ftime) / zeros_speed;
     }
     instr_data++;
-    special_val = instr_data->flags[0];
   }
   cratio /= nblocks;
   rel_speed /= nblocks;
@@ -205,7 +205,9 @@ static int get_best_codec_for_chunk(
   float cratio_norm = normalize(cratio, cratio_mean, cratio_std);
   float cspeed_norm = normalize(rel_speed, cspeed_mean, cspeed_std);
   // Run inference
-  int best = get_best_codec(interpreter, cratio_norm, cspeed_norm, btune->config.tradeoff, metadata->ncategories);
+  int best = get_best_codec(interpreter, cratio_norm, cspeed_norm,
+                            btune->config.tradeoff[0] + btune->config.tradeoff[2] / 2,
+                            metadata->ncategories);
   free(ddata);
   // >>> INFERENCE END
   if (trace) {
@@ -381,9 +383,9 @@ void btune_model_init(blosc2_context * ctx) {
     } else {
       dirname = config->models_dir;
     }
+  } else {
+    strcpy(config->models_dir, dirname);
   }
-  strcpy(config->models_dir, dirname);
-
   // The models_index will be overwritten in case the models are being reused
   btune_params->models_index = -1;
   if (BTUNE_REUSE_MODELS) {

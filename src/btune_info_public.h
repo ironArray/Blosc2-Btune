@@ -24,7 +24,8 @@
 BLOSC2_BTUNE_EXPORT int set_params_defaults(
     uint32_t bandwidth,
     uint32_t perf_mode,
-    float tradeoff,
+    float *tradeoff,
+    int tradeoff_nelems,
     bool cparams_hint,
     int use_inference,
     const char* models_dir,

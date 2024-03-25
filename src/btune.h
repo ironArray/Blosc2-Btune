@@ -112,7 +112,7 @@ typedef enum {
  * before initiating a readapt.
  * Note: a readapt is the process by which btune adjusts the compression parameters.
  * It can be of two types: \b soft, which only changes the compression level and
- * blocksize or \b hard, which also changes the codec, filters, shuffle size and number of threads.
+ * blocksize or \b hard, which also changes the codec, filters and number of threads.
 */
 typedef struct {
   uint32_t nwaits_before_readapt;
@@ -146,8 +146,10 @@ typedef struct {
   */
   btune_performance_mode perf_mode;
   //!< The Btune performance mode.
-  float tradeoff;
+  float tradeoff[3];
   //!< The Btune compression mode (between 0 (speed) and 1 (cratio)).
+  int tradeoff_nelems;
+  // Number of values for tradeoff (3 or 1). This is automatically when using BTUNE_TRADEOFF or setting it through python.
   btune_behaviour behaviour;
   //!< The Btune behaviour config.
   bool cparams_hint;
@@ -179,7 +181,8 @@ typedef struct {
 static btune_config BTUNE_CONFIG_DEFAULTS = {
     2 * BTUNE_GBPS10,
     BTUNE_PERF_AUTO,
-    BTUNE_COMP_BALANCED,
+    {BTUNE_COMP_BALANCED, 0, 0},
+    1,
     {0, 5, 10, BTUNE_STOP},
     false,
     -1,
@@ -190,7 +193,6 @@ static btune_config BTUNE_CONFIG_DEFAULTS = {
 // Internal Btune state enumeration.
 typedef enum {
     CODEC_FILTER,
-    SHUFFLE_SIZE,
     THREADS,
     CLEVEL,
     MEMCPY,

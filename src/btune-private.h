@@ -25,16 +25,18 @@
 typedef struct {
     int compcode;
     // The compressor code
+    uint8_t compcode_meta;
+    // The compressor meta
     uint8_t filter;
     // The precompression filter
+    uint8_t filter_meta;
+    // The filter meta
     int32_t splitmode;
     // Whether the blocks should be split or not
     int clevel;
     // The compression level
     int32_t blocksize;
     // The block size
-    int32_t shufflesize;
-    // The shuffle size
     int nthreads_comp;
     // The number of threads used for compressing
     int nthreads_decomp;
@@ -43,8 +45,6 @@ typedef struct {
     // Control parameter for clevel
     bool increasing_block;
     // Control parameter for blocksize
-    bool increasing_shuffle;
-    // Control parameter for shufflesize
     bool increasing_nthreads;
     // Control parameter for nthreads
     double score;
