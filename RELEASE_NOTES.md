@@ -1,6 +1,21 @@
 Release notes for Btune
 =======================
 
+Changes from 1.1.2 to 1.2.0
+===========================
+
+* New quality mode. This mode can be activated by using a tradeoff of 3 values:
+  (compression ratio, speed, quality) instead of just one value for lossless
+  compression (tradeoff). This mode is only supported for integer datasets
+  (mainly RGB and gray-scale images).  For more info on how this works, take a look at
+  https://github.com/Blosc/Blosc2-Btune?tab=readme-ov-file#btune-quality-mode.
+
+* Removed shuffle size from the tweaking parameters since it is no longer
+  supported in C-Blosc2.
+
+* Removed block size from the tracing list since it is not changed by btune.
+
+
 Changes from 1.1.1 to 1.1.2
 ===========================
 

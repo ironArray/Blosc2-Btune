@@ -1,12 +1,14 @@
-# Announcing Btune 1.1.2
+# Announcing Btune 1.2.0
 
 ## What is new?
 
-This is a maintenance release where slight variations in the way to
-decide the winner in the genetic algorithm have been introduced.
-This is to avoid that the same winner is always selected
-when there is no improvement in the cratio (it can be speed too).
-Also, express S.Speed in GB/s.  This is more intuitive than previous figure.
+New support for tuning compression parameters taking into account not only
+a tradeoff of compression ratio and speed, but also the quality.
+This mode is only supported for integer datasets (mainly RGB and gray-scale
+images).
+
+To get an idea of how this works, see:
+https://github.com/Blosc/Blosc2-Btune?tab=readme-ov-file#btune-quality-mode.
 
 For more info, please see the release notes in:
 
