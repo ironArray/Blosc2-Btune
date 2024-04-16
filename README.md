@@ -343,4 +343,4 @@ Reloading time: 0.547s (1.463 GB/s)
 
 ## Platform support
 
-Right now, we support Btune on Intel/ARM64 Linux and Intel/ARM64 Mac and Intel on Windows, and we are providing binary wheels for these.
+We support Btune on Intel/ARM64 Linux and Mac, and Intel on Windows, and we are providing binary wheels for all of these.
