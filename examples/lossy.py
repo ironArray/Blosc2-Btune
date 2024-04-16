@@ -1,9 +1,12 @@
 ##############################################################################
-# blosc2_grok: Grok (JPEG2000 codec) plugin for Blosc2
+# Btune for Blosc2 - Automatically choose the best codec/filter for your data
 #
-# Copyright (c) 2023  The Blosc Development Team <blosc@blosc.org>
-# https://blosc.org
-# License: GNU Affero General Public License v3.0 (see LICENSE.txt)
+# Copyright (c) 2023-present  Blosc Development Team <blosc@blosc.org>
+# https://btune.blosc.org
+# Copyright (c) 2023-present  ironArray SLU <contact@ironarray.io>
+# https://ironarray.io
+# License: GNU Affero General Public License v3.0
+# See LICENSE.txt for details about copyright and rights to use.
 ##############################################################################
 
 import blosc2
@@ -42,7 +45,8 @@ if __name__ == '__main__':
     # Create a ndarray made out of the same image `nchunks` times
     chunks = blocks = [1] + list(np_array.shape)
     bl_array = blosc2.uninit(
-        shape = [nchunks] + list(np_array.shape),
+        shape=[nchunks] + list(np_array.shape),
+        dtype=np_array.dtype,
         chunks=chunks,
         blocks=blocks,
         mode="w",

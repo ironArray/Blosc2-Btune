@@ -8,7 +8,9 @@
  For Blosc - A blocking, shuffling and lossless compression library
 
  Copyright (c) 2023-present, The Blosc Development Team <blosc@blosc.org>
- All rights reserved.
+  All rights reserved.
+ Copyright (c) 2023-present, ironArray SLU <contact@ironarray.io>
+  All rights reserved.
 
                             Preamble
 
