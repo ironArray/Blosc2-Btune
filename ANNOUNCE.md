@@ -12,7 +12,7 @@ https://github.com/ironArray/Blosc2-Btune?tab=readme-ov-file#btune-quality-mode
 
 For more info, please see the release notes in:
 
-https://github.com/ironArray/blosc2_btune/blob/main/RELEASE_NOTES.md
+https://github.com/ironArray/Blosc2-Btune/blob/main/RELEASE_NOTES.md
 
 
 ## What is it?
@@ -24,7 +24,7 @@ Btune is a dynamic plugin for Blosc2 that assists in finding the optimal combina
 
 The github repository is here:
 
-https://github.com/ironArray/blosc2_btune
+https://github.com/ironArray/Blosc2-Btune
 
 Btune is distributed using the GNU Affero General Public License,
 see LICENSE.txt for details.

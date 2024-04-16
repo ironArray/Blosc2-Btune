@@ -6,13 +6,9 @@ By default, this software uses a genetic algorithm to test different combination
 
 The process of finding optimal compression parameters in Blosc2 can be slow because of the large number of combinations of compression parameters (codec, compression level, filter, split mode, number of threads, etc.). This can require a significant amount of trial and error to find the best combinations. However, you can significantly accelerate this process by training a neural network on your own datasets.
 
-To begin the training process, provide your datasets to the Blosc Development Team. We will then perform the training and provide neural network models tailored to your needs, along with general tuning advice for Blosc2. In exchange, we request financial contributions to the project.
+To begin the training process, you should buy a license from [ironArray SLU](https://ironarray.io) and provide us with a representative sample of your datasets. We will then perform the training and provide neural network models tailored to your needs, along with general tuning advice for Blosc2.
 
-Furthermore, we added another mode for supporting lossy compression for datasets made out of
-images which datatypes are integers. This works as a combination of neural networks
-and heuristic results.
-
-If interested, please contact us at contact@blosc.org.
+If interested, please mail us at contact@ironarray.io
 
 ## Install the Btune wheel
 
@@ -89,7 +85,7 @@ You can see in the column `Winner` if the combination is a winner (`W`), it does
 
 ## Btune Models
 
-The Blosc Development Team offers **Btune Models**, a service in which we provide neural network models trained specifically for your data to determine the optimal combination of codecs and filters. To use these models, set `BTUNE_MODELS_DIR` to the directory containing the models files after the Blosc Development Team has completed training. Btune will then automatically use the trained model; keep reading for how this works.
+ironArray SLU offers **Btune Models**, a service in which we provide neural network models trained specifically for your data to determine the optimal combination of codecs and filters. To use these models, set `BTUNE_MODELS_DIR` to the directory containing the models files after the ironArray team has completed the training. Btune will then automatically use the trained model; keep reading for how this works.
 
 To determine the number of chunks for performing inference, use `BTUNE_USE_INFERENCE`. If set to -1, it performs inference on all chunks. If set to a number greater than 0, it performs inference on this number of chunks and then tweaks parameters for the rest of the chunks. If set to 0, it does not perform inference at all. The default is -1.
 
