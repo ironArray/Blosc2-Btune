@@ -2,11 +2,11 @@
 
 Btune is a dynamic plugin for Blosc2 that assists in finding the optimal combination of compression parameters. It works by training a neural network on your most representative datasets.
 
-By default, this software uses a genetic algorithm to test different combinations of compression parameters that meet your requirements for both compression ratio and speed for every chunk in the dataset. It assigns a score to each combination and, after a number of iterations, the software stops and uses the best score (minimal value) found for the rest of the dataset. For more info and a graphical visualization, visit https://btune.blosc.org.
+By default, this software uses a genetic algorithm to test different combinations of compression parameters that meet your requirements for both compression ratio and speed for every chunk in the dataset. It assigns a score to each combination and, after a number of iterations, the software stops and uses the best score (minimal value) found for the rest of the dataset. For more info and a graphical visualization, visit https://ironarray.io/btune .
 
 The process of finding optimal compression parameters in Blosc2 can be slow because of the large number of combinations of compression parameters (codec, compression level, filter, split mode, number of threads, etc.). This can require a significant amount of trial and error to find the best combinations. However, you can significantly accelerate this process by training a neural network on your own datasets.
 
-To begin the training process, you should buy a license from [ironArray SLU](https://ironarray.io) and provide us with a representative sample of your datasets. We will then perform the training and provide neural network models tailored to your needs, along with general tuning advice for Blosc2.
+To begin the training process, you should buy a license from [ironArray SLU](https://ironarray.io/btune) and provide us with a representative sample of your datasets. We will then perform the training and provide neural network models tailored to your needs, along with general tuning advice for Blosc2.
 
 If interested, please mail us at contact@ironarray.io
 
@@ -124,7 +124,7 @@ TRACE: Inference category=39 codec=1 filter=35 clevel=5 splitmode=1 time entropy
 NDArray succesfully created!
 ```
 
-Using Btune Models usually leads to significantly better performance scores, as demonstrated by the table above. Moreover, the process of finding the best combination is much faster with trained models.  See https://btune.blosc.org for more info.
+Using Btune Models usually leads to significantly better performance scores, as demonstrated by the table above. Moreover, the process of finding the best combination is much faster with trained models.
 
 ### Configuring Btune programmatically from Python
 
