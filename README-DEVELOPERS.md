@@ -1,4 +1,4 @@
-# Blosc2 Btune
+# Btune for Blosc2
 
 For using Btune you will first have to create and install its wheel.
 

@@ -8,11 +8,11 @@ This mode is only supported for integer datasets (mainly RGB and gray-scale
 images).
 
 To get an idea of how this works, see:
-https://github.com/Blosc/Blosc2-Btune?tab=readme-ov-file#btune-quality-mode.
+https://github.com/ironArray/Blosc2-Btune?tab=readme-ov-file#btune-quality-mode
 
 For more info, please see the release notes in:
 
-https://github.com/Blosc/blosc2_btune/blob/main/RELEASE_NOTES.md
+https://github.com/ironArray/blosc2_btune/blob/main/RELEASE_NOTES.md
 
 
 ## What is it?
@@ -22,24 +22,24 @@ Btune is a dynamic plugin for Blosc2 that assists in finding the optimal combina
 
 ## Download sources
 
-The github repository is over here:
+The github repository is here:
 
-https://github.com/Blosc/blosc2_btune
+https://github.com/ironArray/blosc2_btune
 
-Blosc is distributed using the GNU Affero General Public License,
+Btune is distributed using the GNU Affero General Public License,
 see LICENSE.txt for details.
 
-## Mailing list
 
-There is an official Blosc mailing list at:
+## Follow us
 
-blosc@googlegroups.com
-https://groups.google.com/g/blosc
-
-## Tweeter feed
-
-Please follow @Blosc2 to get informed about the latest developments.
+You can follow us on Mastodon: https://mastodon.social/@ironArray
+or on Twitter: https://twitter.com/ironArray
 
 
-Enjoy Data!
-- The Blosc Development Team
+## Contact
+
+Please contact ironArray at: https://ironarray.io
+
+
+We make compression better
+- The ironArray Team
