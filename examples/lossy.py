@@ -45,7 +45,8 @@ if __name__ == '__main__':
     # Create a ndarray made out of the same image `nchunks` times
     chunks = blocks = [1] + list(np_array.shape)
     bl_array = blosc2.uninit(
-        shape = [nchunks] + list(np_array.shape),
+        shape=[nchunks] + list(np_array.shape),
+        dtype=np_array.dtype,
         chunks=chunks,
         blocks=blocks,
         mode="w",
