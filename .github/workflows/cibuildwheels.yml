@@ -43,8 +43,8 @@ jobs:
         arch: [x86_64, aarch64]
         #cibw_build: ["cp3{10,11,12}-*"]
         #p_ver: ["3.10-3.12"]
-        cibw_build: ["cp311-*"]
-        p_ver: ["3.11"]
+        cibw_build: ["cp312-*"]
+        p_ver: ["3.12"]
         exclude:
           - os: windows-latest
             arch: aarch64
@@ -61,7 +61,7 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v4
         with:
-          python-version: '3.11'
+          python-version: '3.12'
 
       - name: Set up QEMU
         if: ${{ matrix.arch == 'aarch64' }}
