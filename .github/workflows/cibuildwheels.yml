@@ -39,17 +39,17 @@ jobs:
       CIBW_ARCHS_MACOS: "arm64"
     strategy:
       matrix:
-        os: [ubuntu-latest, windows-latest, macos-13]
+        os: [ubuntu-latest, windows-latest, macos-latest]
         arch: [x86_64, aarch64]
-        #cibw_build: ["cp3{10,11,12,13}-*"]
-        #p_ver: ["3.10-3.13"]
-        cibw_build: ["cp312-*"]
-        p_ver: ["3.12"]
+        #cibw_build: ["cp3{10,11,12}-*"]
+        #p_ver: ["3.10-3.12"]
+        cibw_build: ["cp310-*"]
+        p_ver: ["3.10"]
         exclude:
           - os: windows-latest
             arch: aarch64
           # cibuild is already in charge to build aarch64 (see CIBW_ARCHS_MACOS)
-          - os: macos-13
+          - os: macos-latest
             arch: aarch64
 
     steps:
@@ -61,7 +61,7 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v4
         with:
-          python-version: '3.12'
+          python-version: '3.10'
 
       - name: Set up QEMU
         if: ${{ matrix.arch == 'aarch64' }}
