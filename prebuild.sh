@@ -10,7 +10,9 @@
 TENSORFLOW_VERSION="v2.19.0"
 if [ ! -d "tensorflow_src" ]
 then
-  git clone --depth=1 -b $TENSORFLOW_VERSION https://github.com/tensorflow/tensorflow.git tensorflow_src
+  #git clone --depth=1 -b $TENSORFLOW_VERSION https://github.com/tensorflow/tensorflow.git tensorflow_src
+  # main branch:
+  git clone --depth=1 https://github.com/tensorflow/tensorflow.git tensorflow_src
 else
   echo "TensorFlow ($TENSORFLOW_VERSION) already cloned"
 fi
