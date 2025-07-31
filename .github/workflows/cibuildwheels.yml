@@ -19,6 +19,16 @@ env:
     BTUNE_TRADEOFF="(0.3, 0.1, 0.6)" BTUNE_PERF_MODE=DECOMP BTUNE_TRACE=1 python {project}/examples/lossy.py {project}/examples/lossy_example.tif'
   CIBW_BUILD_VERBOSITY: 1
   CIBW_ENVIRONMENT: "CMAKE_ARGS='-DCMAKE_POLICY_VERSION_MINIMUM=3.5'"
+  CIBW_ENVIRONMENT_MACOS: >
+    # The next are necessary to avoid the generation of SME instruction set
+    CMAKE_ARGS='-DCMAKE_POLICY_VERSION_MINIMUM=3.5
+    -DTFLITE_ENABLE_XNNPACK=OFF
+    -DTFLITE_ENABLE_GPU=OFF
+    -DXNNPACK_ENABLE_ARM_BF16=OFF
+    -DXNNPACK_ENABLE_ARM_FP16_VECTOR=OFF
+    -DXNNPACK_ENABLE_ARM_FP16_SCALAR=OFF'
+    MACOSX_DEPLOYMENT_TARGET=12.0
+    CMAKE_OSX_DEPLOYMENT_TARGET=12.0
 
 jobs:
 
@@ -102,7 +112,7 @@ jobs:
       - name: Upload wheels
         uses: actions/upload-artifact@v4
         with:
-          name: wheels-${{ matrix.os }}-${{ matrix.arch }}
+          name: wheels-${{ matrix.os }}-${{ runner.os == 'macOS' && 'arm64' || matrix.arch }}
           path: ./wheelhouse/*.whl
 
 
