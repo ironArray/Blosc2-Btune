@@ -49,7 +49,7 @@ jobs:
           - os: windows-latest
             arch: aarch64
           # cibuild is already in charge to build aarch64 (see CIBW_ARCHS_MACOS)
-          - os: macos-latest
+          - os: macos-13
             arch: aarch64
 
     steps:
