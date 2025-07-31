@@ -19,8 +19,8 @@ env:
     BTUNE_TRADEOFF="(0.3, 0.1, 0.6)" BTUNE_PERF_MODE=DECOMP BTUNE_TRACE=1 python {project}/examples/lossy.py {project}/examples/lossy_example.tif'
   CIBW_BUILD_VERBOSITY: 1
   CIBW_ENVIRONMENT: "CMAKE_ARGS='-DCMAKE_POLICY_VERSION_MINIMUM=3.5'"
+  # The next are necessary to avoid the generation of SME instruction set
   CIBW_ENVIRONMENT_MACOS: >
-    # The next are necessary to avoid the generation of SME instruction set
     CMAKE_ARGS='-DCMAKE_POLICY_VERSION_MINIMUM=3.5
     -DTFLITE_ENABLE_XNNPACK=OFF
     -DTFLITE_ENABLE_GPU=OFF
@@ -98,6 +98,9 @@ jobs:
           python -m cibuildwheel --output-dir wheelhouse
         env:
           CIBW_BEFORE_BUILD: bash prebuild.sh
+          CIBW_ENVIRONMENT: >
+            CMAKE_ARGS='-DCMAKE_POLICY_VERSION_MINIMUM=3.5
+            ${{ matrix.arch == 'aarch64' && '-DTFLITE_ENABLE_XNNPACK=OFF -DTFLITE_ENABLE_GPU=OFF' || '' }}'
 
       - name: Build wheels (Mac OSX arm64)
         if: runner.os != 'Windows' && runner.os != 'Linux'
