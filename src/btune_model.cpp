@@ -497,7 +497,7 @@ int most_predicted(btune_struct *btune_params, int *compcode,
   // Get most predicted category
   metadata_t *meta = (metadata_t *) btune_params->metadata;
   if (meta == NULL) {
-    printf("WARNING: Empty metadata, no inference performed\n");
+    BTUNE_TRACE("WARNING: Empty metadata, no inference performed\n");
     return -1;
   }
   int best_idx = 0;
