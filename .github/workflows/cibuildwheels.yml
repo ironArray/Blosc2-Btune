@@ -86,6 +86,8 @@ jobs:
           python -m pip install --upgrade pip
           python -m pip install cibuildwheel
           python -m cibuildwheel --output-dir wheelhouse
+        env:
+          CIBW_BEFORE_BUILD: bash prebuild.sh
 
       - name: Build wheels (Mac OSX arm64)
         if: runner.os != 'Windows' && runner.os != 'Linux'
