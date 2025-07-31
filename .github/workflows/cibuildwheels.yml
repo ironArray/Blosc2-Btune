@@ -39,18 +39,23 @@ jobs:
       CIBW_ARCHS_MACOS: "arm64"
     strategy:
       matrix:
-        os: [ubuntu-latest, windows-latest, macos-latest]
-        arch: [x86_64, aarch64]
-        #cibw_build: ["cp3{10,11,12}-*"]
-        #p_ver: ["3.10-3.12"]
-        cibw_build: ["cp312-*"]
-        p_ver: ["3.12"]
-        exclude:
+        include:
+          - os: ubuntu-latest
+            arch: x86_64
+            cibw_build: "cp312-*"
+            p_ver: "3.12"
+          - os: ubuntu-latest
+            arch: aarch64
+            cibw_build: "cp312-*"
+            p_ver: "3.12"
           - os: windows-latest
-            arch: aarch64
-          # cibuild is already in charge to build aarch64 (see CIBW_ARCHS_MACOS)
+            arch: x86_64
+            cibw_build: "cp312-*"
+            p_ver: "3.12"
           - os: macos-latest
-            arch: aarch64
+            arch: arm64
+            cibw_build: "cp312-*"
+            p_ver: "3.12"
 
     steps:
       - name: Checkout repo
