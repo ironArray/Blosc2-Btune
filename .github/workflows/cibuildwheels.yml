@@ -80,16 +80,6 @@ jobs:
             cmd /V /C "set BTUNE_TRACE=1; set BTUNE_TRADEOFF="(0.3, 0.1, 0.6)"; set BTUNE_PERF_MODE=DECOMP; 
             python {project}/examples/lossy.py {project}/examples/lossy_example.tif"
 
-      - name: Build wheels (Linux / Mac OSX)
-        if: runner.os != 'Windows'
-        run: |
-          python -m pip install --upgrade pip
-          python -m pip install cibuildwheel
-          python -m cibuildwheel --output-dir wheelhouse
-        env:
-          CIBW_BEFORE_BUILD: CMAKE_OSX_ARCHITECTURES=x86_64 bash prebuild.sh
-          CIBW_ARCHS_MACOS: "x86_64"
-
       - name: Build wheels (Mac OSX arm64)
         if: runner.os != 'Windows' && runner.os != 'Linux'
         run: |
