@@ -341,4 +341,4 @@ Reloading time: 0.547s (1.463 GB/s)
 
 ## Platform support
 
-We support Btune on Intel/ARM64 Linux and Mac, and Intel on Windows, and we are providing binary wheels for all of these.
+We support Btune on Intel/ARM64 Linux and Intel Windows platforms, and provide binary wheels for these systems. MacOS support was available up to version 1.2.0, but has been deprecated due to [CMake's lack of support for TensorFlow on MacOS](https://github.com/tensorflow/tensorflow/issues/98002). If you need Btune on MacOS, you can still build it from source, but pre-built binary wheels are not provided.
