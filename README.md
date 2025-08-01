@@ -1,6 +1,6 @@
 # Btune for Blosc2
 
-<img src="img/btune-preview-running.png">
+<img src="img/blosc2-btune-diagram-2.png">
 
 Btune is a dynamic plugin for Blosc2 that assists in finding the optimal combination of compression parameters. It works by training a neural network on your most representative datasets.
 

@@ -14,10 +14,19 @@ on:
 env:
   CIBW_SKIP: '*-win32 *-manylinux*_i686 *-musllinux_*'
   CIBW_TEST_REQUIRES: blosc2 pillow
-  CIBW_TEST_SKIP: "*macosx*arm64*"
+  # CIBW_TEST_SKIP: "*macosx*arm64*"
   CIBW_TEST_COMMAND: 'BTUNE_TRACE=1 python {project}/examples/btune_config.py; 
     BTUNE_TRADEOFF="(0.3, 0.1, 0.6)" BTUNE_PERF_MODE=DECOMP BTUNE_TRACE=1 python {project}/examples/lossy.py {project}/examples/lossy_example.tif'
   CIBW_BUILD_VERBOSITY: 1
+  CIBW_ENVIRONMENT: "CMAKE_ARGS='-DCMAKE_POLICY_VERSION_MINIMUM=3.5'"
+  # The next are necessary to avoid the generation of SME instruction set
+  CIBW_ENVIRONMENT_MACOS: >
+    CMAKE_ARGS='-DCMAKE_POLICY_VERSION_MINIMUM=3.5
+    -DTFLITE_ENABLE_XNNPACK=OFF
+    -DTFLITE_ENABLE_GPU=OFF
+    -DXNNPACK_ENABLE_ARM_BF16=OFF
+    -DXNNPACK_ENABLE_ARM_FP16_VECTOR=OFF
+    -DXNNPACK_ENABLE_ARM_FP16_SCALAR=OFF'
 
 jobs:
 
@@ -27,21 +36,28 @@ jobs:
     env:
       CIBW_BUILD: ${{ matrix.cibw_build }}
       CIBW_ARCHS_LINUX: ${{ matrix.arch }}
-      CIBW_ARCHS_MACOS: "x86_64 arm64"
+      CIBW_ARCHS_MACOS: "arm64"
     strategy:
       matrix:
-        os: [ubuntu-latest, windows-latest, macos-latest]
-        arch: [x86_64, aarch64]
-        #cibw_build: ["cp3{9,10,11,12}-*"]
-        #p_ver: ["3.9-3.12"]
-        cibw_build: ["cp310-*"]
-        p_ver: ["3.10"]
-        exclude:
+        include:
+          - os: ubuntu-latest
+            arch: x86_64
+            cibw_build: "cp312-*"
+            p_ver: "3.12"
+          - os: ubuntu-latest
+            arch: aarch64
+            cibw_build: "cp312-*"
+            p_ver: "3.12"
           - os: windows-latest
-            arch: aarch64
-          # cibuild is already in charge to build aarch64 (see CIBW_ARCHS_MACOS)
-          - os: macos-latest
-            arch: aarch64
+            arch: x86_64
+            cibw_build: "cp312-*"
+            p_ver: "3.12"
+            # We are blocked on MacOS because tensorflow issues:
+            # https://github.com/tensorflow/tensorflow/issues/98002
+#          - os: macos-latest
+#            arch: arm64
+#            cibw_build: "cp312-*"
+#            p_ver: "3.12"
 
     steps:
       - name: Checkout repo
@@ -52,7 +68,7 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v4
         with:
-          python-version: '3.10'
+          python-version: '3.12'
 
       - name: Set up QEMU
         if: ${{ matrix.arch == 'aarch64' }}
@@ -79,15 +95,17 @@ jobs:
             cmd /V /C "set BTUNE_TRACE=1; set BTUNE_TRADEOFF="(0.3, 0.1, 0.6)"; set BTUNE_PERF_MODE=DECOMP; 
             python {project}/examples/lossy.py {project}/examples/lossy_example.tif"
 
-      - name: Build wheels (Linux / Mac OSX)
-        if: runner.os != 'Windows'
+      - name: Build wheels (Linux)
+        if: runner.os == 'Linux'
         run: |
           python -m pip install --upgrade pip
           python -m pip install cibuildwheel
           python -m cibuildwheel --output-dir wheelhouse
         env:
-          CIBW_BEFORE_BUILD: CMAKE_OSX_ARCHITECTURES=x86_64 bash prebuild.sh
-          CIBW_ARCHS_MACOS: "x86_64"
+          CIBW_BEFORE_BUILD: bash prebuild.sh
+          CIBW_ENVIRONMENT: >
+            CMAKE_ARGS='-DCMAKE_POLICY_VERSION_MINIMUM=3.5
+            ${{ matrix.arch == 'aarch64' && '-DTFLITE_ENABLE_XNNPACK=OFF -DTFLITE_ENABLE_GPU=OFF' || '' }}'
 
       - name: Build wheels (Mac OSX arm64)
         if: runner.os != 'Windows' && runner.os != 'Linux'
@@ -100,8 +118,9 @@ jobs:
           CIBW_ARCHS_MACOS: "arm64"
 
       - name: Upload wheels
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
+          name: wheels-${{ matrix.os }}-${{ runner.os == 'macOS' && 'arm64' || matrix.arch }}
           path: ./wheelhouse/*.whl
 
 
@@ -111,10 +130,10 @@ jobs:
     # Only upload wheels when tagging (typically a release)
     if: startsWith(github.event.ref, 'refs/tags')
     steps:
-      - uses: actions/download-artifact@v3
+      - uses: actions/download-artifact@v4
         with:
-          name: artifact
           path: dist
+          merge-multiple: true
 
       - uses: pypa/gh-action-pypi-publish@release/v1
         with:
