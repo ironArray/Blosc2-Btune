@@ -16,7 +16,7 @@ from enum import Enum
 import ctypes
 import numpy as np
 
-VERSION = "1.2.1.dev0"
+VERSION = "1.2.1"
 
 
 class RepeatMode(Enum):

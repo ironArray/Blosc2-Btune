@@ -1,14 +1,12 @@
-# Announcing Btune 1.2.0
+# Announcing Btune 1.2.1
 
 ## What is new?
 
-New support for tuning compression parameters taking into account not only
-a tradeoff of compression ratio and speed, but also the quality.
-This mode is only supported for integer datasets (mainly RGB and gray-scale
-images).
-
-To get an idea of how this works, see:
-https://github.com/ironArray/Blosc2-Btune?tab=readme-ov-file#btune-quality-mode
+This is a maintenance release for removing a stale
+"WARNING: Empty metadata, no inference performed" message
+that was printed when no inference was performed.  This is still
+available when using `BTUNE_TRACE=1`, but it is not printed by
+default anymore. Fixes #15.
 
 For more info, please see the release notes in:
 

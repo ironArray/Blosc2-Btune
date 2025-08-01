@@ -4,7 +4,10 @@ Release notes for Btune
 Changes from 1.2.0 to 1.2.1
 ===========================
 
-#XXX version-specific blurb XXX#
+* Remove a stale "WARNING: Empty metadata, no inference performed" message
+  that was printed when no inference was performed.  This is still available
+  when using `BTUNE_TRACE=1`, but it is not printed by default anymore.
+  Fixes #15.
 
 
 Changes from 1.1.2 to 1.2.0
