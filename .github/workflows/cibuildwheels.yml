@@ -127,6 +127,7 @@ jobs:
   upload_pypi:
     needs: [ build_wheels ]  # last but not least
     runs-on: ubuntu-latest
+    # ironArray is configured as a trusted publisher in PyPI
     permissions:
       id-token: write
     # Only upload wheels when tagging (typically a release)
@@ -138,6 +139,3 @@ jobs:
           merge-multiple: true
 
       - uses: pypa/gh-action-pypi-publish@release/v1
-        with:
-          user: __token__
-          password: ${{ secrets.blosc_pypi_secret }}
