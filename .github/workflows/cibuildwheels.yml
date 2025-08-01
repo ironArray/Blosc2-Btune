@@ -52,10 +52,12 @@ jobs:
             arch: x86_64
             cibw_build: "cp312-*"
             p_ver: "3.12"
-          - os: macos-latest
-            arch: arm64
-            cibw_build: "cp312-*"
-            p_ver: "3.12"
+            # We are blocked on MacOS because tensorflow issues:
+            # https://github.com/tensorflow/tensorflow/issues/98002
+#          - os: macos-latest
+#            arch: arm64
+#            cibw_build: "cp312-*"
+#            p_ver: "3.12"
 
     steps:
       - name: Checkout repo
