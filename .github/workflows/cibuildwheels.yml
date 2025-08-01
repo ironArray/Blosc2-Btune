@@ -127,6 +127,8 @@ jobs:
   upload_pypi:
     needs: [ build_wheels ]  # last but not least
     runs-on: ubuntu-latest
+    permissions:
+      id-token: write
     # Only upload wheels when tagging (typically a release)
     if: startsWith(github.event.ref, 'refs/tags')
     steps:
